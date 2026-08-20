@@ -12,10 +12,11 @@
         :root {
             --mondaine-red: #e30613;
             --mondaine-black: #000000;
-            --bg-color: #f5f5f7;
-            --card-bg: #ffffff;
-            --widget-bg: #f0f2f5;
-            --widget-text: #6e6e73;
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --widget-bg: #262626;
+            --widget-text: #a0a0a5;
+            --text-color: #ffffff;
         }
 
         * {
@@ -32,15 +33,17 @@
             align-items: center;
             min-height: 100vh;
             padding: 24px;
+            color: var(--text-color);
         }
 
-        /* Targeta principal adaptable */
+        /* Targeta principal en fons fosc */
         .app-card {
             background-color: var(--card-bg);
             border-radius: 28px;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+            border: 1px solid #2a2a2a;
             width: 100%;
-            max-width: 420px; /* Per defecte en mòbil */
+            max-width: 420px;
             padding: 24px;
             display: flex;
             flex-direction: column;
@@ -62,7 +65,7 @@
             height: auto;
             aspect-ratio: 1 / 1;
             margin-bottom: 20px;
-            filter: drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.15));
+            filter: drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.4));
         }
 
         .hand-shadow {
@@ -78,10 +81,10 @@
         .widget {
             flex: 1;
             background-color: var(--widget-bg);
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 14px;
             text-align: center;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+            border: 1px solid #333333;
         }
 
         .widget-title {
@@ -96,7 +99,7 @@
         .widget-value {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #000;
+            color: var(--text-color);
         }
 
         .calendar-section {
@@ -104,15 +107,19 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background-color: var(--widget-bg);
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px solid #333333;
         }
 
         .calendar-header {
             text-align: center;
             font-weight: 700;
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             margin-bottom: 16px;
             text-transform: capitalize;
-            color: #000;
+            color: var(--text-color);
         }
 
         .calendar-grid {
@@ -120,6 +127,7 @@
             grid-template-columns: repeat(7, 1fr);
             gap: 6px;
             text-align: center;
+            align-items: center;
         }
 
         .day-name {
@@ -130,24 +138,32 @@
         }
 
         .day {
-            font-size: 1rem;
-            padding: 10px 0;
+            font-size: 0.95rem;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 10px;
-            color: #000;
+            color: var(--text-color);
+            margin: 0 auto;
+            width: 100%;
+            max-width: 36px;
         }
 
+        /* Dia actual destacat com la segonera vermella */
         .day.today {
             background-color: var(--mondaine-red);
             color: #ffffff;
             font-weight: 700;
-            box-shadow: 0 4px 10px rgba(227, 6, 19, 0.3);
+            border-radius: 50%; /* Esfera perfecta */
+            box-shadow: 0 0 12px rgba(227, 6, 19, 0.6);
         }
 
         .day.empty {
             visibility: hidden;
         }
 
-        /* Disseny Responsive per a ordinadors de sobretaula i pantalles amples */
+        /* Responsive per a pantalles amples / PC */
         @media (min-width: 768px) {
             .app-card {
                 max-width: 800px;
@@ -173,13 +189,13 @@
 <div class="app-card">
     <div class="clock-section">
         <svg class="clock-svg" viewBox="0 0 300 300">
-            <!-- Bisell exterior -->
+            <!-- Bisell exterior i fons del rellotge (Manté l'esfera blanca) -->
             <circle cx="150" cy="150" r="140" fill="#ffffff" stroke="#000000" stroke-width="12"/>
 
-            <!-- Branding principal: "DOMAINE" centrat -->
-            <text x="150" y="97" font-family="'Helvetica''Mondaine'" font-size="13" font-weight="900" letter-spacing="2.6" fill="#000000" text-anchor="middle">MONDAINE</text>
+            <!-- Branding principal: "DOMAINE" (Font 13px, Letter-spacing 2.6px) -->
+            <text x="150" y="97" font-family="'Cinzel', 'Helvetica', 'Mondaine', serif" font-size="13" font-weight="900" letter-spacing="2.6" fill="#000000" text-anchor="middle">MONDAINE</text>
 
-            <!-- Sub-logo centrat com un sol bloc (x=150) -->
+            <!-- Sub-logo centrat com un sol bloc -->
             <g transform="translate(107, 103)">
                 <!-- Rectangle Vermell -->
                 <rect x="0" y="0" width="18" height="11" fill="#e30613"/>
@@ -194,7 +210,7 @@
             <g id="dial-marks"></g>
 
             <!-- Agulla Horària -->
-            <line id="hourHand" class="hand-shadow" x1="140" y1="180" x2="150" y2="85" stroke="#000000" stroke-width="18" stroke-linecap="butt"/>
+            <line id="hourHand" class="hand-shadow" x1="150" y1="175" x2="150" y2="85" stroke="#000000" stroke-width="18" stroke-linecap="butt"/>
 
             <!-- Agulla Minutera -->
             <line id="minuteHand" class="hand-shadow" x1="150" y1="180" x2="150" y2="26" stroke="#000000" stroke-width="12" stroke-linecap="butt"/>
