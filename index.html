@@ -99,13 +99,15 @@
             flex-shrink: 0;
         }
 
-        .widget-value {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--text-color);
-            line-height: 1;
-            white-space: nowrap;
-        }
+   .widget-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+    white-space: nowrap;
+    flex-grow: 1;         /* Fa que el contenidor del text ocupi tot l'espai disponible */
+    text-align: center;   /* Centra les xifres horitzontalment */
+}
 
         .calendar-section {
             width: 100%;
