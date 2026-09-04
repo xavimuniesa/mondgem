@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Rellotge Mondaine Stop2Go & Calendari</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --mondaine-red: #e30613;
+            --mondaine-black: #000000;
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --widget-bg: #262626;
+            --widget-text: #a0a0a5;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            height: 100vh;
+            height: 100dvh;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: clamp(8px, 2vh, 24px);
+            color: var(--text-color);
+        }
+
+        .app-card {
+            background-color: var(--card-bg);
+            border-radius: clamp(16px, 4vw, 28px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+            border: 1px solid #2a2a2a;
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            max-height: 100%;
+            padding: clamp(12px, 3vh, 24px);
+            display: grid;
+            grid-template-areas:
+                "clock"
+                "info"
+                "calendar";
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr auto auto;
+            align-items: stretch;
+            gap: clamp(8px, 2vh, 20px);
+            overflow: hidden;
+        }
+
+        .clock-section {
+            grid-area: clock;
+            width: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clock-svg {
+            height: min(100%, 340px);
+            width: auto;
+            max-width: 100%;
+            aspect-ratio: 1 / 1;
+            margin-bottom: clamp(6px, 1.5vh, 16px);
+            filter: drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.4));
+            flex-shrink: 0;
+        }
+
+        .hand-shadow {
+            filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        .info-section {
+            grid-area: info;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(6px, 1.2vh, 12px);
+        }
+
+        .widgets-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(6px, 1.2vh, 12px);
+            flex-shrink: 0;
+        }
+
+        .widget {
+            min-width: 0;
+            background-color: var(--widget-bg);
+            border-radius: 14px;
+            padding: clamp(6px, 1vh, 10px) clamp(4px, 1vw, 10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: 1px solid #333333;
+            overflow: hidden;
+        }
+
+        .widget-icon {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: var(--widget-text);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .widget-value {
+            font-size: clamp(0.72rem, 2.6vw, 1rem);
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .location-widget {
+            width: 100%;
+            min-width: 0;
+            background-color: var(--widget-bg);
+            border-radius: 14px;
+            padding: clamp(6px, 1vh, 10px) 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid #333333;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .location-value {
+            font-size: clamp(0.75rem, 2.8vw, 0.95rem);
+            font-weight: 600;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .calendar-section {
+            grid-area: calendar;
+            width: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: var(--widget-bg);
+            padding: clamp(8px, 1.5vh, 18px);
+            border-radius: 20px;
+            border: 1px solid #333333;
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: clamp(0.9rem, 3vw, 1.25rem);
+            margin-bottom: clamp(4px, 1vh, 16px);
+            text-transform: capitalize;
+            color: var(--text-color);
+            flex-shrink: 0;
+        }
+
+        .calendar-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: auto repeat(6, auto);
+            gap: clamp(4px, 1vh, 10px);
+            text-align: center;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .day-name {
+            font-weight: 600;
+            font-size: clamp(0.6rem, min(2vw, 2.4vh), 0.85rem);
+            color: var(--widget-text);
+        }
+
+        .day {
+            font-size: clamp(0.65rem, min(2.2vw, 2.6vh), 0.95rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+        }
+
+        .day-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.9em;
+            height: 1.9em;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .day.today .day-number {
+            background-color: var(--mondaine-red);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 0 12px rgba(227, 6, 19, 0.6);
+        }
+
+        .day.empty {
+            visibility: hidden;
+        }
+
+        @media (orientation: landscape) {
+            .app-card {
+                max-width: 880px;
+                grid-template-areas:
+                    "clock calendar"
+                    "clock info";
+                grid-template-columns: auto 1fr;
+                grid-template-rows: 1fr auto;
+                align-items: stretch;
+                gap: clamp(12px, 3vw, 32px);
+            }
+
+            .clock-section {
+                min-width: 220px;
+                justify-self: center;
+            }
+
+            .clock-svg {
+                height: auto;
+                width: min(56vh, 30vw, 340px);
+            }
+
+            .calendar-section {
+                justify-content: center;
+            }
+
+            .info-section {
+                flex-direction: row;
+                align-items: stretch;
+            }
+
+            .widgets-container {
+                flex: 2;
+            }
+
+            .location-widget {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <div class="clock-section">
+        <svg class="clock-svg" viewBox="0 0 300 300">
+            <!-- Bisell exterior i fons -->
+            <circle cx="150" cy="150" r="140" fill="#ffffff" stroke="#000000" stroke-width="12"/>
+
+            <!-- Text MONDAINE -->
+            <text x="150" y="97" font-family="'Montserrat', -apple-system, sans-serif" font-size="16" font-weight="300" letter-spacing="1.8" fill="#000000" text-anchor="middle">MONDAINE</text>
+
+            <!-- Sub-logo Swiss Watch -->
+            <g transform="translate(150, 110)">
+                <circle cx="0" cy="0" r="6.5" fill="#e30613"/>
+                <rect x="-1.3" y="-4.2" width="2.6" height="8.4" fill="#ffffff"/>
+                <rect x="-4.2" y="-1.3" width="8.4" height="2.6" fill="#ffffff"/>
+
+                <text x="-8" y="0.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="400" fill="#000000" text-anchor="end" dominant-baseline="middle" letter-spacing="0.2">Swiss</text>
+                <text x="8" y="0.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="400" fill="#000000" text-anchor="start" dominant-baseline="middle" letter-spacing="0.2">Watch</text>
+            </g>
+
+            <!-- Marques d'hores i minuts -->
+            <g id="dial-marks"></g>
+
+            <!-- Agulla Horària -->
+            <line id="hourHand" class="hand-shadow" x1="150" y1="175" x2="150" y2="68" stroke="#000000" stroke-width="14" stroke-linecap="butt"/>
+
+            <!-- Agulla Minutera -->
+            <line id="minuteHand" class="hand-shadow" x1="150" y1="175" x2="150" y2="26" stroke="#000000" stroke-width="12" stroke-linecap="butt"/>
+
+            <!-- Segonera Stop2Go amb les teves mides ajustades -->
+            <g id="secondHand" class="hand-shadow">
+                <line x1="150" y1="172" x2="150" y2="69" stroke="#e30613" stroke-width="3.5" stroke-linecap="butt"/>
+                <circle cx="150" cy="63" r="9" fill="#e30613"/>
+            </g>
+
+            <!-- Caputxó/Eix central vermell -->
+            <circle cx="150" cy="150" r="5" fill="#e30613"/>
+        </svg>
+    </div>
+
+    <div class="info-section">
+        <div class="widgets-container">
+            <div class="widget">
+                <svg class="widget-icon" viewBox="0 0 24 24">
+                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+                </svg>
+                <div class="widget-value" id="tempValue">--°</div>
+            </div>
+
+            <div class="widget">
+                <svg class="widget-icon" viewBox="0 0 24 24">
+                    <path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/>
+                </svg>
+                <div class="widget-value" id="humValue">--%</div>
+            </div>
+
+            <div class="widget">
+                <svg class="widget-icon" viewBox="0 0 24 24">
+                    <path d="M8 3l4 8 5-5 5 15H2L8 3z"/>
+                </svg>
+                <div class="widget-value" id="altValue">--m</div>
+            </div>
+        </div>
+
+        <div class="location-widget">
+            <svg class="widget-icon" viewBox="0 0 24 24">
+                <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
+                <circle cx="12" cy="9" r="2.3" fill="none"/>
+            </svg>
+            <div class="location-value" id="cityValue">Localitzant...</div>
+        </div>
+    </div>
+
+    <div class="calendar-section">
+        <div class="calendar-header" id="calendarHeader"></div>
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="day-name">Dl</div>
+            <div class="day-name">Dt</div>
+            <div class="day-name">Dc</div>
+            <div class="day-name">Dj</div>
+            <div class="day-name">Dv</div>
+            <div class="day-name">Ds</div>
+            <div class="day-name">Dg</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const marksGroup = document.getElementById('dial-marks');
+    for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isHour = i % 5 === 0;
+
+        const mark = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        mark.setAttribute("x1", "150");
+        mark.setAttribute("y1", "22");
+        mark.setAttribute("x2", "150");
+        mark.setAttribute("y2", isHour ? "52" : "32");
+        mark.setAttribute("stroke", "#000000");
+        mark.setAttribute("stroke-width", isHour ? "11" : "3.5");
+        mark.setAttribute("stroke-linecap", "butt");
+        mark.setAttribute("transform", `rotate(${angle} 150 150)`);
+        marksGroup.appendChild(mark);
+    }
+
+    let currentMinute = -1;
+
+    function updateClock() {
+        const now = new Date();
+        const ms = now.getMilliseconds();
+        const s = now.getSeconds();
+        const m = now.getMinutes();
+        const h = now.getHours();
+
+        let secondAngle = 0;
+        if (s < 58) {
+            const totalMs = s * 1000 + ms;
+            secondAngle = (totalMs / 58000) * 360;
+        } else {
+            secondAngle = 360;
+        }
+
+        const minuteAngle = m * 6;
+        const hourAngle = ((h % 12) * 30) + (m * 0.5);
+
+        document.getElementById('secondHand').setAttribute('transform', `rotate(${secondAngle} 150 150)`);
+        document.getElementById('minuteHand').setAttribute('transform', `rotate(${minuteAngle} 150 150)`);
+        document.getElementById('hourHand').setAttribute('transform', `rotate(${hourAngle} 150 150)`);
+
+        if (m !== currentMinute) {
+            currentMinute = m;
+            if (h === 0 && m === 0) renderCalendar();
+        }
+
+        requestAnimationFrame(updateClock);
+    }
+
+    function renderCalendar() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const today = now.getDate();
+
+        const monthName = new Intl.DateTimeFormat('ca-ES', { month: 'long' }).format(now);
+        document.getElementById('calendarHeader').innerText = `${monthName} ${year}`;
+
+        const grid = document.getElementById('calendarGrid');
+        const oldDays = grid.querySelectorAll('.day');
+        oldDays.forEach(d => d.remove());
+
+        let firstDayIndex = new Date(year, month, 1).getDay();
+        firstDayIndex = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
+
+        const totalDays = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDayIndex; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'day empty';
+            grid.appendChild(emptyCell);
+        }
+
+        for (let day = 1; day <= totalDays; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = `day ${day === today ? 'today' : ''}`;
+
+            const dayNumber = document.createElement('span');
+            dayNumber.className = 'day-number';
+            dayNumber.innerText = day;
+
+            dayCell.appendChild(dayNumber);
+            grid.appendChild(dayCell);
+        }
+    }
+
+    async function fetchLocationData() {
+        if (!("geolocation" in navigator)) {
+            setFallbackData();
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            const weatherPromise = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&elevation=nan`)
+                .then(r => r.json())
+                .catch(() => null);
+
+            const geoPromise = fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ca`)
+                .then(r => r.json())
+                .catch(() => null);
+
+            const [weatherData, geoData] = await Promise.all([weatherPromise, geoPromise]);
+
+            if (weatherData && weatherData.current) {
+                if (weatherData.current.temperature_2m !== undefined) {
+                    document.getElementById('tempValue').innerText = `${Math.round(weatherData.current.temperature_2m)}°`;
+                }
+                if (weatherData.current.relative_humidity_2m !== undefined) {
+                    document.getElementById('humValue').innerText = `${Math.round(weatherData.current.relative_humidity_2m)}%`;
+                }
+            } else {
+                document.getElementById('tempValue').innerText = "26°";
+                document.getElementById('humValue').innerText = "55%";
+            }
+
+            if (weatherData && weatherData.elevation !== undefined) {
+                document.getElementById('altValue').innerText = `${Math.round(weatherData.elevation)}m`;
+            } else {
+                document.getElementById('altValue').innerText = "1250m";
+            }
+
+            if (geoData) {
+                const place = geoData.city || geoData.locality || geoData.principalSubdivision || geoData.countryName;
+                document.getElementById('cityValue').innerText = place || "Ubicació desconeguda";
+            } else {
+                document.getElementById('cityValue').innerText = "Ubicació desconeguda";
+            }
+        }, () => {
+            setFallbackData();
+        });
+    }
+
+    function setFallbackData() {
+        document.getElementById('tempValue').innerText = "26°";
+        document.getElementById('humValue').innerText = "55%";
+        document.getElementById('altValue').innerText = "1250m";
+        document.getElementById('cityValue').innerText = "Ubicació desconeguda";
+    }
+
+    renderCalendar();
+    fetchLocationData();
+    requestAnimationFrame(updateClock);
+</script>
+</body>
+</html>
