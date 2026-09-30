@@ -227,6 +227,10 @@
             text-transform: capitalize;
             color: var(--text-color);
             min-width: 0;
+            padding: 4px 6px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .cal-nav-btn {
@@ -617,7 +621,7 @@
 
     function renderCalendar(offset) {
         if (typeof offset === 'number') {
-            monthOffset = Math.max(-3, Math.min(3, offset));
+            monthOffset = offset;
         }
 
         const realNow = new Date();
@@ -629,11 +633,6 @@
 
         const monthName = new Intl.DateTimeFormat('ca-ES', { month: 'long' }).format(target);
         document.getElementById('calendarHeader').innerText = `${monthName} ${year}`;
-
-        const prevBtn = document.getElementById('prevMonthBtn');
-        const nextBtn = document.getElementById('nextMonthBtn');
-        if (prevBtn) prevBtn.disabled = monthOffset <= -3;
-        if (nextBtn) nextBtn.disabled = monthOffset >= 3;
 
         const holidays = getHolidaysForYear(year);
 
@@ -782,6 +781,65 @@
 
     document.getElementById('prevMonthBtn').addEventListener('click', () => renderCalendar(monthOffset - 1));
     document.getElementById('nextMonthBtn').addEventListener('click', () => renderCalendar(monthOffset + 1));
+
+    function goToCurrentMonth() {
+        if (monthOffset !== 0) renderCalendar(0);
+    }
+
+    // Prémer llarg (mantenir premut) a qualsevol de les fletxes torna al mes actual
+    function setupLongPress(el) {
+        let pressTimer = null;
+        let longPressed = false;
+
+        const start = () => {
+            longPressed = false;
+            pressTimer = setTimeout(() => {
+                longPressed = true;
+                goToCurrentMonth();
+            }, 550);
+        };
+        const cancel = (e) => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (longPressed && e) {
+                e.preventDefault();
+                longPressed = false;
+            }
+        };
+
+        el.addEventListener('mousedown', start);
+        el.addEventListener('mouseup', cancel);
+        el.addEventListener('mouseleave', cancel);
+        el.addEventListener('touchstart', start, { passive: true });
+        el.addEventListener('touchend', cancel);
+        el.addEventListener('touchcancel', cancel);
+        el.addEventListener('click', (e) => {
+            if (longPressed) {
+                e.preventDefault();
+                e.stopPropagation();
+                longPressed = false;
+            }
+        });
+    }
+
+    setupLongPress(document.getElementById('prevMonthBtn'));
+    setupLongPress(document.getElementById('nextMonthBtn'));
+
+    // Doble toc/clic al nom del mes torna al mes actual
+    const calendarHeaderEl = document.getElementById('calendarHeader');
+    calendarHeaderEl.addEventListener('dblclick', goToCurrentMonth);
+
+    let lastHeaderTap = 0;
+    calendarHeaderEl.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastHeaderTap < 350) {
+            e.preventDefault();
+            goToCurrentMonth();
+        }
+        lastHeaderTap = now;
+    });
 
     let touchStartX = null;
     let touchStartY = null;
