@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" id="themeColorMeta" content="#0d0d0d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Rellotge Mondaine Stop2Go & Calendari</title>
+    <script>
+        // S'aplica el tema abans de pintar la pàgina, per evitar un parpelleig fosc→clar en carregar
+        (function () {
+            var override = null;
+            try { override = localStorage.getItem('mondaineThemeOverride'); } catch (e) {}
+            var h = new Date().getHours();
+            document.documentElement.setAttribute('data-theme', override || ((h >= 7 && h < 20) ? 'light' : 'dark'));
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -48,6 +60,12 @@
             overflow: hidden;
         }
 
+        /* Fins que el tema no està aplicat, cap transició (evita animar el canvi inicial) */
+        html:not(.theme-ready) *,
+        html:not(.theme-ready) body {
+            transition: none !important;
+        }
+
         body {
             height: 100vh;
             height: 100dvh;
@@ -56,8 +74,16 @@
             justify-content: center;
             align-items: center;
             padding: clamp(8px, 2vh, 24px);
+            /* Respecta la "illa" / notch de l'iPhone, sobretot en horitzontal */
+            padding-top: max(clamp(8px, 2vh, 24px), env(safe-area-inset-top));
+            padding-bottom: max(clamp(8px, 2vh, 24px), env(safe-area-inset-bottom));
+            padding-left: max(clamp(8px, 2vh, 24px), env(safe-area-inset-left));
+            padding-right: max(clamp(8px, 2vh, 24px), env(safe-area-inset-right));
             color: var(--text-color);
             transition: var(--transition-theme);
+            /* Evita el zoom per doble toc quan es premen les fletxes ràpidament */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .app-card {
@@ -77,11 +103,20 @@
                 "clock"
                 "info"
                 "calendar";
-            grid-template-columns: 1fr;
-            grid-template-rows: auto auto auto;
+            /* minmax(0, 1fr): sense això, la franja lliscable d'indicadors eixampla la columna
+               i desplaça el rellotge i el calendari fora de la pantalla */
+            grid-template-columns: minmax(0, 1fr);
+            /* La fila del rellotge s'emporta l'espai sobrant (el rellotge es dimensiona per JS) */
+            grid-template-rows: minmax(0, 1fr) auto auto;
             align-items: stretch;
             gap: clamp(8px, 2vh, 20px);
             overflow: hidden;
+        }
+
+        .clock-section,
+        .info-section,
+        .calendar-section {
+            min-width: 0;
         }
 
         .clock-section {
@@ -134,6 +169,34 @@
             display: none;
         }
 
+        /* Difuminat a les vores per indicar que hi ha més indicadors a banda i banda */
+        .widgets-container.fade-right {
+            -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+            mask-image: linear-gradient(to right, #000 82%, transparent);
+        }
+
+        .widgets-container.fade-left {
+            -webkit-mask-image: linear-gradient(to left, #000 82%, transparent);
+            mask-image: linear-gradient(to left, #000 82%, transparent);
+        }
+
+        .widgets-container.fade-left.fade-right {
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 18%, #000 82%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 18%, #000 82%, transparent);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .widgets-container {
+                cursor: grab;
+            }
+
+            .widgets-container.dragging {
+                cursor: grabbing;
+                scroll-snap-type: none;
+                user-select: none;
+            }
+        }
+
         .widget {
             flex: 0 0 auto;
             width: clamp(78px, 24vw, 108px);
@@ -174,11 +237,15 @@
             text-overflow: clip;
         }
 
+        /* La població s'adapta a la llargada del nom (fins a un màxim) */
         .widget--location {
             flex-direction: row;
-            width: clamp(118px, 34vw, 176px);
+            container-type: normal;
+            width: auto;
+            min-width: clamp(118px, 34vw, 176px);
+            max-width: 260px;
             gap: 6px;
-            padding: clamp(6px, 1vh, 10px) 10px;
+            padding: clamp(6px, 1vh, 10px) 12px;
         }
 
         .widget--location .widget-icon {
@@ -188,7 +255,7 @@
 
         .location-value {
             min-width: 0;
-            font-size: clamp(0.68rem, 13cqw, 0.92rem);
+            font-size: clamp(0.8rem, 3.8vw, 0.95rem);
             font-weight: 600;
             color: var(--text-color);
             line-height: 1.1;
@@ -219,7 +286,7 @@
             transform: translate(-50%, -100%);
             background-color: #000000;
             color: #ffffff;
-            font-size: clamp(0.62rem, 2.4cqw, 0.8rem);
+            font-size: 0.75rem;
             font-weight: 600;
             white-space: nowrap;
             padding: 5px 10px;
@@ -283,9 +350,10 @@
             background-color: var(--nav-active-bg);
         }
 
-        .cal-nav-btn:disabled {
-            opacity: 0.25;
-            cursor: default;
+        .cal-nav-btn {
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .calendar-grid {
@@ -417,13 +485,17 @@
         @media (orientation: landscape) {
             .app-card {
                 max-width: min(94vw, 1200px);
+                /* Calendari + indicadors formen un bloc centrat verticalment al costat del rellotge */
                 grid-template-areas:
+                    "clock ."
                     "clock calendar"
-                    "clock info";
-                grid-template-columns: 1fr minmax(320px, 460px);
-                grid-template-rows: minmax(0, 1fr) auto;
+                    "clock info"
+                    "clock .";
+                grid-template-columns: minmax(0, 1fr) minmax(300px, 460px);
+                grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
                 align-items: stretch;
-                gap: clamp(12px, 3vw, 32px);
+                column-gap: clamp(12px, 3vw, 32px);
+                row-gap: clamp(8px, 2vh, 16px);
             }
 
             .clock-section {
@@ -438,9 +510,7 @@
 
             .calendar-section {
                 justify-content: center;
-                justify-self: center;
                 width: 100%;
-                max-width: clamp(320px, 24vw, 460px);
             }
 
             .calendar-header {
@@ -467,8 +537,6 @@
 
             .info-section {
                 width: 100%;
-                max-width: clamp(320px, 24vw, 460px);
-                justify-self: center;
             }
         }
     </style>
@@ -543,45 +611,45 @@
     </div>
 
     <div class="info-section">
-        <div class="widgets-container">
-            <div class="widget">
-                <svg class="widget-icon" viewBox="0 0 24 24">
+        <div class="widgets-container" id="widgetsContainer">
+            <div class="widget" title="Altitud" role="group" aria-label="Altitud">
+                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8 3l4 8 5-5 5 15H2L8 3z"/>
                 </svg>
                 <div class="widget-value" id="altValue">--m</div>
             </div>
 
-            <div class="widget">
-                <svg class="widget-icon" viewBox="0 0 24 24">
+            <div class="widget" title="Temperatura" role="group" aria-label="Temperatura">
+                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
                 </svg>
                 <div class="widget-value" id="tempValue">--°</div>
             </div>
 
-            <div class="widget">
-                <svg class="widget-icon" viewBox="0 0 24 24">
+            <div class="widget" title="Humitat" role="group" aria-label="Humitat">
+                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/>
                 </svg>
                 <div class="widget-value" id="humValue">--%</div>
             </div>
 
-            <div class="widget">
-                <svg class="widget-icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v5l3.5 2"/>
+            <div class="widget" title="Sensació tèrmica" role="group" aria-label="Sensació tèrmica">
+                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M11 14.76V4.5a2.5 2.5 0 0 0-5 0v10.26a4.5 4.5 0 1 0 5 0z"/>
+                    <path d="M15 8c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0M15 13c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0"/>
                 </svg>
                 <div class="widget-value" id="feelsValue">--°</div>
             </div>
 
-            <div class="widget">
-                <svg class="widget-icon" id="weatherCondIcon" viewBox="0 0 24 24">
+            <div class="widget" title="Previsió properes 12 h" role="group" aria-label="Previsió properes 12 hores">
+                <svg class="widget-icon" id="weatherCondIcon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/>
                 </svg>
                 <div class="widget-value" id="weatherCondValue">--</div>
             </div>
 
-            <div class="widget widget--location">
-                <svg class="widget-icon" viewBox="0 0 24 24">
+            <div class="widget widget--location" title="Població" role="group" aria-label="Població">
+                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
                     <circle cx="12" cy="9" r="2.3" fill="none"/>
                 </svg>
@@ -611,6 +679,7 @@
 <div class="holiday-tooltip" id="holidayTooltip"></div>
 
 <script>
+    // ---------- Rellotge ----------
     const marksGroup = document.getElementById('dial-marks');
     for (let i = 0; i < 60; i++) {
         const angle = i * 6;
@@ -628,7 +697,12 @@
         marksGroup.appendChild(mark);
     }
 
+    const secondHandEl = document.getElementById('secondHand');
+    const minuteHandEl = document.getElementById('minuteHand');
+    const hourHandEl = document.getElementById('hourHand');
+
     let currentMinute = -1;
+    let currentDateKey = null;
 
     function updateClock() {
         const now = new Date();
@@ -637,38 +711,76 @@
         const m = now.getMinutes();
         const h = now.getHours();
 
-        let secondAngle = 0;
-        if (s < 58) {
-            const totalMs = s * 1000 + ms;
-            secondAngle = (totalMs / 58000) * 360;
-        } else {
-            secondAngle = 360;
-        }
-
+        // Stop2Go: la segonera fa la volta en 58 s i s'atura 2 s a les 12
+        const secondAngle = s < 58 ? ((s * 1000 + ms) / 58000) * 360 : 360;
         const minuteAngle = m * 6;
         const hourAngle = ((h % 12) * 30) + (m * 0.5);
 
-        document.getElementById('secondHand').setAttribute('transform', `rotate(${secondAngle} 150 150)`);
-        document.getElementById('minuteHand').setAttribute('transform', `rotate(${minuteAngle} 150 150)`);
-        document.getElementById('hourHand').setAttribute('transform', `rotate(${hourAngle} 150 150)`);
+        secondHandEl.setAttribute('transform', `rotate(${secondAngle} 150 150)`);
+        minuteHandEl.setAttribute('transform', `rotate(${minuteAngle} 150 150)`);
+        hourHandEl.setAttribute('transform', `rotate(${hourAngle} 150 150)`);
 
         if (m !== currentMinute) {
             currentMinute = m;
-            if (h === 0 && m === 0) {
-                monthOffset = 0;
-                renderCalendar();
-            }
-            if (typeof applyTheme === 'function') applyTheme();
+            onMinuteChange(now);
         }
 
         requestAnimationFrame(updateClock);
     }
 
-    const FIXED_HOLIDAYS = {
+    function onMinuteChange(now) {
+        // Canvi de dia: es compara la data, no l'hora 00:00, perquè si la pàgina estava
+        // en segon pla a mitjanit el navegador no executa el rellotge i aquell minut es perdria
+        const dateKey = fmtKey(now);
+        if (dateKey !== currentDateKey) {
+            const firstRun = currentDateKey === null;
+            currentDateKey = dateKey;
+            if (!firstRun) renderCalendar(0);
+        }
+        applyTheme();
+    }
+
+    // ---------- Festius ----------
+    // Calendaris oficials publicats per la Generalitat (cal afegir-ne un de nou cada any)
+    const OFFICIAL_HOLIDAYS = {
+        2026: {
+            '01-01': "Cap d'Any",
+            '01-06': 'Reis',
+            '04-03': 'Divendres Sant',
+            '04-06': 'Dilluns de Pasqua',
+            '05-01': 'Festa del Treball',
+            '06-24': 'Sant Joan',
+            '08-15': "L'Assumpció",
+            '09-11': 'Diada Nacional',
+            '10-12': "Festa Nacional d'Espanya",
+            '11-01': 'Tots Sants',
+            '12-08': 'La Immaculada',
+            '12-25': 'Nadal',
+            '12-26': 'Sant Esteve'
+        },
+        2027: {
+            '01-01': "Cap d'Any",
+            '01-06': 'Reis',
+            '03-26': 'Divendres Sant',
+            '03-29': 'Dilluns de Pasqua',
+            '05-01': 'Festa del Treball',
+            '06-24': 'Sant Joan',
+            '09-11': 'Diada Nacional',
+            '10-12': "Festa Nacional d'Espanya",
+            '11-01': 'Tots Sants',
+            '12-06': 'Dia de la Constitució',
+            '12-08': 'La Immaculada',
+            '12-25': 'Nadal'
+        }
+    };
+
+    // Per a anys sense calendari oficial carregat: regla general (aproximada)
+    const GENERIC_FIXED_HOLIDAYS = {
         '01-01': "Cap d'Any",
         '01-06': 'Reis',
         '05-01': 'Festa del Treball',
         '06-24': 'Sant Joan',
+        '08-15': "L'Assumpció",
         '09-11': 'Diada Nacional',
         '10-12': "Festa Nacional d'Espanya",
         '11-01': 'Tots Sants',
@@ -680,6 +792,10 @@
 
     function pad2(n) {
         return String(n).padStart(2, '0');
+    }
+
+    function fmtKey(d) {
+        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
     }
 
     function getEasterSunday(year) {
@@ -700,39 +816,40 @@
         return new Date(year, month - 1, day);
     }
 
-    function fmtKey(d) {
-        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-    }
-
     const holidaysByYear = new Map();
 
     function getHolidaysForYear(year) {
         if (holidaysByYear.has(year)) return holidaysByYear.get(year);
 
         const map = new Map();
-        Object.entries(FIXED_HOLIDAYS).forEach(([key, name]) => {
-            map.set(`${year}-${key}`, name);
-        });
+        const official = OFFICIAL_HOLIDAYS[year];
 
-        const easter = getEasterSunday(year);
-        const goodFriday = new Date(easter);
-        goodFriday.setDate(easter.getDate() - 2);
-        const easterMonday = new Date(easter);
-        easterMonday.setDate(easter.getDate() + 1);
-
-        map.set(fmtKey(goodFriday), 'Divendres Sant');
-        map.set(fmtKey(easterMonday), 'Dilluns de Pasqua');
+        if (official) {
+            Object.entries(official).forEach(([key, name]) => map.set(`${year}-${key}`, name));
+        } else {
+            Object.entries(GENERIC_FIXED_HOLIDAYS).forEach(([key, name]) => map.set(`${year}-${key}`, name));
+            const easter = getEasterSunday(year);
+            const goodFriday = new Date(easter);
+            goodFriday.setDate(easter.getDate() - 2);
+            const easterMonday = new Date(easter);
+            easterMonday.setDate(easter.getDate() + 1);
+            map.set(fmtKey(goodFriday), 'Divendres Sant');
+            map.set(fmtKey(easterMonday), 'Dilluns de Pasqua');
+        }
 
         holidaysByYear.set(year, map);
         return map;
     }
 
+    // ---------- Calendari ----------
     let monthOffset = 0;
 
     function renderCalendar(offset) {
         if (typeof offset === 'number') {
             monthOffset = offset;
         }
+
+        hideHolidayTooltip();
 
         const realNow = new Date();
         const target = new Date(realNow.getFullYear(), realNow.getMonth() + monthOffset, 1);
@@ -747,18 +864,18 @@
         const holidays = getHolidaysForYear(year);
 
         const grid = document.getElementById('calendarGrid');
-        const oldDays = grid.querySelectorAll('.day');
-        oldDays.forEach(d => d.remove());
+        grid.querySelectorAll('.day').forEach(d => d.remove());
 
         let firstDayIndex = new Date(year, month, 1).getDay();
         firstDayIndex = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
 
         const totalDays = new Date(year, month + 1, 0).getDate();
+        const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < firstDayIndex; i++) {
             const emptyCell = document.createElement('div');
             emptyCell.className = 'day empty';
-            grid.appendChild(emptyCell);
+            fragment.appendChild(emptyCell);
         }
 
         for (let day = 1; day <= totalDays; day++) {
@@ -778,86 +895,112 @@
             dayNumber.innerText = day;
 
             dayCell.appendChild(dayNumber);
-            grid.appendChild(dayCell);
+            fragment.appendChild(dayCell);
         }
 
-        // Sempre completem fins a 6 setmanes (42 caselles) perquè el calendari
-        // tingui sempre la mateixa mida, independentment de les setmanes del mes
-        const cellsSoFar = firstDayIndex + totalDays;
-        const trailingEmpty = 42 - cellsSoFar;
+        // Sempre 6 setmanes (42 caselles): el calendari té la mateixa mida tots els mesos
+        const trailingEmpty = 42 - (firstDayIndex + totalDays);
         for (let i = 0; i < trailingEmpty; i++) {
             const emptyCell = document.createElement('div');
             emptyCell.className = 'day empty';
-            grid.appendChild(emptyCell);
+            fragment.appendChild(emptyCell);
         }
+
+        grid.appendChild(fragment);
 
         if (typeof sizeClockForPortrait === 'function') {
             requestAnimationFrame(sizeClockForPortrait);
         }
     }
 
-    async function fetchLocationData() {
+    // ---------- Dades meteorològiques i ubicació ----------
+    const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+    let lastFetchTime = 0;
+    let lastGeoCoords = null;
+    let fetchInProgress = false;
+
+    function setText(id, text) {
+        document.getElementById(id).innerText = text;
+    }
+
+    function distanceKm(a, b) {
+        const R = 6371;
+        const dLat = (b.lat - a.lat) * Math.PI / 180;
+        const dLon = (b.lon - a.lon) * Math.PI / 180;
+        const x = Math.sin(dLat / 2) ** 2 +
+            Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(x));
+    }
+
+    function fetchJson(url) {
+        return fetch(url)
+            .then(r => (r.ok ? r.json() : null))
+            .catch(() => null);
+    }
+
+    function fetchLocationData() {
+        if (fetchInProgress) return;
+
         if (!("geolocation" in navigator)) {
             setFallbackData();
             return;
         }
 
+        fetchInProgress = true;
+
         navigator.geolocation.getCurrentPosition(async (position) => {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            const weatherPromise = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m&daily=weather_code,precipitation_probability_max&timezone=auto&elevation=nan`)
-                .then(r => r.json())
-                .catch(() => null);
+            // Sense "elevation=nan": així l'API usa un model d'elevació de 90 m al punt exacte
+            // (amb "nan" retornava l'alçada mitjana de tota la cel·la del model, p. ex. 0 m a Barcelona)
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+                `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day` +
+                `&hourly=weather_code,precipitation_probability&forecast_days=2&timezone=auto`;
 
-            const geoPromise = fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ca`)
-                .then(r => r.json())
-                .catch(() => null);
+            // Només es torna a geolocalitzar la població si t'has mogut més d'1 km
+            const coords = { lat, lon };
+            const needGeo = !lastGeoCoords || distanceKm(lastGeoCoords, coords) > 1;
+            const geoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ca`;
 
-            const [weatherData, geoData] = await Promise.all([weatherPromise, geoPromise]);
+            const [weatherData, geoData] = await Promise.all([
+                fetchJson(weatherUrl),
+                needGeo ? fetchJson(geoUrl) : Promise.resolve(undefined)
+            ]);
 
-            if (weatherData && weatherData.current) {
-                if (weatherData.current.temperature_2m !== undefined) {
-                    document.getElementById('tempValue').innerText = `${Math.round(weatherData.current.temperature_2m)}°`;
-                }
-                if (weatherData.current.apparent_temperature !== undefined) {
-                    document.getElementById('feelsValue').innerText = `${Math.round(weatherData.current.apparent_temperature)}°`;
-                }
-                if (weatherData.current.relative_humidity_2m !== undefined) {
-                    document.getElementById('humValue').innerText = `${Math.round(weatherData.current.relative_humidity_2m)}%`;
-                }
-            } else {
-                document.getElementById('tempValue').innerText = "--°";
-                document.getElementById('feelsValue').innerText = "--°";
-                document.getElementById('humValue').innerText = "--%";
-            }
-
-            if (weatherData && weatherData.elevation !== undefined) {
-                document.getElementById('altValue').innerText = `${Math.round(weatherData.elevation)}m`;
-            } else {
-                document.getElementById('altValue').innerText = "--m";
-            }
+            const cur = weatherData && weatherData.current;
+            setText('tempValue', cur && cur.temperature_2m != null ? `${Math.round(cur.temperature_2m)}°` : '--°');
+            setText('feelsValue', cur && cur.apparent_temperature != null ? `${Math.round(cur.apparent_temperature)}°` : '--°');
+            setText('humValue', cur && cur.relative_humidity_2m != null ? `${Math.round(cur.relative_humidity_2m)}%` : '--%');
+            setText('altValue', weatherData && weatherData.elevation != null ? `${Math.round(weatherData.elevation)}m` : '--m');
 
             applyWeatherCondition(weatherData);
 
-            if (geoData) {
-                const place = geoData.city || geoData.locality || geoData.principalSubdivision || geoData.countryName;
-                document.getElementById('cityValue').innerText = place || "--";
-            } else {
-                document.getElementById('cityValue').innerText = "--";
+            if (geoData !== undefined) {
+                const place = geoData && (geoData.city || geoData.locality || geoData.principalSubdivision || geoData.countryName);
+                setText('cityValue', place || '--');
+                if (place) lastGeoCoords = coords;
             }
+
+            lastFetchTime = Date.now();
+            fetchInProgress = false;
         }, () => {
             setFallbackData();
+            lastFetchTime = Date.now();
+            fetchInProgress = false;
+        }, {
+            timeout: 15000,
+            maximumAge: 10 * 60 * 1000
         });
     }
 
     function setFallbackData() {
-        document.getElementById('tempValue').innerText = "--°";
-        document.getElementById('feelsValue').innerText = "--°";
-        document.getElementById('humValue').innerText = "--%";
-        document.getElementById('altValue').innerText = "--m";
-        document.getElementById('cityValue').innerText = "--";
-        document.getElementById('weatherCondValue').innerText = "--";
+        setText('tempValue', '--°');
+        setText('feelsValue', '--°');
+        setText('humValue', '--%');
+        setText('altValue', '--m');
+        setText('cityValue', '--');
+        setText('weatherCondValue', '--');
     }
 
     const WEATHER_ICONS = {
@@ -865,52 +1008,84 @@
         fog: '<path d="M7 11.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 5a4 4 0 0 1 .9 7.9"/><path d="M4 15h16M4 18h16M4 12h7"/>',
         snow: '<path d="M7 11.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1z"/><path d="M9 17v4M9 17l-1.7 1M9 17l1.7 1M9 21l-1.7-1M9 21l1.7-1M15 17v4M15 17l-1.7 1M15 17l1.7 1M15 21l-1.7-1M15 21l1.7-1"/>',
         clear: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>',
+        clearNight: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
         cloud: '<path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/>'
     };
 
+    const FOG_CODES = [45, 48];
+    const SNOW_CODES = [71, 73, 75, 77, 85, 86];
+    const RAIN_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+    const FORECAST_WINDOW_HOURS = 12;
+
+    // Previsió de les properes 12 hores (abans s'usava el dia sencer, i a la nit
+    // seguia mostrant la pluja del matí, que ja havia passat)
     function applyWeatherCondition(weatherData) {
         const valueEl = document.getElementById('weatherCondValue');
         const iconEl = document.getElementById('weatherCondIcon');
 
-        const daily = weatherData && weatherData.daily;
-        if (!daily || !Array.isArray(daily.weather_code) || daily.weather_code.length === 0) {
-            valueEl.innerText = "--";
+        const hourly = weatherData && weatherData.hourly;
+        const current = weatherData && weatherData.current;
+        if (!hourly || !Array.isArray(hourly.time) || !Array.isArray(hourly.weather_code)) {
+            valueEl.innerText = '--';
+            iconEl.innerHTML = WEATHER_ICONS.cloud;
             return;
         }
 
-        const code = daily.weather_code[0];
-        const prob = Array.isArray(daily.precipitation_probability_max) ? daily.precipitation_probability_max[0] : undefined;
+        // Hora actual a la zona horària de la ubicació (format "AAAA-MM-DDTHH:00")
+        const currentHour = current && current.time ? current.time.slice(0, 13) + ':00' : null;
+        let start = currentHour ? hourly.time.findIndex(t => t >= currentHour) : 0;
+        if (start < 0) start = 0;
 
-        const FOG_CODES = [45, 48];
-        const SNOW_CODES = [71, 73, 75, 77, 85, 86];
-        const RAIN_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+        const codes = hourly.weather_code.slice(start, start + FORECAST_WINDOW_HOURS).filter(c => c != null);
+        const probs = (hourly.precipitation_probability || [])
+            .slice(start, start + FORECAST_WINDOW_HOURS)
+            .filter(p => p != null);
+        const maxProb = probs.length ? Math.max(...probs) : null;
+
+        if (codes.length === 0) {
+            valueEl.innerText = '--';
+            iconEl.innerHTML = WEATHER_ICONS.cloud;
+            return;
+        }
 
         let kind, label;
-        if (SNOW_CODES.includes(code)) {
+        if (codes.some(c => SNOW_CODES.includes(c))) {
             kind = 'snow';
             label = 'Neu';
-        } else if (FOG_CODES.includes(code)) {
-            kind = 'fog';
-            label = 'Boira';
-        } else if (RAIN_CODES.includes(code) || (prob !== undefined && prob >= 50)) {
+        } else if (codes.some(c => RAIN_CODES.includes(c)) || (maxProb !== null && maxProb >= 50)) {
             kind = 'rain';
             label = 'Pluja';
-        } else if (code === 0) {
-            kind = 'clear';
+        } else if (codes.some(c => FOG_CODES.includes(c))) {
+            kind = 'fog';
+            label = 'Boira';
+        } else if (codes[0] <= 1) {
+            kind = current && current.is_day === 0 ? 'clearNight' : 'clear';
             label = 'Serè';
         } else {
             kind = 'cloud';
             label = 'Núvols';
         }
 
-        if (prob !== undefined && (kind === 'rain' || kind === 'snow')) {
-            label += ` ${Math.round(prob)}%`;
+        if (maxProb !== null && (kind === 'rain' || kind === 'snow')) {
+            label += ` ${Math.round(maxProb)}%`;
         }
 
         iconEl.innerHTML = WEATHER_ICONS[kind];
         valueEl.innerText = label;
     }
 
+    // Les dades es refresquen soles cada 15 min i en tornar a obrir la pestanya
+    setInterval(() => {
+        if (!document.hidden) fetchLocationData();
+    }, REFRESH_INTERVAL_MS);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) return;
+        onMinuteChange(new Date());
+        if (Date.now() - lastFetchTime > REFRESH_INTERVAL_MS) fetchLocationData();
+    });
+
+    // ---------- Mida del rellotge en vertical ----------
     function sizeClockForPortrait() {
         const isPortrait = window.matchMedia('(orientation: portrait)').matches;
         const svg = document.querySelector('.clock-svg');
@@ -919,25 +1094,21 @@
         const calendarSection = document.querySelector('.calendar-section');
         const clockSection = document.querySelector('.clock-section');
 
-        if (!isPortrait) {
-            svg.style.width = '';
-            svg.style.height = '';
-            return;
-        }
-
-        // Restablim abans de mesurar, per no arrossegar una mida anterior
         svg.style.width = '';
         svg.style.height = '';
 
+        if (!isPortrait) return;
+
         requestAnimationFrame(() => {
             const cardStyles = getComputedStyle(appCard);
-            const gap = parseFloat(cardStyles.rowGap) || parseFloat(cardStyles.gap) || 0;
+            const gap = parseFloat(cardStyles.rowGap) || 0;
 
             const totalHeight = appCard.clientHeight
                 - parseFloat(cardStyles.paddingTop)
                 - parseFloat(cardStyles.paddingBottom);
 
-            const used = infoSection.offsetHeight + calendarSection.offsetHeight + (gap * 2);
+            const svgMargin = parseFloat(getComputedStyle(svg).marginBottom) || 0;
+            const used = infoSection.offsetHeight + calendarSection.offsetHeight + (gap * 2) + svgMargin;
             const available = totalHeight - used;
             const maxByWidth = clockSection.clientWidth;
 
@@ -953,53 +1124,46 @@
     window.addEventListener('resize', sizeClockForPortrait);
     window.addEventListener('orientationchange', () => setTimeout(sizeClockForPortrait, 250));
 
-    document.getElementById('prevMonthBtn').addEventListener('click', () => renderCalendar(monthOffset - 1));
-    document.getElementById('nextMonthBtn').addEventListener('click', () => renderCalendar(monthOffset + 1));
-
+    // ---------- Navegació del calendari ----------
     function goToCurrentMonth() {
         if (monthOffset !== 0) renderCalendar(0);
     }
 
-    // Prémer llarg (mantenir premut) a qualsevol de les fletxes torna al mes actual
-    function setupLongPress(el) {
+    // Un sol gestor per fletxa: toc curt = canvia de mes; prémer llarg = torna al mes actual.
+    // (Abans, amb ratolí, el prémer llarg tornava al mes actual i després igualment avançava un mes.)
+    function setupNavButton(el, delta) {
         let pressTimer = null;
         let longPressed = false;
 
         const start = () => {
             longPressed = false;
+            clearTimeout(pressTimer);
             pressTimer = setTimeout(() => {
                 longPressed = true;
                 goToCurrentMonth();
             }, 550);
         };
-        const cancel = (e) => {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-                pressTimer = null;
-            }
-            if (longPressed && e) {
-                e.preventDefault();
-                longPressed = false;
-            }
+        const stop = () => {
+            clearTimeout(pressTimer);
+            pressTimer = null;
         };
 
-        el.addEventListener('mousedown', start);
-        el.addEventListener('mouseup', cancel);
-        el.addEventListener('mouseleave', cancel);
-        el.addEventListener('touchstart', start, { passive: true });
-        el.addEventListener('touchend', cancel);
-        el.addEventListener('touchcancel', cancel);
-        el.addEventListener('click', (e) => {
+        el.addEventListener('pointerdown', start);
+        el.addEventListener('pointerup', stop);
+        el.addEventListener('pointerleave', stop);
+        el.addEventListener('pointercancel', stop);
+        el.addEventListener('contextmenu', (e) => e.preventDefault());
+        el.addEventListener('click', () => {
             if (longPressed) {
-                e.preventDefault();
-                e.stopPropagation();
                 longPressed = false;
+                return;
             }
+            renderCalendar(monthOffset + delta);
         });
     }
 
-    setupLongPress(document.getElementById('prevMonthBtn'));
-    setupLongPress(document.getElementById('nextMonthBtn'));
+    setupNavButton(document.getElementById('prevMonthBtn'), -1);
+    setupNavButton(document.getElementById('nextMonthBtn'), +1);
 
     // Doble toc/clic al nom del mes torna al mes actual
     const calendarHeaderEl = document.getElementById('calendarHeader');
@@ -1015,6 +1179,7 @@
         lastHeaderTap = now;
     });
 
+    // Lliscar a esquerra/dreta sobre el calendari canvia de mes
     let touchStartX = null;
     let touchStartY = null;
 
@@ -1039,6 +1204,7 @@
         }
     }, { passive: true });
 
+    // ---------- Etiqueta dels festius ----------
     const holidayTooltip = document.getElementById('holidayTooltip');
     let tooltipHideTimer = null;
     let tooltipOpenCell = null;
@@ -1093,18 +1259,66 @@
         }
     });
 
-    // Tema dia/nit: automàtic segons l'hora local, o forçat manualment amb el botó
+    // ---------- Franja d'indicadors: roda i arrossegament amb ratolí, i difuminat a les vores ----------
+    const widgetsContainer = document.getElementById('widgetsContainer');
+
+    function updateWidgetsFade() {
+        const maxScroll = widgetsContainer.scrollWidth - widgetsContainer.clientWidth;
+        widgetsContainer.classList.toggle('fade-left', widgetsContainer.scrollLeft > 4);
+        widgetsContainer.classList.toggle('fade-right', widgetsContainer.scrollLeft < maxScroll - 4);
+    }
+
+    widgetsContainer.addEventListener('scroll', updateWidgetsFade, { passive: true });
+    window.addEventListener('resize', updateWidgetsFade);
+
+    // La roda vertical del ratolí desplaça la franja en horitzontal (a l'escriptori no hi ha barra)
+    widgetsContainer.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+        const maxScroll = widgetsContainer.scrollWidth - widgetsContainer.clientWidth;
+        if (maxScroll <= 0) return;
+        e.preventDefault();
+        widgetsContainer.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    // Arrossegar amb el ratolí
+    let dragStartX = null;
+    let dragStartScroll = 0;
+
+    widgetsContainer.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'mouse') return;
+        dragStartX = e.clientX;
+        dragStartScroll = widgetsContainer.scrollLeft;
+        widgetsContainer.classList.add('dragging');
+        widgetsContainer.setPointerCapture(e.pointerId);
+    });
+
+    widgetsContainer.addEventListener('pointermove', (e) => {
+        if (dragStartX === null) return;
+        widgetsContainer.scrollLeft = dragStartScroll - (e.clientX - dragStartX);
+    });
+
+    const endDrag = () => {
+        dragStartX = null;
+        widgetsContainer.classList.remove('dragging');
+    };
+    widgetsContainer.addEventListener('pointerup', endDrag);
+    widgetsContainer.addEventListener('pointercancel', endDrag);
+
+    // ---------- Tema dia/nit ----------
+    // Automàtic segons l'hora local, o forçat amb el botó (cicle: automàtic → diürn → nocturn)
     const THEME_STORAGE_KEY = 'mondaineThemeOverride';
+    let sessionThemeOverride = null;
 
     function getThemeOverride() {
         try {
             return localStorage.getItem(THEME_STORAGE_KEY);
         } catch (e) {
-            return null;
+            return sessionThemeOverride;
         }
     }
 
     function setThemeOverride(value) {
+        sessionThemeOverride = value;
         try {
             if (value) {
                 localStorage.setItem(THEME_STORAGE_KEY, value);
@@ -1127,22 +1341,24 @@
 
         document.documentElement.setAttribute('data-theme', effective);
 
+        const meta = document.getElementById('themeColorMeta');
+        if (meta) meta.setAttribute('content', effective === 'light' ? '#e9ebee' : '#0d0d0d');
+
         const btn = document.getElementById('themeToggleBtn');
         if (btn) {
             btn.classList.toggle('light', effective === 'light');
             btn.classList.toggle('dark', effective === 'dark');
             btn.classList.toggle('manual', !!override);
-            btn.setAttribute('aria-label',
-                override
-                    ? `Tema forçat en mode ${override === 'light' ? 'diürn' : 'nocturn'}. Toca per canviar.`
-                    : `Tema automàtic (ara ${effective === 'light' ? 'diürn' : 'nocturn'}). Toca per forçar.`
-            );
+            const label = override
+                ? `Tema forçat en mode ${override === 'light' ? 'diürn' : 'nocturn'}. Toca per canviar.`
+                : `Tema automàtic (ara ${effective === 'light' ? 'diürn' : 'nocturn'}). Toca per forçar.`;
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
         }
     }
 
     document.getElementById('themeToggleBtn').addEventListener('click', () => {
         const override = getThemeOverride();
-        // Cicle: automàtic -> diürn -> nocturn -> automàtic...
         let next;
         if (!override) {
             next = 'light';
@@ -1155,14 +1371,20 @@
         applyTheme();
     });
 
+    // ---------- Inici ----------
     applyTheme();
-
     renderCalendar();
+    currentDateKey = fmtKey(new Date());
     fetchLocationData();
     requestAnimationFrame(updateClock);
     sizeClockForPortrait();
     setTimeout(sizeClockForPortrait, 300);
+    updateWidgetsFade();
 
+    // Les transicions de tema s'activen només després del primer pintat
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.documentElement.classList.add('theme-ready');
+    }));
 </script>
 </body>
 </html>
