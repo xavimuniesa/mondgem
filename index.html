@@ -17,6 +17,23 @@
             --widget-bg: #262626;
             --widget-text: #a0a0a5;
             --text-color: #ffffff;
+            --border-color: #2a2a2a;
+            --border-color-soft: #333333;
+            --nav-active-bg: rgba(255, 255, 255, 0.08);
+            --card-shadow: rgba(0, 0, 0, 0.6);
+            --transition-theme: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        html[data-theme="light"] {
+            --bg-color: #e9ebee;
+            --card-bg: #ffffff;
+            --widget-bg: #f1f2f5;
+            --widget-text: #6c7076;
+            --text-color: #18181a;
+            --border-color: #dde0e4;
+            --border-color-soft: #e4e6ea;
+            --nav-active-bg: rgba(0, 0, 0, 0.06);
+            --card-shadow: rgba(30, 30, 40, 0.18);
         }
 
         * {
@@ -40,18 +57,21 @@
             align-items: center;
             padding: clamp(8px, 2vh, 24px);
             color: var(--text-color);
+            transition: var(--transition-theme);
         }
 
         .app-card {
+            position: relative;
             background-color: var(--card-bg);
             border-radius: clamp(16px, 4vw, 28px);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-            border: 1px solid #2a2a2a;
+            box-shadow: 0 12px 36px var(--card-shadow);
+            border: 1px solid var(--border-color);
             width: 100%;
             max-width: 420px;
             height: 100%;
             max-height: 100%;
             padding: clamp(12px, 3vh, 24px);
+            transition: var(--transition-theme);
             display: grid;
             grid-template-areas:
                 "clock"
@@ -98,14 +118,26 @@
 
         .widgets-container {
             width: 100%;
-            container-type: inline-size;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             gap: clamp(6px, 1.2vh, 12px);
+            padding-right: clamp(20px, 8vw, 36px);
             flex-shrink: 0;
         }
 
+        .widgets-container::-webkit-scrollbar {
+            display: none;
+        }
+
         .widget {
+            flex: 0 0 auto;
+            width: clamp(78px, 24vw, 108px);
+            container-type: inline-size;
             min-width: 0;
             background-color: var(--widget-bg);
             border-radius: 14px;
@@ -115,8 +147,10 @@
             align-items: center;
             justify-content: center;
             gap: 3px;
-            border: 1px solid #333333;
+            border: 1px solid var(--border-color-soft);
             overflow: hidden;
+            scroll-snap-align: start;
+            transition: var(--transition-theme);
         }
 
         .widget-icon {
@@ -131,7 +165,7 @@
         }
 
         .widget-value {
-            font-size: clamp(0.6rem, 3.6cqw, 0.95rem);
+            font-size: clamp(0.7rem, 15cqw, 1rem);
             font-weight: 700;
             color: var(--text-color);
             line-height: 1;
@@ -140,25 +174,24 @@
             text-overflow: clip;
         }
 
-        .location-widget {
-            width: 100%;
-            min-width: 0;
-            background-color: var(--widget-bg);
-            border-radius: 14px;
-            padding: clamp(6px, 1vh, 10px) 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: 1px solid #333333;
-            overflow: hidden;
-            flex-shrink: 0;
+        .widget--location {
+            flex-direction: row;
+            width: clamp(118px, 34vw, 176px);
+            gap: 6px;
+            padding: clamp(6px, 1vh, 10px) 10px;
+        }
+
+        .widget--location .widget-icon {
+            width: 15px;
+            height: 15px;
         }
 
         .location-value {
-            font-size: clamp(0.75rem, 2.8vw, 0.95rem);
+            min-width: 0;
+            font-size: clamp(0.68rem, 13cqw, 0.92rem);
             font-weight: 600;
             color: var(--text-color);
+            line-height: 1.1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -175,8 +208,9 @@
             background-color: var(--widget-bg);
             padding: clamp(8px, 1.5vh, 18px);
             border-radius: 20px;
-            border: 1px solid #333333;
+            border: 1px solid var(--border-color-soft);
             overflow: hidden;
+            transition: var(--transition-theme);
         }
 
         .holiday-tooltip {
@@ -246,7 +280,7 @@
         }
 
         .cal-nav-btn:active {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: var(--nav-active-bg);
         }
 
         .cal-nav-btn:disabled {
@@ -323,6 +357,63 @@
             visibility: hidden;
         }
 
+        .theme-toggle-btn {
+            position: absolute;
+            top: clamp(8px, 2vh, 14px);
+            right: clamp(8px, 2vh, 14px);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--widget-bg);
+            border: 1px solid var(--border-color-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            padding: 0;
+            transition: var(--transition-theme);
+        }
+
+        .theme-toggle-btn:active {
+            background-color: var(--nav-active-bg);
+        }
+
+        .theme-toggle-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: var(--text-color);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: none;
+        }
+
+        .theme-toggle-btn.light .icon-sun {
+            display: block;
+        }
+
+        .theme-toggle-btn.dark .icon-moon {
+            display: block;
+        }
+
+        .theme-toggle-btn .auto-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--mondaine-red);
+            border: 1.5px solid var(--card-bg);
+            display: none;
+        }
+
+        .theme-toggle-btn.manual .auto-dot {
+            display: block;
+        }
+
         @media (orientation: landscape) {
             .app-card {
                 max-width: min(94vw, 1200px);
@@ -385,6 +476,17 @@
 <body>
 
 <div class="app-card">
+    <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema dia/nit">
+        <svg class="icon-sun" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="4.5"/>
+            <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
+        </svg>
+        <span class="auto-dot"></span>
+    </button>
+
     <div class="clock-section">
         <svg class="clock-svg" viewBox="0 0 300 300">
             <defs>
@@ -470,14 +572,21 @@
                 </svg>
                 <div class="widget-value" id="feelsValue">--°</div>
             </div>
-        </div>
 
-        <div class="location-widget">
-            <svg class="widget-icon" viewBox="0 0 24 24">
-                <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
-                <circle cx="12" cy="9" r="2.3" fill="none"/>
-            </svg>
-            <div class="location-value" id="cityValue">Localitzant...</div>
+            <div class="widget">
+                <svg class="widget-icon" id="weatherCondIcon" viewBox="0 0 24 24">
+                    <path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/>
+                </svg>
+                <div class="widget-value" id="weatherCondValue">--</div>
+            </div>
+
+            <div class="widget widget--location">
+                <svg class="widget-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
+                    <circle cx="12" cy="9" r="2.3" fill="none"/>
+                </svg>
+                <div class="location-value" id="cityValue">Localitzant...</div>
+            </div>
         </div>
     </div>
 
@@ -549,6 +658,7 @@
                 monthOffset = 0;
                 renderCalendar();
             }
+            if (typeof applyTheme === 'function') applyTheme();
         }
 
         requestAnimationFrame(updateClock);
@@ -671,6 +781,16 @@
             grid.appendChild(dayCell);
         }
 
+        // Sempre completem fins a 6 setmanes (42 caselles) perquè el calendari
+        // tingui sempre la mateixa mida, independentment de les setmanes del mes
+        const cellsSoFar = firstDayIndex + totalDays;
+        const trailingEmpty = 42 - cellsSoFar;
+        for (let i = 0; i < trailingEmpty; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'day empty';
+            grid.appendChild(emptyCell);
+        }
+
         if (typeof sizeClockForPortrait === 'function') {
             requestAnimationFrame(sizeClockForPortrait);
         }
@@ -686,7 +806,7 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            const weatherPromise = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m&elevation=nan`)
+            const weatherPromise = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m&daily=weather_code,precipitation_probability_max&timezone=auto&elevation=nan`)
                 .then(r => r.json())
                 .catch(() => null);
 
@@ -718,6 +838,8 @@
                 document.getElementById('altValue').innerText = "--m";
             }
 
+            applyWeatherCondition(weatherData);
+
             if (geoData) {
                 const place = geoData.city || geoData.locality || geoData.principalSubdivision || geoData.countryName;
                 document.getElementById('cityValue').innerText = place || "--";
@@ -735,6 +857,58 @@
         document.getElementById('humValue').innerText = "--%";
         document.getElementById('altValue').innerText = "--m";
         document.getElementById('cityValue').innerText = "--";
+        document.getElementById('weatherCondValue').innerText = "--";
+    }
+
+    const WEATHER_ICONS = {
+        rain: '<path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/><path d="M9 19l-1 2M13 19l-1 2M17 19l-1 2"/>',
+        fog: '<path d="M7 11.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 5a4 4 0 0 1 .9 7.9"/><path d="M4 15h16M4 18h16M4 12h7"/>',
+        snow: '<path d="M7 11.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1z"/><path d="M9 17v4M9 17l-1.7 1M9 17l1.7 1M9 21l-1.7-1M9 21l1.7-1M15 17v4M15 17l-1.7 1M15 17l1.7 1M15 21l-1.7-1M15 21l1.7-1"/>',
+        clear: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>',
+        cloud: '<path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/>'
+    };
+
+    function applyWeatherCondition(weatherData) {
+        const valueEl = document.getElementById('weatherCondValue');
+        const iconEl = document.getElementById('weatherCondIcon');
+
+        const daily = weatherData && weatherData.daily;
+        if (!daily || !Array.isArray(daily.weather_code) || daily.weather_code.length === 0) {
+            valueEl.innerText = "--";
+            return;
+        }
+
+        const code = daily.weather_code[0];
+        const prob = Array.isArray(daily.precipitation_probability_max) ? daily.precipitation_probability_max[0] : undefined;
+
+        const FOG_CODES = [45, 48];
+        const SNOW_CODES = [71, 73, 75, 77, 85, 86];
+        const RAIN_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+
+        let kind, label;
+        if (SNOW_CODES.includes(code)) {
+            kind = 'snow';
+            label = 'Neu';
+        } else if (FOG_CODES.includes(code)) {
+            kind = 'fog';
+            label = 'Boira';
+        } else if (RAIN_CODES.includes(code) || (prob !== undefined && prob >= 50)) {
+            kind = 'rain';
+            label = 'Pluja';
+        } else if (code === 0) {
+            kind = 'clear';
+            label = 'Serè';
+        } else {
+            kind = 'cloud';
+            label = 'Núvols';
+        }
+
+        if (prob !== undefined && (kind === 'rain' || kind === 'snow')) {
+            label += ` ${Math.round(prob)}%`;
+        }
+
+        iconEl.innerHTML = WEATHER_ICONS[kind];
+        valueEl.innerText = label;
     }
 
     function sizeClockForPortrait() {
@@ -918,6 +1092,70 @@
             hideHolidayTooltip();
         }
     });
+
+    // Tema dia/nit: automàtic segons l'hora local, o forçat manualment amb el botó
+    const THEME_STORAGE_KEY = 'mondaineThemeOverride';
+
+    function getThemeOverride() {
+        try {
+            return localStorage.getItem(THEME_STORAGE_KEY);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setThemeOverride(value) {
+        try {
+            if (value) {
+                localStorage.setItem(THEME_STORAGE_KEY, value);
+            } else {
+                localStorage.removeItem(THEME_STORAGE_KEY);
+            }
+        } catch (e) {
+            /* localStorage no disponible: l'override només dura la sessió */
+        }
+    }
+
+    function getAutoTheme() {
+        const hour = new Date().getHours();
+        return (hour >= 7 && hour < 20) ? 'light' : 'dark';
+    }
+
+    function applyTheme() {
+        const override = getThemeOverride();
+        const effective = override || getAutoTheme();
+
+        document.documentElement.setAttribute('data-theme', effective);
+
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) {
+            btn.classList.toggle('light', effective === 'light');
+            btn.classList.toggle('dark', effective === 'dark');
+            btn.classList.toggle('manual', !!override);
+            btn.setAttribute('aria-label',
+                override
+                    ? `Tema forçat en mode ${override === 'light' ? 'diürn' : 'nocturn'}. Toca per canviar.`
+                    : `Tema automàtic (ara ${effective === 'light' ? 'diürn' : 'nocturn'}). Toca per forçar.`
+            );
+        }
+    }
+
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        const override = getThemeOverride();
+        // Cicle: automàtic -> diürn -> nocturn -> automàtic...
+        let next;
+        if (!override) {
+            next = 'light';
+        } else if (override === 'light') {
+            next = 'dark';
+        } else {
+            next = null;
+        }
+        setThemeOverride(next);
+        applyTheme();
+    });
+
+    applyTheme();
 
     renderCalendar();
     fetchLocationData();
