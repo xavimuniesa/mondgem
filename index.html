@@ -20,6 +20,9 @@
             try { override = localStorage.getItem('mondaineThemeOverride'); } catch (e) {}
             var h = new Date().getHours();
             document.documentElement.setAttribute('data-theme', override || ((h >= 7 && h < 20) ? 'light' : 'dark'));
+            var lang = null;
+            try { lang = localStorage.getItem('rellotgeLang'); } catch (e) {}
+            if (['ca', 'fr', 'de', 'en'].indexOf(lang) >= 0) document.documentElement.setAttribute('lang', lang);
         })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -547,6 +550,70 @@
             stroke-width: 2.4;
         }
 
+        /* Selector d'idioma: a la cantonada inferior dreta de la zona del rellotge,
+           on l'esfera rodona tampoc no hi arriba */
+        .ctrl-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .lang-control {
+            position: relative;
+        }
+
+        .lang-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--text-color);
+        }
+
+        .lang-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 6px);
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 999px;
+            background-color: var(--widget-bg);
+            border: 1px solid var(--border-color-soft);
+            box-shadow: 0 6px 18px var(--card-shadow);
+            opacity: 0;
+            transform: translateY(-6px);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .lang-control.open .lang-menu {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .lang-option {
+            min-width: 34px;
+            height: 30px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: none;
+            background: none;
+            color: var(--widget-text);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+        }
+
+        .lang-option[aria-checked="true"] {
+            background-color: var(--mondaine-red);
+            color: #ffffff;
+        }
+
+        html[data-theme="zz"] .lang-option[aria-checked="true"] {
+            color: #000000;
+        }
+
         /* Avís breu en canviar un mode */
         .toast {
             position: fixed;
@@ -704,19 +771,31 @@
             </span>
         </button>
 
-        <button class="ctrl-btn theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
-            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="4.5"/>
-                <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
-            </svg>
-            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
-            </svg>
-            <svg class="icon-zz" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 10h7l-7 9h7M14 4h6l-6 7h6"/>
-            </svg>
-            <span class="auto-dot"></span>
-        </button>
+        <div class="ctrl-group">
+            <div class="lang-control" id="langControl">
+                <div class="lang-menu" id="langMenu" role="radiogroup" aria-label="Idioma">
+                    <button class="lang-option" type="button" role="radio" data-lang="ca" lang="ca">CA</button>
+                    <button class="lang-option" type="button" role="radio" data-lang="fr" lang="fr">FR</button>
+                    <button class="lang-option" type="button" role="radio" data-lang="de" lang="de">DE</button>
+                    <button class="lang-option" type="button" role="radio" data-lang="en" lang="en">EN</button>
+                </div>
+                <button class="ctrl-btn lang-btn" id="langBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Idioma">CA</button>
+            </div>
+
+            <button class="ctrl-btn theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
+                <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4.5"/>
+                    <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
+                </svg>
+                <svg class="icon-zz" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 10h7l-7 9h7M14 4h6l-6 7h6"/>
+                </svg>
+                <span class="auto-dot"></span>
+            </button>
+        </div>
     </div>
 
     <div class="clock-section">
@@ -772,40 +851,41 @@
             <!-- Caputxó/Eix central vermell -->
             <circle class="clock-cap" cx="150" cy="150" r="5" fill="#e30613"/>
         </svg>
+
     </div>
 
     <div class="info-section">
         <div class="widgets-container" id="widgetsContainer">
-            <div class="widget widget--location" title="Població" role="group" aria-label="Població">
+            <div class="widget widget--location" data-i18n-label="location" role="group">
                 <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
                     <circle cx="12" cy="9" r="2.3" fill="none"/>
                 </svg>
-                <div class="location-value" id="cityValue">Localitzant...</div>
+                <div class="location-value" id="cityValue">…</div>
             </div>
 
-            <div class="widget" title="Altitud" role="group" aria-label="Altitud">
+            <div class="widget" data-i18n-label="altitude" role="group">
                 <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8 3l4 8 5-5 5 15H2L8 3z"/>
                 </svg>
                 <div class="widget-value" id="altValue">--m</div>
             </div>
 
-            <div class="widget" title="Temperatura" role="group" aria-label="Temperatura">
+            <div class="widget" data-i18n-label="temperature" role="group">
                 <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
                 </svg>
                 <div class="widget-value" id="tempValue">--°</div>
             </div>
 
-            <div class="widget" title="Humitat" role="group" aria-label="Humitat">
+            <div class="widget" data-i18n-label="humidity" role="group">
                 <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/>
                 </svg>
                 <div class="widget-value" id="humValue">--%</div>
             </div>
 
-            <div class="widget" title="Sensació tèrmica" role="group" aria-label="Sensació tèrmica">
+            <div class="widget" data-i18n-label="feels" role="group">
                 <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M11 14.76V4.5a2.5 2.5 0 0 0-5 0v10.26a4.5 4.5 0 1 0 5 0z"/>
                     <path d="M15 8c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0M15 13c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0"/>
@@ -813,7 +893,7 @@
                 <div class="widget-value" id="feelsValue">--°</div>
             </div>
 
-            <div class="widget" title="Previsió properes 12 h" role="group" aria-label="Previsió properes 12 hores">
+            <div class="widget" data-i18n-label="forecast" role="group">
                 <svg class="widget-icon" id="weatherCondIcon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/>
                 </svg>
@@ -825,9 +905,9 @@
 
     <div class="calendar-section">
         <div class="calendar-header-row">
-            <button class="cal-nav-btn" id="prevMonthBtn" type="button" aria-label="Mes anterior">‹</button>
+            <button class="cal-nav-btn" id="prevMonthBtn" type="button" data-i18n-label="prevMonth">‹</button>
             <div class="calendar-header" id="calendarHeader"></div>
-            <button class="cal-nav-btn" id="nextMonthBtn" type="button" aria-label="Mes següent">›</button>
+            <button class="cal-nav-btn" id="nextMonthBtn" type="button" data-i18n-label="nextMonth">›</button>
         </div>
         <div class="calendar-grid" id="calendarGrid">
             <div class="day-name">Dl</div>
@@ -845,6 +925,110 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+    // ---------- Idiomes ----------
+    // L'idioma tria els textos de l'app i la llengua de l'anunci de les hores en punt.
+    // Les festes només es mostren en català (són el calendari laboral de Catalunya).
+    const LANG_STORAGE_KEY = 'rellotgeLang';
+    const LANGS = ['ca', 'fr', 'de', 'en'];
+
+    const I18N = {
+        ca: {
+            locale: 'ca-ES', speech: 'ca-ES',
+            langName: 'Català',
+            days: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
+            location: 'Població', altitude: 'Altitud', temperature: 'Temperatura', humidity: 'Humitat',
+            feels: 'Sensació tèrmica', forecast: 'Previsió properes 12 hores',
+            prevMonth: 'Mes anterior', nextMonth: 'Mes següent', language: 'Idioma',
+            weather: { snow: 'Neu', rain: 'Pluja', fog: 'Boira', clear: 'Serè', clearNight: 'Serè', cloud: 'Núvols' },
+            themeNames: { light: 'diürn', dark: 'nocturn', zz: 'zz (tauleta de nit)' },
+            themeForced: n => `Tema forçat: ${n}. Toca per canviar.`,
+            themeAutoNow: n => `Tema automàtic (ara ${n}). Toca per canviar.`,
+            themeToast: n => `Tema ${n}`,
+            themeAutoToast: 'Tema automàtic (dia de 7 a 20 h)',
+            voiceLabels: { off: 'Anunci horari silenciat', always: 'Anunci horari activat', day: 'Anunci horari de 7 a 23 h' },
+            voiceTest: n => `Prova de veu: ${n}`,
+            systemVoice: 'veu del sistema',
+            voiceBlocked: 'La veu no pot sonar: toca la pantalla',
+            tapToEnable: 'Toca la pantalla un cop per activar la veu',
+            holidaysUpdated: 'Calendari de festius actualitzat',
+            langToast: 'Idioma: català'
+        },
+        fr: {
+            locale: 'fr-FR', speech: 'fr-FR',
+            langName: 'Français',
+            days: ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'],
+            location: 'Localité', altitude: 'Altitude', temperature: 'Température', humidity: 'Humidité',
+            feels: 'Ressenti', forecast: 'Prévisions des 12 prochaines heures',
+            prevMonth: 'Mois précédent', nextMonth: 'Mois suivant', language: 'Langue',
+            weather: { snow: 'Neige', rain: 'Pluie', fog: 'Brouillard', clear: 'Dégagé', clearNight: 'Dégagé', cloud: 'Nuageux' },
+            themeNames: { light: 'jour', dark: 'nuit', zz: 'zz (table de chevet)' },
+            themeForced: n => `Thème forcé : ${n}. Touchez pour changer.`,
+            themeAutoNow: n => `Thème automatique (actuellement ${n}). Touchez pour changer.`,
+            themeToast: n => `Thème ${n}`,
+            themeAutoToast: 'Thème automatique (jour de 7 h à 20 h)',
+            voiceLabels: { off: 'Annonce horaire coupée', always: 'Annonce horaire activée', day: 'Annonce horaire de 7 h à 23 h' },
+            voiceTest: n => `Test de voix : ${n}`,
+            systemVoice: 'voix du système',
+            voiceBlocked: 'La voix ne peut pas sonner : touchez l’écran',
+            tapToEnable: 'Touchez l’écran une fois pour activer la voix',
+            holidaysUpdated: 'Calendrier des jours fériés mis à jour',
+            langToast: 'Langue : français'
+        },
+        de: {
+            locale: 'de-DE', speech: 'de-DE',
+            langName: 'Deutsch',
+            days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+            location: 'Ort', altitude: 'Höhe', temperature: 'Temperatur', humidity: 'Luftfeuchtigkeit',
+            feels: 'Gefühlt', forecast: 'Vorhersage für die nächsten 12 Stunden',
+            prevMonth: 'Vorheriger Monat', nextMonth: 'Nächster Monat', language: 'Sprache',
+            weather: { snow: 'Schnee', rain: 'Regen', fog: 'Nebel', clear: 'Klar', clearNight: 'Klar', cloud: 'Bewölkt' },
+            themeNames: { light: 'Tag', dark: 'Nacht', zz: 'zz (Nachttisch)' },
+            themeForced: n => `Design fest: ${n}. Tippen zum Wechseln.`,
+            themeAutoNow: n => `Automatisches Design (jetzt ${n}). Tippen zum Wechseln.`,
+            themeToast: n => `Design ${n}`,
+            themeAutoToast: 'Automatisches Design (Tag von 7 bis 20 Uhr)',
+            voiceLabels: { off: 'Zeitansage stumm', always: 'Zeitansage aktiviert', day: 'Zeitansage von 7 bis 23 Uhr' },
+            voiceTest: n => `Stimmtest: ${n}`,
+            systemVoice: 'Systemstimme',
+            voiceBlocked: 'Die Stimme ist blockiert: Bildschirm antippen',
+            tapToEnable: 'Einmal auf den Bildschirm tippen, um die Stimme zu aktivieren',
+            holidaysUpdated: 'Feiertagskalender aktualisiert',
+            langToast: 'Sprache: Deutsch'
+        },
+        en: {
+            locale: 'en-GB', speech: 'en-GB',
+            langName: 'English',
+            days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+            location: 'Location', altitude: 'Altitude', temperature: 'Temperature', humidity: 'Humidity',
+            feels: 'Feels like', forecast: 'Forecast for the next 12 hours',
+            prevMonth: 'Previous month', nextMonth: 'Next month', language: 'Language',
+            weather: { snow: 'Snow', rain: 'Rain', fog: 'Fog', clear: 'Clear', clearNight: 'Clear', cloud: 'Cloudy' },
+            themeNames: { light: 'day', dark: 'night', zz: 'zz (bedside)' },
+            themeForced: n => `Theme fixed: ${n}. Tap to change.`,
+            themeAutoNow: n => `Automatic theme (now ${n}). Tap to change.`,
+            themeToast: n => `Theme: ${n}`,
+            themeAutoToast: 'Automatic theme (day from 7 am to 8 pm)',
+            voiceLabels: { off: 'Hourly announcement muted', always: 'Hourly announcement on', day: 'Hourly announcement 7 am – 11 pm' },
+            voiceTest: n => `Voice test: ${n}`,
+            systemVoice: 'system voice',
+            voiceBlocked: 'The voice is blocked: tap the screen',
+            tapToEnable: 'Tap the screen once to enable the voice',
+            holidaysUpdated: 'Holiday calendar updated',
+            langToast: 'Language: English'
+        }
+    };
+
+    function detectDefaultLang() {
+        try {
+            const stored = localStorage.getItem(LANG_STORAGE_KEY);
+            if (LANGS.includes(stored)) return stored;
+        } catch (e) { /* res */ }
+        return 'ca';
+    }
+
+    let currentLang = detectDefaultLang();
+    const T = () => I18N[currentLang];
+
     // ---------- Rellotge ----------
     const marksGroup = document.getElementById('dial-marks');
     for (let i = 0; i < 60; i++) {
@@ -1043,7 +1227,7 @@
             if (changed) {
                 holidaysByYear.clear();
                 renderCalendar();
-                if (hadData) showToast('Calendari de festius actualitzat');
+                if (hadData && currentLang === 'ca') showToast(T().holidaysUpdated);
             }
         } catch (e) {
             /* sense connexió: es fan servir les dades desades o les de l'app */
@@ -1102,10 +1286,11 @@
         const isCurrentMonth = monthOffset === 0;
         const today = realNow.getDate();
 
-        const monthName = new Intl.DateTimeFormat('ca-ES', { month: 'long' }).format(target);
+        const monthName = new Intl.DateTimeFormat(T().locale, { month: 'long' }).format(target);
         document.getElementById('calendarHeader').innerText = `${monthName} ${year}`;
 
-        const holidays = getHolidaysForYear(year);
+        // Les festes (calendari laboral de Catalunya) només es mostren en català
+        const holidays = currentLang === 'ca' ? getHolidaysForYear(year) : new Map();
 
         const grid = document.getElementById('calendarGrid');
         grid.querySelectorAll('.day').forEach(d => d.remove());
@@ -1207,7 +1392,7 @@
             // Només es torna a geolocalitzar la població si t'has mogut més d'1 km
             const coords = { lat, lon };
             const needGeo = !lastGeoCoords || distanceKm(lastGeoCoords, coords) > 1;
-            const geoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ca`;
+            const geoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${currentLang}`;
 
             const [weatherData, geoData] = await Promise.all([
                 fetchJson(weatherUrl),
@@ -1247,6 +1432,7 @@
         setText('altValue', '--m');
         setText('cityValue', '--');
         setText('weatherCondValue', '--');
+        lastWeather = null;
     }
 
     const WEATHER_ICONS = {
@@ -1272,6 +1458,7 @@
         const hourly = weatherData && weatherData.hourly;
         const current = weatherData && weatherData.current;
         if (!hourly || !Array.isArray(hourly.time) || !Array.isArray(hourly.weather_code)) {
+            lastWeather = null;
             valueEl.innerText = '--';
             iconEl.innerHTML = WEATHER_ICONS.cloud;
             return;
@@ -1289,35 +1476,38 @@
         const maxProb = probs.length ? Math.max(...probs) : null;
 
         if (codes.length === 0) {
+            lastWeather = null;
             valueEl.innerText = '--';
             iconEl.innerHTML = WEATHER_ICONS.cloud;
             return;
         }
 
-        let kind, label;
+        let kind;
         if (codes.some(c => SNOW_CODES.includes(c))) {
             kind = 'snow';
-            label = 'Neu';
         } else if (codes.some(c => RAIN_CODES.includes(c)) || (maxProb !== null && maxProb >= 50)) {
             kind = 'rain';
-            label = 'Pluja';
         } else if (codes.some(c => FOG_CODES.includes(c))) {
             kind = 'fog';
-            label = 'Boira';
         } else if (codes[0] <= 1) {
             kind = current && current.is_day === 0 ? 'clearNight' : 'clear';
-            label = 'Serè';
         } else {
             kind = 'cloud';
-            label = 'Núvols';
         }
 
-        if (maxProb !== null && (kind === 'rain' || kind === 'snow')) {
-            label += ` ${Math.round(maxProb)}%`;
-        }
-
+        lastWeather = { kind, prob: (kind === 'rain' || kind === 'snow') ? maxProb : null };
         iconEl.innerHTML = WEATHER_ICONS[kind];
-        valueEl.innerText = label;
+        renderWeatherLabel();
+    }
+
+    // Es guarda l'última previsió per poder-la traduir en canviar d'idioma sense tornar a consultar
+    let lastWeather = null;
+
+    function renderWeatherLabel() {
+        if (!lastWeather) return;
+        let label = T().weather[lastWeather.kind];
+        if (lastWeather.prob !== null) label += ` ${Math.round(lastWeather.prob)}%`;
+        document.getElementById('weatherCondValue').innerText = label;
     }
 
     // Les dades es refresquen soles cada 15 min i en tornar a obrir la pestanya
@@ -1358,13 +1548,37 @@
             const available = totalHeight - used;
             const maxByWidth = clockSection.clientWidth;
 
-            const size = Math.max(120, Math.min(available, maxByWidth, 340));
+            let size = Math.max(120, Math.min(available, maxByWidth, 340));
 
             if (isFinite(size) && size > 0) {
                 svg.style.width = `${size}px`;
                 svg.style.height = `${size}px`;
+
+                // En pantalles molt estretes, els botons de dalt podrien tocar el bisell: s'encongeix el just
+                for (let i = 0; i < 4; i++) {
+                    const gapToButtons = minButtonClearance(svg);
+                    if (gapToButtons >= 6 || size <= 120) break;
+                    size = Math.max(120, size - (6 - gapToButtons) * 2.2);
+                    svg.style.width = `${size}px`;
+                    svg.style.height = `${size}px`;
+                }
             }
         });
+    }
+
+    function minButtonClearance(svg) {
+        const r = svg.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const radius = r.width * 146 / 300;
+        let min = Infinity;
+        document.querySelectorAll('.corner-controls .ctrl-btn').forEach((btn) => {
+            const b = btn.getBoundingClientRect();
+            const nx = Math.max(b.left, Math.min(cx, b.right));
+            const ny = Math.max(b.top, Math.min(cy, b.bottom));
+            min = Math.min(min, Math.hypot(nx - cx, ny - cy) - radius);
+        });
+        return min;
     }
 
     window.addEventListener('resize', sizeClockForPortrait);
@@ -1564,7 +1778,7 @@
     // ---------- Tema: automàtic, diürn, nocturn o zz ----------
     // Automàtic segons l'hora local, o forçat amb el botó (cicle: automàtic → diürn → nocturn → zz)
     const THEME_STORAGE_KEY = 'mondaineThemeOverride';
-    const THEME_NAMES = { light: 'diürn', dark: 'nocturn', zz: 'zz (tauleta de nit)' };
+    const THEME_NAMES = { light: 1, dark: 1, zz: 1 }; // noms traduïts a I18N[...].themeNames
     const THEME_COLORS = { light: '#ffffff', dark: '#161616', zz: '#000000' };
     let sessionThemeOverride = null;
 
@@ -1617,8 +1831,8 @@
         btn.classList.toggle('zz', effective === 'zz');
         btn.classList.toggle('manual', !!THEME_NAMES[override]);
         const label = THEME_NAMES[override]
-            ? `Tema forçat: ${THEME_NAMES[override]}. Toca per canviar.`
-            : `Tema automàtic (ara ${THEME_NAMES[effective]}). Toca per canviar.`;
+            ? T().themeForced(T().themeNames[override])
+            : T().themeAutoNow(T().themeNames[effective]);
         btn.setAttribute('aria-label', label);
         btn.title = label;
 
@@ -1631,7 +1845,7 @@
         const next = order[(order.indexOf(current) + 1) % order.length];
         setThemeOverride(next);
         applyTheme();
-        showToast(next ? `Tema ${THEME_NAMES[next]}` : 'Tema automàtic (dia de 7 a 20 h)');
+        showToast(next ? T().themeToast(T().themeNames[next]) : T().themeAutoToast);
     });
 
     // En mode zz la pantalla no s'apaga (tauleta de nit), si el navegador ho permet
@@ -1654,50 +1868,143 @@
 
     document.addEventListener('visibilitychange', updateWakeLock);
 
-    // ---------- Anunci horari en francès ----------
+    // ---------- Anunci horari (en l'idioma triat) ----------
     // Modes: silenciat → sempre → només de dia (de 7 h a 23 h)
     const VOICE_STORAGE_KEY = 'mondaineVoiceMode';
     const VOICE_MODES = ['off', 'always', 'day'];
-    const VOICE_LABELS = {
-        off: 'Anunci horari silenciat',
-        always: 'Anunci horari activat',
-        day: 'Anunci horari de 7 a 23 h'
-    };
-    const FRENCH_HOURS = ['minuit', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze',
-        'midi', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf', 'vingt', 'vingt et une',
-        'vingt-deux', 'vingt-trois'];
 
     let voiceMode = readStorage(VOICE_STORAGE_KEY, 'off');
     if (!VOICE_MODES.includes(voiceMode)) voiceMode = 'off';
     let lastAnnounceKey = null;
     let audioCtx = null;
 
-    function frenchHourPhrase(h) {
-        if (h === 0) return 'Il est minuit.';
-        if (h === 12) return 'Il est midi.';
-        return `Il est ${FRENCH_HOURS[h]} heure${h === 1 ? '' : 's'}.`;
+    function pick(options) {
+        return options[Math.floor(Math.random() * options.length)];
     }
 
-    // Tria una veu femenina francesa, preferint les de més qualitat (Premium, Enhanced, Natural…)
-    const FEMALE_VOICE_NAMES = ['amélie', 'amelie', 'audrey', 'aurélie', 'aurelie', 'marie', 'virginie', 'julie', 'hortense',
-        'denise', 'vivienne', 'eloise', 'éloïse', 'brigitte', 'coralie', 'céline', 'celine', 'léa', 'chantal', 'sylvie',
-        'google français', 'google french'];
-    const MALE_VOICE_NAMES = ['thomas', 'jacques', 'paul', 'henri', 'claude', 'rémy', 'remy', 'nicolas', 'daniel',
-        'sébastien', 'olivier', 'antoine', 'jérôme', 'yves', 'fabrice', 'alain', 'guillaume', 'mathieu', 'remi'];
+    // Frases de cada idioma: l'hora, la salutació en activar l'anunci i un anunci amable segons el moment del dia
+    const CA_HOURS = ['dotze', 'una', 'dues', 'tres', 'quatre', 'cinc', 'sis', 'set', 'vuit', 'nou', 'deu', 'onze'];
+    const FR_HOURS = ['minuit', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze',
+        'midi', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf', 'vingt', 'vingt et une',
+        'vingt-deux', 'vingt-trois'];
+    const DE_HOURS = ['Mitternacht', 'ein', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'elf',
+        'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn', 'sechzehn', 'siebzehn', 'achtzehn', 'neunzehn', 'zwanzig',
+        'einundzwanzig', 'zweiundzwanzig', 'dreiundzwanzig'];
+    const EN_HOURS = ['twelve', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'];
 
-    function pickFrenchVoice() {
+    const SPEECH = {
+        ca: {
+            hour(h) {
+                if (h === 0) return 'És mitjanit.';
+                if (h === 12) return 'És migdia.';
+                const h12 = h % 12;
+                const part = h <= 5 ? 'de la matinada' : h <= 11 ? 'del matí' : h <= 18 ? 'de la tarda' : h <= 21 ? 'del vespre' : 'de la nit';
+                return h12 === 1 ? `És la una ${part}.` : `Són les ${CA_HOURS[h12]} ${part}.`;
+            },
+            greeting: h => ['Hola!', (h >= 19 || h < 5) ? 'Que passis un bon vespre.' : 'Que passis un bon dia.'],
+            friendly(h, hour) {
+                if (h >= 5 && h <= 11) return ['Bon dia!', hour];
+                if (h === 12) return [hour, pick(['Bon profit!', 'Bona hora de dinar!'])];
+                if (h >= 13 && h <= 18) return [hour, pick(['Bona tarda!', 'Que vagi bé la tarda!'])];
+                if (h >= 19 && h <= 21) return [pick(['Bon vespre!', 'Bona vesprada!']), hour];
+                return [hour, pick(['Bona nit.', 'Dolça nit.'])];
+            },
+            female: ['montserrat', 'laia', 'núria', 'nuria', 'google català', 'google catalan'],
+            male: ['jordi', 'pau', 'arnau', 'enric'],
+            region: /^ca[-_]es/i
+        },
+        fr: {
+            hour(h) {
+                if (h === 0) return 'Il est minuit.';
+                if (h === 12) return 'Il est midi.';
+                return `Il est ${FR_HOURS[h]} heure${h === 1 ? '' : 's'}.`;
+            },
+            greeting: h => ['Salut !', `Je te souhaite une belle ${(h >= 19 || h < 5) ? 'soirée' : 'journée'}.`],
+            friendly(h, hour) {
+                if (h >= 5 && h <= 11) return ['Bonjour !', hour];
+                if (h === 12) return [hour, pick(['Bon appétit !', 'Bonne pause de midi !'])];
+                if (h >= 13 && h <= 17) return [hour, pick(['Bon après-midi !', 'Belle après-midi à toi !'])];
+                if (h >= 18 && h <= 21) return [pick(['Bonsoir !', 'Bonsoir à toi !']), hour];
+                if (h >= 22) return [hour, pick(['Douce soirée.', 'Belle soirée !'])];
+                return [hour, 'Douce nuit.'];
+            },
+            female: ['amélie', 'amelie', 'audrey', 'aurélie', 'aurelie', 'marie', 'virginie', 'julie', 'hortense', 'denise',
+                'vivienne', 'eloise', 'éloïse', 'brigitte', 'coralie', 'céline', 'celine', 'léa', 'chantal', 'sylvie',
+                'google français', 'google french'],
+            male: ['thomas', 'jacques', 'paul', 'henri', 'claude', 'rémy', 'remy', 'nicolas', 'daniel', 'sébastien',
+                'olivier', 'antoine', 'jérôme', 'yves', 'fabrice', 'alain', 'guillaume', 'mathieu', 'remi'],
+            region: /^fr[-_]fr/i
+        },
+        de: {
+            hour(h) {
+                if (h === 0) return 'Es ist Mitternacht.';
+                return `Es ist ${DE_HOURS[h]} Uhr.`;
+            },
+            greeting: h => ['Hallo!', `Ich wünsche dir einen schönen ${(h >= 19 || h < 5) ? 'Abend' : 'Tag'}.`],
+            friendly(h, hour) {
+                if (h >= 5 && h <= 11) return ['Guten Morgen!', hour];
+                if (h === 12) return [hour, pick(['Guten Appetit!', 'Schöne Mittagspause!'])];
+                if (h >= 13 && h <= 17) return [hour, pick(['Einen schönen Nachmittag!', 'Hab einen schönen Nachmittag!'])];
+                if (h >= 18 && h <= 21) return [pick(['Guten Abend!', 'Einen schönen Abend!']), hour];
+                if (h >= 22) return [hour, pick(['Gute Nacht.', 'Schlaf schön.'])];
+                return [hour, 'Gute Nacht.'];
+            },
+            female: ['anna', 'petra', 'helena', 'marlene', 'vicki', 'katja', 'hedda', 'sandy', 'shelley', 'katharina',
+                'amala', 'seraphina', 'google deutsch'],
+            male: ['markus', 'yannick', 'hans', 'conrad', 'stefan', 'martin', 'florian', 'killian', 'eddy', 'reed', 'rocko', 'grandpa'],
+            region: /^de[-_]de/i
+        },
+        en: {
+            hour(h) {
+                if (h === 0) return "It's midnight.";
+                if (h === 12) return "It's noon.";
+                return `It's ${EN_HOURS[h % 12]} o'clock.`;
+            },
+            greeting: h => ['Hi!', `I wish you a lovely ${(h >= 19 || h < 5) ? 'evening' : 'day'}.`],
+            friendly(h, hour) {
+                if (h >= 5 && h <= 11) return ['Good morning!', hour];
+                if (h === 12) return [hour, pick(['Enjoy your lunch!', 'Time for a lunch break!'])];
+                if (h >= 13 && h <= 17) return [hour, pick(['Have a lovely afternoon!', 'Enjoy your afternoon!'])];
+                if (h >= 18 && h <= 21) return [pick(['Good evening!', 'Good evening to you!']), hour];
+                if (h >= 22) return [hour, pick(['Have a peaceful night.', 'Sweet dreams.'])];
+                return [hour, 'Sleep well.'];
+            },
+            female: ['samantha', 'karen', 'moira', 'tessa', 'serena', 'kate', 'victoria', 'allison', 'ava', 'susan',
+                'zira', 'fiona', 'stephanie', 'martha', 'libby', 'sonia', 'female', 'google us english'],
+            male: ['daniel', 'alex', 'fred', 'tom', 'oliver', 'arthur', 'david', 'mark', 'george', 'rishi', 'aaron',
+                'gordon', 'ralph', 'ryan', 'thomas', 'eddy', 'reed', 'rocko', 'grandpa'],
+            region: /^en[-_]gb/i
+        }
+    };
+
+    function hourPhrase(h) {
+        return SPEECH[currentLang].hour(h);
+    }
+
+    function activationGreeting(h) {
+        return SPEECH[currentLang].greeting(h);
+    }
+
+    function friendlyAnnouncement(h) {
+        return SPEECH[currentLang].friendly(h, hourPhrase(h));
+    }
+
+    // Tria una veu femenina de l'idioma, preferint Google (Chrome) i les de més qualitat (Premium, Millorada…)
+    function pickVoice() {
         if (!('speechSynthesis' in window)) return null;
-        const voices = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang));
+        const conf = SPEECH[currentLang];
+        const prefix = new RegExp(`^${currentLang}`, 'i');
+        const voices = speechSynthesis.getVoices().filter(v => prefix.test(v.lang));
         let best = null;
         let bestScore = -Infinity;
         voices.forEach(v => {
             const name = v.name.toLowerCase();
             let score = 0;
-            if (name.includes('google')) score += 30; // veu preferida de l'usuari (Chrome / Android)
-            if (FEMALE_VOICE_NAMES.some(n => name.includes(n))) score += 10;
-            if (MALE_VOICE_NAMES.some(n => name.includes(n))) score -= 20;
-            if (/^fr[-_]fr/i.test(v.lang)) score += 3;
-            if (/premium|enhanced|natural|neural|amélioré|améliorée|millorada|mejorada|siri/i.test(v.name)) score += 4;
+            if (name.includes('google')) score += 30;
+            if (conf.female.some(n => name.includes(n))) score += 10;
+            if (/\bmale\b/.test(name) || conf.male.some(n => new RegExp(`\\b${n}\\b`).test(name))) score -= 20;
+            if (conf.region.test(v.lang)) score += 3;
+            if (/premium|enhanced|natural|neural|amélioré|améliorée|millorada|mejorada|erweitert|siri/i.test(v.name)) score += 4;
             if (v.localService) score += 1;
             if (score > bestScore) {
                 bestScore = score;
@@ -1713,16 +2020,16 @@
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     let speechUnlocked = false;
 
-    function speakFrench(texts, volume = 1) {
+    function speak(texts, volume = 1) {
         if (!('speechSynthesis' in window)) return;
         const list = Array.isArray(texts) ? texts : [texts];
         const synth = window.speechSynthesis;
 
         const run = () => {
-            const voice = pickFrenchVoice();
+            const voice = pickVoice();
             list.forEach((text, i) => {
                 const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'fr-FR';
+                u.lang = T().speech;
                 if (voice) u.voice = voice;
                 u.rate = 0.86;
                 u.pitch = 1.12;
@@ -1730,7 +2037,7 @@
                 if (i === 0) u.onstart = () => { speechUnlocked = true; };
                 u.onerror = (ev) => {
                     if (volume > 0 && ev && ev.error && ev.error !== 'canceled' && ev.error !== 'interrupted') {
-                        showToast('La veu no pot sonar: toca la pantalla');
+                        showToast(T().voiceBlocked);
                     }
                 };
                 synth.speak(u);
@@ -1751,33 +2058,12 @@
     function unlockAudio(e) {
         if (voiceMode === 'off' || speechUnlocked) return;
         if (e && e.target && e.target.closest && e.target.closest('#voiceToggleBtn')) return; // el botó ja parla ell mateix
-        speakFrench('.', 0.01);
+        speak('.', 0.01);
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC && !IS_IOS) {
             if (!audioCtx) audioCtx = new AC();
             if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
         }
-    }
-
-    function pick(options) {
-        return options[Math.floor(Math.random() * options.length)];
-    }
-
-    // Salutació en activar l'anunci: "belle soirée" a partir de les 19 h (i de matinada), si no "belle journée"
-    function activationGreeting(h) {
-        const evening = h >= 19 || h < 5;
-        return ['Salut !', `Je te souhaite une belle ${evening ? 'soirée' : 'journée'}.`];
-    }
-
-    // Anunci amable segons el moment del dia (amb una mica de varietat perquè no soni repetitiu)
-    function friendlyAnnouncement(h) {
-        const hour = frenchHourPhrase(h);
-        if (h >= 5 && h <= 11) return ['Bonjour !', hour];
-        if (h === 12) return [hour, pick(['Bon appétit !', 'Bonne pause de midi !'])];
-        if (h >= 13 && h <= 17) return [hour, pick(['Bon après-midi !', 'Belle après-midi à toi !'])];
-        if (h >= 18 && h <= 21) return [pick(['Bonsoir !', 'Bonsoir à toi !']), hour];
-        if (h >= 22) return [hour, pick(['Douce soirée.', 'Belle soirée !'])];
-        return [hour, 'Douce nuit.'];
     }
 
     // Dos tons suaus, com un avís d'estació, abans de la veu
@@ -1817,15 +2103,15 @@
         if (voiceMode === 'off') return;
         if (voiceMode === 'day' && (h < 7 || h > 23)) return;
 
-        playChime().then(() => speakFrench(friendlyAnnouncement(h)));
-        if (!speechUnlocked) showToast('Toca la pantalla un cop per activar la veu');
+        playChime().then(() => speak(friendlyAnnouncement(h)));
+        if (!speechUnlocked) showToast(T().tapToEnable);
     }
 
     function applyVoiceButton() {
         const btn = document.getElementById('voiceToggleBtn');
         VOICE_MODES.forEach(m => btn.classList.toggle(m, m === voiceMode));
-        btn.setAttribute('aria-label', VOICE_LABELS[voiceMode]);
-        btn.title = VOICE_LABELS[voiceMode];
+        btn.setAttribute('aria-label', T().voiceLabels[voiceMode]);
+        btn.title = T().voiceLabels[voiceMode];
     }
 
     // Botó de l'altaveu: toc curt = canvia el mode; mantenir premut = prova de veu ara mateix.
@@ -1838,20 +2124,20 @@
     let suppressVoiceClick = false;
 
     function playVoiceTest() {
-        const voice = pickFrenchVoice();
-        showToast(`Prova de veu: ${voice ? voice.name : 'veu del sistema'}`);
-        speakFrench(friendlyAnnouncement(new Date().getHours()));
+        const voice = pickVoice();
+        showToast(T().voiceTest(voice ? voice.name : T().systemVoice));
+        speak(friendlyAnnouncement(new Date().getHours()));
     }
 
     function cycleVoiceMode() {
         voiceMode = VOICE_MODES[(VOICE_MODES.indexOf(voiceMode) + 1) % VOICE_MODES.length];
         writeStorage(VOICE_STORAGE_KEY, voiceMode);
         applyVoiceButton();
-        showToast(VOICE_LABELS[voiceMode]);
+        showToast(T().voiceLabels[voiceMode]);
 
         // El toc de l'usuari "desbloqueja" l'àudio a l'iPhone, i de pas se sent la veu triada
         if (voiceMode === 'always' || voiceMode === 'day') {
-            speakFrench(activationGreeting(new Date().getHours()));
+            speak(activationGreeting(new Date().getHours()));
         } else if ('speechSynthesis' in window) {
             speechSynthesis.cancel();
         }
@@ -1905,11 +2191,81 @@
         speechSynthesis.addEventListener?.('voiceschanged', () => speechSynthesis.getVoices());
     }
 
+    // ---------- Selector d'idioma ----------
+    const langControl = document.getElementById('langControl');
+    const langBtn = document.getElementById('langBtn');
+
+    function setLangMenuOpen(open) {
+        langControl.classList.toggle('open', open);
+        langBtn.setAttribute('aria-expanded', String(open));
+    }
+
+    function applyLanguage() {
+        const t = T();
+        document.documentElement.setAttribute('lang', currentLang);
+
+        document.querySelectorAll('[data-i18n-label]').forEach((el) => {
+            const text = t[el.dataset.i18nLabel];
+            el.setAttribute('aria-label', text);
+            if (el.classList.contains('widget')) el.title = text;
+        });
+        document.querySelectorAll('#calendarGrid .day-name').forEach((el, i) => { el.textContent = t.days[i]; });
+
+        langBtn.textContent = currentLang.toUpperCase();
+        langBtn.setAttribute('aria-label', `${t.language}: ${t.langName}`);
+        langBtn.title = `${t.language}: ${t.langName}`;
+        document.getElementById('langMenu').setAttribute('aria-label', t.language);
+        document.querySelectorAll('.lang-option').forEach((el) => {
+            el.setAttribute('aria-checked', String(el.dataset.lang === currentLang));
+            el.setAttribute('aria-label', I18N[el.dataset.lang].langName);
+        });
+
+        renderWeatherLabel();
+        applyVoiceButton();
+        applyTheme();
+        renderCalendar();
+    }
+
+    function setLanguage(lang) {
+        if (!LANGS.includes(lang) || lang === currentLang) return;
+        currentLang = lang;
+        writeStorage(LANG_STORAGE_KEY, lang);
+        applyLanguage();
+        showToast(T().langToast);
+
+        // El nom de la població també es tradueix (p. ex. Barcelone, Barcelona…)
+        lastGeoCoords = null;
+        if (fetchInProgress) setTimeout(fetchLocationData, 4000);
+        else fetchLocationData();
+
+        // Si l'anunci és actiu, se sent la salutació en el nou idioma (dins del toc: també sona a l'iPhone)
+        if (voiceMode !== 'off') speak(activationGreeting(new Date().getHours()));
+    }
+
+    langBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setLangMenuOpen(!langControl.classList.contains('open'));
+    });
+
+    document.querySelectorAll('.lang-option').forEach((el) => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setLanguage(el.dataset.lang);
+            setLangMenuOpen(false);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!langControl.contains(e.target)) setLangMenuOpen(false);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setLangMenuOpen(false);
+    });
+
     // ---------- Inici ----------
     lastAnnounceKey = hourKey(new Date()); // no s'anuncia l'hora només per obrir la pàgina
-    applyVoiceButton();
-    applyTheme();
-    renderCalendar();
+    applyLanguage(); // textos, botons, tema i calendari
     currentDateKey = fmtKey(new Date());
     refreshOfficialHolidays(false);
     fetchLocationData();
