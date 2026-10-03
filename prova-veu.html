@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Prova de veu</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --card: #f1f2f5;
+            --text: #18181a;
+            --muted: #6c7076;
+            --border: #e4e6ea;
+            --accent: #e30613;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #161616;
+                --card: #262626;
+                --text: #ffffff;
+                --muted: #a0a0a5;
+                --border: #333333;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        main {
+            max-width: 520px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        p, li {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            border-radius: 14px;
+            padding: 14px 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            text-align: left;
+        }
+
+        button small {
+            font-weight: 500;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        button.primary small {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .voice-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .voice-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 10px 10px 10px 14px;
+        }
+
+        .voice-name {
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .voice-meta {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            vertical-align: middle;
+        }
+
+        .play {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .now-playing {
+            margin-top: 10px;
+            min-height: 1.3em;
+            font-size: 0.85rem;
+        }
+
+        ol {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Prova de veu</h1>
+    <p>Escolta com sona l'anunci horari amb les veus d'aquest dispositiu. Puja el volum i treu el mode silenci.</p>
+
+    <section>
+        <h2>Abans i ara</h2>
+        <div class="compare">
+            <button id="btnBefore" type="button">▶ Abans<small>«Il est quinze heures.»<br>Ritme normal, to pla</small></button>
+            <button id="btnAfter" class="primary" type="button">▶ Ara<small id="afterText">Frase amable, més pausada i dolça</small></button>
+        </div>
+        <p class="now-playing" id="nowPlaying"></p>
+    </section>
+
+    <section>
+        <h2>Veus franceses d'aquest dispositiu</h2>
+        <ul class="voice-list" id="voiceList"></ul>
+        <p id="noVoices" hidden>No s'ha trobat cap veu francesa. A l'iPhone, descarrega'n una (mira els passos de sota).</p>
+    </section>
+
+    <section>
+        <h2>Per tenir una veu més càlida a l'iPhone</h2>
+        <ol>
+            <li>Configuració › Accessibilitat › Contingut llegit › Veus.</li>
+            <li>Tria <strong>Francès</strong> i descarrega una veu femenina amb l'etiqueta <strong>Premium</strong> o <strong>Millorada</strong> (per exemple, Audrey o Amélie).</li>
+            <li>Torna aquí, prova-les, i l'app triarà sola la millor que hagis descarregat.</li>
+        </ol>
+    </section>
+</main>
+
+<script>
+    // Mateixos criteris que fa servir l'app per triar la veu
+    const FEMALE = ['amélie', 'amelie', 'audrey', 'aurélie', 'aurelie', 'marie', 'virginie', 'julie', 'hortense',
+        'denise', 'vivienne', 'eloise', 'éloïse', 'brigitte', 'coralie', 'céline', 'celine', 'léa', 'chantal', 'sylvie',
+        'google français', 'google french'];
+    const MALE = ['thomas', 'jacques', 'paul', 'henri', 'claude', 'rémy', 'remy', 'nicolas', 'daniel',
+        'sébastien', 'olivier', 'antoine', 'jérôme', 'yves', 'fabrice', 'alain', 'guillaume', 'mathieu', 'remi'];
+
+    const HOURS = ['minuit', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze',
+        'midi', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf', 'vingt', 'vingt et une',
+        'vingt-deux', 'vingt-trois'];
+
+    function scoreVoice(v) {
+        const name = v.name.toLowerCase();
+        let score = 0;
+        if (name.includes('google')) score += 30; // veu preferida (Chrome / Android)
+        if (FEMALE.some(n => name.includes(n))) score += 10;
+        if (MALE.some(n => name.includes(n))) score -= 20;
+        if (/^fr[-_]fr/i.test(v.lang)) score += 3;
+        if (/premium|enhanced|natural|neural|amélioré|améliorée|millorada|mejorada|siri/i.test(v.name)) score += 4;
+        if (v.localService) score += 1;
+        return score;
+    }
+
+    function frenchVoices() {
+        return speechSynthesis.getVoices()
+            .filter(v => /^fr/i.test(v.lang))
+            .sort((a, b) => scoreVoice(b) - scoreVoice(a));
+    }
+
+    function hourPhrase(h) {
+        if (h === 0) return 'Il est minuit.';
+        if (h === 12) return 'Il est midi.';
+        return `Il est ${HOURS[h]} heure${h === 1 ? '' : 's'}.`;
+    }
+
+    function friendly(h) {
+        const hour = hourPhrase(h);
+        if (h >= 5 && h <= 11) return ['Bonjour !', hour];
+        if (h === 12) return [hour, 'Bon appétit !'];
+        if (h >= 13 && h <= 17) return [hour, 'Bon après-midi !'];
+        if (h >= 18 && h <= 21) return ['Bonsoir à toi !', hour];
+        if (h >= 22) return [hour, 'Douce soirée.'];
+        return [hour, 'Douce nuit.'];
+    }
+
+    function speak(texts, voice, rate, pitch) {
+        speechSynthesis.cancel();
+        texts.forEach((t) => {
+            const u = new SpeechSynthesisUtterance(t);
+            u.lang = 'fr-FR';
+            if (voice) u.voice = voice;
+            u.rate = rate;
+            u.pitch = pitch;
+            speechSynthesis.speak(u);
+        });
+        document.getElementById('nowPlaying').textContent =
+            `Sona: ${voice ? voice.name : 'veu del sistema'} — «${texts.join(' ')}»`;
+    }
+
+    const sayBefore = (voice) => speak(['Il est quinze heures.'], voice, 0.92, 1.05);
+    const sayAfter = (voice) => speak(friendly(new Date().getHours()), voice, 0.86, 1.12);
+
+    document.getElementById('afterText').textContent = `«${friendly(new Date().getHours()).join(' ')}»`;
+    document.getElementById('btnBefore').addEventListener('click', () => sayBefore(frenchVoices()[0]));
+    document.getElementById('btnAfter').addEventListener('click', () => sayAfter(frenchVoices()[0]));
+
+    function renderVoices() {
+        const list = document.getElementById('voiceList');
+        const voices = frenchVoices();
+        list.innerHTML = '';
+        document.getElementById('noVoices').hidden = voices.length > 0;
+
+        voices.forEach((v, i) => {
+            const li = document.createElement('li');
+            li.className = 'voice-row';
+
+            const info = document.createElement('div');
+            const name = document.createElement('div');
+            name.className = 'voice-name';
+            name.textContent = v.name;
+            if (i === 0) {
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.textContent = "La de l'app";
+                name.appendChild(badge);
+            }
+            const meta = document.createElement('div');
+            meta.className = 'voice-meta';
+            meta.textContent = v.lang;
+            info.append(name, meta);
+
+            const play = document.createElement('button');
+            play.className = 'play';
+            play.type = 'button';
+            play.setAttribute('aria-label', `Escolta ${v.name}`);
+            play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>';
+            play.addEventListener('click', () => sayAfter(v));
+
+            li.append(info, play);
+            list.appendChild(li);
+        });
+    }
+
+    if ('speechSynthesis' in window) {
+        renderVoices();
+        speechSynthesis.addEventListener?.('voiceschanged', renderVoices);
+        setTimeout(renderVoices, 500);
+    } else {
+        document.getElementById('noVoices').hidden = false;
+        document.getElementById('noVoices').textContent = 'Aquest navegador no pot llegir text en veu alta.';
+    }
+</script>
+</body>
+</html>

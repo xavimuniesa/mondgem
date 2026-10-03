@@ -1709,20 +1709,54 @@
 
     // Parla una o diverses frases seguides; la pausa natural entre frases fa l'anunci menys "de megafonia".
     // To una mica més alt i ritme més pausat que el per defecte: sona més dolç i proper.
+    const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let speechUnlocked = false;
+
     function speakFrench(texts, volume = 1) {
         if (!('speechSynthesis' in window)) return;
         const list = Array.isArray(texts) ? texts : [texts];
-        const voice = pickFrenchVoice();
-        speechSynthesis.cancel();
-        list.forEach((text) => {
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = 'fr-FR';
-            if (voice) u.voice = voice;
-            u.rate = 0.86;
-            u.pitch = 1.12;
-            u.volume = volume;
-            speechSynthesis.speak(u);
-        });
+        const synth = window.speechSynthesis;
+
+        const run = () => {
+            const voice = pickFrenchVoice();
+            list.forEach((text, i) => {
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'fr-FR';
+                if (voice) u.voice = voice;
+                u.rate = 0.86;
+                u.pitch = 1.12;
+                u.volume = volume;
+                if (i === 0) u.onstart = () => { speechUnlocked = true; };
+                u.onerror = (ev) => {
+                    if (volume > 0 && ev && ev.error && ev.error !== 'canceled' && ev.error !== 'interrupted') {
+                        showToast('La veu no pot sonar: toca la pantalla');
+                    }
+                };
+                synth.speak(u);
+            });
+        };
+
+        // A l'iPhone, speak() ha de córrer dins del toc: només cancel·lem si hi ha alguna cosa parlant
+        try { synth.resume(); } catch (e) { /* res */ }
+        if (synth.speaking || synth.pending) {
+            synth.cancel();
+            setTimeout(run, 80);
+        } else {
+            run();
+        }
+    }
+
+    // Desbloqueja la veu amb un toc real (touchend/click; pointerdown no compta a iOS)
+    function unlockAudio(e) {
+        if (voiceMode === 'off' || speechUnlocked) return;
+        if (e && e.target && e.target.closest && e.target.closest('#voiceToggleBtn')) return; // el botó ja parla ell mateix
+        speakFrench('.', 0.01);
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC && !IS_IOS) {
+            if (!audioCtx) audioCtx = new AC();
+            if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        }
     }
 
     function pick(options) {
@@ -1749,7 +1783,7 @@
     // Dos tons suaus, com un avís d'estació, abans de la veu
     function playChime() {
         const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return Promise.resolve();
+        if (!AC || IS_IOS) return Promise.resolve(); // a iOS el so web talla la veu: només veu
         if (!audioCtx) audioCtx = new AC();
         if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
@@ -1784,6 +1818,7 @@
         if (voiceMode === 'day' && (h < 7 || h > 23)) return;
 
         playChime().then(() => speakFrench(friendlyAnnouncement(h)));
+        if (!speechUnlocked) showToast('Toca la pantalla un cop per activar la veu');
     }
 
     function applyVoiceButton() {
@@ -1805,7 +1840,7 @@
     function playVoiceTest() {
         const voice = pickFrenchVoice();
         showToast(`Prova de veu: ${voice ? voice.name : 'veu del sistema'}`);
-        playChime().then(() => speakFrench(friendlyAnnouncement(new Date().getHours())));
+        speakFrench(friendlyAnnouncement(new Date().getHours()));
     }
 
     function cycleVoiceMode() {
@@ -1816,7 +1851,7 @@
 
         // El toc de l'usuari "desbloqueja" l'àudio a l'iPhone, i de pas se sent la veu triada
         if (voiceMode === 'always' || voiceMode === 'day') {
-            playChime().then(() => speakFrench(activationGreeting(new Date().getHours())));
+            speakFrench(activationGreeting(new Date().getHours()));
         } else if ('speechSynthesis' in window) {
             speechSynthesis.cancel();
         }
@@ -1861,14 +1896,8 @@
         }
     });
 
-    // Si l'anunci ja estava activat d'una altra sessió, el primer toc a la pàgina desbloqueja l'àudio
-    document.addEventListener('pointerdown', () => {
-        if (voiceMode === 'off') return;
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (AC && !audioCtx) audioCtx = new AC();
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-        speakFrench(' ', 0);
-    }, { once: true, capture: true });
+    // Si l'anunci ja estava activat d'una sessió anterior, el primer toc real desbloqueja la veu
+    ['touchend', 'click'].forEach((t) => document.addEventListener(t, unlockAudio, { capture: true, passive: true }));
 
     if ('speechSynthesis' in window) {
         // Algunes plataformes carreguen la llista de veus amb retard
