@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" id="themeColorMeta" content="#0d0d0d">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Rellotge">
     <title>Rellotge Mondaine Stop2Go & Calendari</title>
+    <!-- App instal·lable -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <script>
         // S'aplica el tema abans de pintar la pàgina, per evitar un parpelleig fosc→clar en carregar
         (function () {
@@ -33,6 +39,8 @@
             --border-color-soft: #333333;
             --nav-active-bg: rgba(255, 255, 255, 0.08);
             --card-shadow: rgba(0, 0, 0, 0.6);
+            --today-text: #ffffff;
+            --today-glow: rgba(227, 6, 19, 0.6);
             --transition-theme: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
@@ -46,6 +54,26 @@
             --border-color-soft: #e4e6ea;
             --nav-active-bg: rgba(0, 0, 0, 0.06);
             --card-shadow: rgba(30, 30, 40, 0.18);
+        }
+
+        /* Mode zz (tauleta de nit): tot negre amb un sol to taronja.
+           Per tornar al vermell pur de la imatge de referència, canvia --zz per #ff0000 i --zz-rgb per 255, 0, 0 */
+        html[data-theme="zz"] {
+            --zz: #ff4500;
+            --zz-rgb: 255, 69, 0;
+            --zz-dim: rgba(var(--zz-rgb), 0.45);
+            --mondaine-red: var(--zz);
+            --bg-color: #000000;
+            --card-bg: #000000;
+            --widget-bg: #000000;
+            --widget-text: rgba(var(--zz-rgb), 0.6);
+            --text-color: var(--zz);
+            --border-color: rgba(var(--zz-rgb), 0.14);
+            --border-color-soft: rgba(var(--zz-rgb), 0.22);
+            --nav-active-bg: rgba(var(--zz-rgb), 0.14);
+            --card-shadow: transparent;
+            --today-text: #000000;
+            --today-glow: rgba(var(--zz-rgb), 0.35);
         }
 
         * {
@@ -160,8 +188,8 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             -ms-overflow-style: none;
-            gap: clamp(6px, 1.2vh, 12px);
-            padding-right: clamp(20px, 8vw, 36px);
+            gap: clamp(6px, 1.2vh, 10px);
+            padding-right: 24px;
             flex-shrink: 0;
         }
 
@@ -197,19 +225,18 @@
             }
         }
 
+        /* Cada indicador és una "pastilla" amb la icona al costat del valor: ocupa just el que necessita */
         .widget {
             flex: 0 0 auto;
-            width: clamp(78px, 24vw, 108px);
-            container-type: inline-size;
             min-width: 0;
             background-color: var(--widget-bg);
             border-radius: 14px;
-            padding: clamp(6px, 1vh, 10px) 4px;
+            padding: clamp(7px, 1.1vh, 10px) 12px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 3px;
+            gap: 7px;
             border: 1px solid var(--border-color-soft);
             overflow: hidden;
             scroll-snap-align: start;
@@ -217,8 +244,8 @@
         }
 
         .widget-icon {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             fill: none;
             stroke: var(--widget-text);
             stroke-width: 2;
@@ -227,39 +254,23 @@
             flex-shrink: 0;
         }
 
-        .widget-value {
-            font-size: clamp(0.7rem, 15cqw, 1rem);
+        .widget-value,
+        .location-value {
+            font-size: clamp(0.85rem, 3.9vw, 1rem);
             font-weight: 700;
             color: var(--text-color);
-            line-height: 1;
+            line-height: 1.1;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: clip;
         }
 
         /* La població s'adapta a la llargada del nom (fins a un màxim) */
         .widget--location {
-            flex-direction: row;
-            container-type: normal;
-            width: auto;
-            min-width: clamp(118px, 34vw, 176px);
-            max-width: 260px;
-            gap: 6px;
-            padding: clamp(6px, 1vh, 10px) 12px;
-        }
-
-        .widget--location .widget-icon {
-            width: 15px;
-            height: 15px;
+            max-width: 230px;
         }
 
         .location-value {
             min-width: 0;
-            font-size: clamp(0.8rem, 3.8vw, 0.95rem);
             font-weight: 600;
-            color: var(--text-color);
-            line-height: 1.1;
-            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -395,9 +406,9 @@
 
         .day.today .day-number {
             background-color: var(--mondaine-red);
-            color: #ffffff;
+            color: var(--today-text);
             font-weight: 700;
-            box-shadow: 0 0 12px rgba(227, 6, 19, 0.6);
+            box-shadow: 0 0 12px var(--today-glow);
         }
 
         .day.holiday:not(.today) .day-number {
@@ -418,19 +429,27 @@
         }
 
         .day.today.holiday::after {
-            background-color: #ffffff;
+            background-color: var(--today-text);
         }
 
         .day.empty {
             visibility: hidden;
         }
 
-        .theme-toggle-btn {
+        /* Botons de la cantonada: anunci horari i tema */
+        .corner-controls {
             position: absolute;
             top: clamp(8px, 2vh, 14px);
             right: clamp(8px, 2vh, 14px);
-            width: 32px;
-            height: 32px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .ctrl-btn {
+            position: relative;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background-color: var(--widget-bg);
             border: 1px solid var(--border-color-soft);
@@ -438,18 +457,18 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 10;
             padding: 0;
             transition: var(--transition-theme);
+            -webkit-touch-callout: none;
         }
 
-        .theme-toggle-btn:active {
+        .ctrl-btn:active {
             background-color: var(--nav-active-bg);
         }
 
-        .theme-toggle-btn svg {
-            width: 16px;
-            height: 16px;
+        .ctrl-btn svg {
+            width: 17px;
+            height: 17px;
             fill: none;
             stroke: var(--text-color);
             stroke-width: 2;
@@ -458,15 +477,21 @@
             display: none;
         }
 
-        .theme-toggle-btn.light .icon-sun {
+        .theme-toggle-btn.light .icon-sun,
+        .theme-toggle-btn.dark .icon-moon,
+        .theme-toggle-btn.zz .icon-zz,
+        .voice-toggle-btn.off .icon-voice-off,
+        .voice-toggle-btn.always .icon-voice-on,
+        .voice-toggle-btn.day .icon-voice-on {
             display: block;
         }
 
-        .theme-toggle-btn.dark .icon-moon {
-            display: block;
+        .voice-toggle-btn.off svg {
+            stroke: var(--widget-text);
         }
 
-        .theme-toggle-btn .auto-dot {
+        /* Puntet vermell: tema forçat manualment */
+        .ctrl-btn .auto-dot {
             position: absolute;
             top: -2px;
             right: -2px;
@@ -482,35 +507,137 @@
             display: block;
         }
 
+        /* Petit sol: anunci només de dia (7 h – 23 h) */
+        .voice-day-badge {
+            position: absolute;
+            right: -4px;
+            bottom: -4px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color-soft);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-toggle-btn.day .voice-day-badge {
+            display: flex;
+        }
+
+        .ctrl-btn .voice-day-badge svg {
+            display: block;
+            width: 11px;
+            height: 11px;
+            stroke-width: 2.4;
+        }
+
+        /* Avís breu en canviar un mode */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: max(24px, env(safe-area-inset-bottom));
+            transform: translate(-50%, 12px);
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 9px 16px;
+            border-radius: 999px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 60;
+        }
+
+        .toast.visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        /* ---------- Mode zz: el rellotge també passa a negre i taronja, sense ombres ---------- */
+        html[data-theme="zz"] .clock-svg,
+        html[data-theme="zz"] .hand-shadow,
+        html[data-theme="zz"] #dial-marks {
+            filter: none;
+        }
+
+        html[data-theme="zz"] .clock-dial { fill: #000000; stroke: #000000; }
+        html[data-theme="zz"] .clock-brand { fill: var(--zz-dim); }
+        html[data-theme="zz"] .clock-badge { fill: var(--zz-dim); }
+        html[data-theme="zz"] .clock-badge-cross { fill: #000000; }
+        html[data-theme="zz"] .mark-hour { stroke: var(--zz); }
+        html[data-theme="zz"] .mark-minute { stroke: var(--zz-dim); }
+        html[data-theme="zz"] .hand { stroke: var(--zz); }
+        html[data-theme="zz"] .second-line { stroke: var(--zz-dim); }
+        html[data-theme="zz"] .second-dot { fill: var(--zz-dim); }
+        html[data-theme="zz"] .clock-cap { fill: var(--zz); }
+
+        html[data-theme="zz"] .day:not(.today):not(.holiday) .day-number {
+            opacity: 0.8;
+        }
+
+        html[data-theme="zz"] .holiday-tooltip,
+        html[data-theme="zz"] .toast {
+            background-color: #000000;
+            color: var(--zz);
+            border: 1px solid var(--zz-dim);
+        }
+
+        html[data-theme="zz"] .holiday-tooltip::after {
+            border-top-color: var(--zz-dim);
+        }
+
         @media (orientation: landscape) {
             .app-card {
-                max-width: min(94vw, 1200px);
-                /* Calendari + indicadors formen un bloc centrat verticalment al costat del rellotge */
+                max-width: min(96vw, 1200px);
+                /* Calendari + indicadors formen un bloc centrat verticalment al costat del rellotge.
+                   La columna dreta té un màxim (calendari compacte) i el rellotge s'emporta la resta */
                 grid-template-areas:
                     "clock ."
+                    "clock controls"
                     "clock calendar"
                     "clock info"
                     "clock .";
-                grid-template-columns: minmax(0, 1fr) minmax(300px, 460px);
-                grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+                grid-template-columns: minmax(0, 1fr) minmax(0, clamp(240px, 36vw, 340px));
+                grid-template-rows: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
                 align-items: stretch;
-                column-gap: clamp(12px, 3vw, 32px);
-                row-gap: clamp(8px, 2vh, 16px);
+                column-gap: clamp(12px, 3vw, 40px);
+                row-gap: clamp(6px, 1.6vh, 14px);
             }
 
+            /* Els botons passen a la columna dreta, damunt del calendari: mai no tapen res */
+            .corner-controls {
+                position: static;
+                grid-area: controls;
+                justify-self: end;
+            }
+
+            /* El rellotge es dimensiona segons la seva pròpia columna (abans ho feia segons
+               l'amplada de la pantalla i, en pantalles estretes, quedava sota el calendari) */
             .clock-section {
-                min-width: 220px;
-                justify-self: center;
+                container-type: size;
+                justify-self: stretch;
+                align-self: stretch;
             }
 
             .clock-svg {
                 height: auto;
-                width: min(64vh, 32vw, 480px);
+                width: min(32vw, 64vh);
+                width: min(100cqw, 100cqh, 560px);
+                margin-bottom: 0;
             }
 
             .calendar-section {
                 justify-content: center;
                 width: 100%;
+            }
+
+            .widget-value,
+            .location-value {
+                font-size: clamp(0.8rem, 1.5vw, 0.95rem);
             }
 
             .calendar-header {
@@ -544,16 +671,38 @@
 <body>
 
 <div class="app-card">
-    <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema dia/nit">
-        <svg class="icon-sun" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="4.5"/>
-            <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
-        </svg>
-        <svg class="icon-moon" viewBox="0 0 24 24">
-            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
-        </svg>
-        <span class="auto-dot"></span>
-    </button>
+    <div class="corner-controls">
+        <button class="ctrl-btn voice-toggle-btn off" id="voiceToggleBtn" type="button" aria-label="Anunci horari: silenciat">
+            <svg class="icon-voice-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9h3l5-4v14l-5-4H4z"/>
+                <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+            </svg>
+            <svg class="icon-voice-on" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9h3l5-4v14l-5-4H4z"/>
+                <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>
+            </svg>
+            <span class="voice-day-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>
+                </svg>
+            </span>
+        </button>
+
+        <button class="ctrl-btn theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4.5"/>
+                <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
+            </svg>
+            <svg class="icon-zz" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 10h7l-7 9h7M14 4h6l-6 7h6"/>
+            </svg>
+            <span class="auto-dot"></span>
+        </button>
+    </div>
 
     <div class="clock-section">
         <svg class="clock-svg" viewBox="0 0 300 300">
@@ -575,38 +724,38 @@
             </defs>
 
             <!-- Bisell exterior i fons -->
-            <circle cx="150" cy="150" r="140" fill="url(#dialGradient)" stroke="url(#bezelGradient)" stroke-width="12"/>
+            <circle class="clock-dial" cx="150" cy="150" r="140" fill="url(#dialGradient)" stroke="url(#bezelGradient)" stroke-width="12"/>
 
             <!-- Text MONDAINE -->
-            <text x="150" y="97" font-family="'Montserrat', -apple-system, sans-serif" font-size="16" font-weight="300" letter-spacing="1.8" fill="#000000" text-anchor="middle">MONDAINE</text>
+            <text class="clock-brand" x="150" y="97" font-family="'Montserrat', -apple-system, sans-serif" font-size="16" font-weight="300" letter-spacing="1.8" fill="#000000" text-anchor="middle">MONDAINE</text>
 
             <!-- Sub-logo Swiss Watch -->
             <g transform="translate(150, 110)">
-                <circle cx="0" cy="0" r="6.5" fill="#e30613"/>
-                <rect x="-1.3" y="-4.2" width="2.6" height="8.4" fill="#ffffff"/>
-                <rect x="-4.2" y="-1.3" width="8.4" height="2.6" fill="#ffffff"/>
+                <circle class="clock-badge" cx="0" cy="0" r="6.5" fill="#e30613"/>
+                <rect class="clock-badge-cross" x="-1.3" y="-4.2" width="2.6" height="8.4" fill="#ffffff"/>
+                <rect class="clock-badge-cross" x="-4.2" y="-1.3" width="8.4" height="2.6" fill="#ffffff"/>
 
-                <text x="-8" y="0.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="400" fill="#000000" text-anchor="end" dominant-baseline="middle" letter-spacing="0.2">Swiss</text>
-                <text x="8" y="0.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="400" fill="#000000" text-anchor="start" dominant-baseline="middle" letter-spacing="0.2">Watch</text>
+                <text class="clock-brand" x="-8" y="0.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="400" fill="#000000" text-anchor="end" dominant-baseline="middle" letter-spacing="0.2">Swiss</text>
+                <text class="clock-brand" x="8" y="0.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="400" fill="#000000" text-anchor="start" dominant-baseline="middle" letter-spacing="0.2">Watch</text>
             </g>
 
             <!-- Marques d'hores i minuts -->
             <g id="dial-marks" filter="url(#markShadow)"></g>
 
             <!-- Agulla Horària -->
-            <line id="hourHand" class="hand-shadow" x1="150" y1="175" x2="150" y2="68" stroke="#000000" stroke-width="14" stroke-linecap="butt"/>
+            <line id="hourHand" class="hand hand-shadow" x1="150" y1="175" x2="150" y2="68" stroke="#000000" stroke-width="14" stroke-linecap="butt"/>
 
             <!-- Agulla Minutera -->
-            <line id="minuteHand" class="hand-shadow" x1="150" y1="175" x2="150" y2="26" stroke="#000000" stroke-width="12" stroke-linecap="butt"/>
+            <line id="minuteHand" class="hand hand-shadow" x1="150" y1="175" x2="150" y2="26" stroke="#000000" stroke-width="12" stroke-linecap="butt"/>
 
             <!-- Segonera Stop2Go amb les teves mides ajustades -->
             <g id="secondHand" class="hand-shadow">
-                <line x1="150" y1="172" x2="150" y2="69" stroke="#e30613" stroke-width="3.5" stroke-linecap="butt"/>
-                <circle cx="150" cy="63" r="9" fill="#e30613"/>
+                <line class="second-line" x1="150" y1="172" x2="150" y2="69" stroke="#e30613" stroke-width="3.5" stroke-linecap="butt"/>
+                <circle class="second-dot" cx="150" cy="63" r="9" fill="#e30613"/>
             </g>
 
             <!-- Caputxó/Eix central vermell -->
-            <circle cx="150" cy="150" r="5" fill="#e30613"/>
+            <circle class="clock-cap" cx="150" cy="150" r="5" fill="#e30613"/>
         </svg>
     </div>
 
@@ -677,6 +826,7 @@
 </div>
 
 <div class="holiday-tooltip" id="holidayTooltip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
     // ---------- Rellotge ----------
@@ -693,6 +843,7 @@
         mark.setAttribute("stroke", "#000000");
         mark.setAttribute("stroke-width", isHour ? "11" : "3.5");
         mark.setAttribute("stroke-linecap", "butt");
+        mark.setAttribute("class", isHour ? "mark-hour" : "mark-minute");
         mark.setAttribute("transform", `rotate(${angle} 150 150)`);
         marksGroup.appendChild(mark);
     }
@@ -720,13 +871,21 @@
         minuteHandEl.setAttribute('transform', `rotate(${minuteAngle} 150 150)`);
         hourHandEl.setAttribute('transform', `rotate(${hourAngle} 150 150)`);
 
+        checkMinute(now);
+        requestAnimationFrame(updateClock);
+    }
+
+    // Es comprova també amb un temporitzador: requestAnimationFrame s'atura quan la pestanya
+    // no es veu, i a l'escriptori volem que l'anunci horari soni igualment
+    function checkMinute(now) {
+        const m = now.getMinutes();
         if (m !== currentMinute) {
             currentMinute = m;
             onMinuteChange(now);
         }
-
-        requestAnimationFrame(updateClock);
     }
+
+    setInterval(() => checkMinute(new Date()), 1000);
 
     function onMinuteChange(now) {
         // Canvi de dia: es compara la data, no l'hora 00:00, perquè si la pàgina estava
@@ -738,6 +897,7 @@
             if (!firstRun) renderCalendar(0);
         }
         applyTheme();
+        maybeAnnounceHour(now);
     }
 
     // ---------- Festius ----------
@@ -886,7 +1046,9 @@
             const dayCell = document.createElement('div');
             dayCell.className = `day ${isToday ? 'today' : ''} ${holidayName ? 'holiday' : ''}`.trim();
             if (holidayName) {
-                dayCell.title = holidayName;
+                // Sense "title": a l'escriptori mostrava una segona etiqueta del navegador
+                // a sobre de la nostra
+                dayCell.setAttribute('aria-label', `${day}: ${holidayName}`);
                 dayCell.dataset.holidayName = holidayName;
             }
 
@@ -1304,30 +1466,49 @@
     widgetsContainer.addEventListener('pointerup', endDrag);
     widgetsContainer.addEventListener('pointercancel', endDrag);
 
-    // ---------- Tema dia/nit ----------
-    // Automàtic segons l'hora local, o forçat amb el botó (cicle: automàtic → diürn → nocturn)
+    // ---------- Avís breu (toast) ----------
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+
+    function showToast(text) {
+        toastEl.textContent = text;
+        toastEl.classList.add('visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 2200);
+    }
+
+    // ---------- Tema: automàtic, diürn, nocturn o zz ----------
+    // Automàtic segons l'hora local, o forçat amb el botó (cicle: automàtic → diürn → nocturn → zz)
     const THEME_STORAGE_KEY = 'mondaineThemeOverride';
+    const THEME_NAMES = { light: 'diürn', dark: 'nocturn', zz: 'zz (tauleta de nit)' };
+    const THEME_COLORS = { light: '#e9ebee', dark: '#0d0d0d', zz: '#000000' };
     let sessionThemeOverride = null;
 
-    function getThemeOverride() {
+    function readStorage(key, fallback) {
         try {
-            return localStorage.getItem(THEME_STORAGE_KEY);
+            const v = localStorage.getItem(key);
+            return v === null ? fallback : v;
         } catch (e) {
-            return sessionThemeOverride;
+            return fallback;
         }
+    }
+
+    function writeStorage(key, value) {
+        try {
+            if (value === null) localStorage.removeItem(key);
+            else localStorage.setItem(key, value);
+        } catch (e) {
+            /* localStorage no disponible: el valor només dura la sessió */
+        }
+    }
+
+    function getThemeOverride() {
+        return readStorage(THEME_STORAGE_KEY, sessionThemeOverride);
     }
 
     function setThemeOverride(value) {
         sessionThemeOverride = value;
-        try {
-            if (value) {
-                localStorage.setItem(THEME_STORAGE_KEY, value);
-            } else {
-                localStorage.removeItem(THEME_STORAGE_KEY);
-            }
-        } catch (e) {
-            /* localStorage no disponible: l'override només dura la sessió */
-        }
+        writeStorage(THEME_STORAGE_KEY, value);
     }
 
     function getAutoTheme() {
@@ -1337,41 +1518,204 @@
 
     function applyTheme() {
         const override = getThemeOverride();
-        const effective = override || getAutoTheme();
+        const effective = THEME_NAMES[override] ? override : getAutoTheme();
 
-        document.documentElement.setAttribute('data-theme', effective);
+        if (document.documentElement.getAttribute('data-theme') !== effective) {
+            document.documentElement.setAttribute('data-theme', effective);
+        }
 
         const meta = document.getElementById('themeColorMeta');
-        if (meta) meta.setAttribute('content', effective === 'light' ? '#e9ebee' : '#0d0d0d');
+        if (meta) meta.setAttribute('content', THEME_COLORS[effective]);
 
         const btn = document.getElementById('themeToggleBtn');
-        if (btn) {
-            btn.classList.toggle('light', effective === 'light');
-            btn.classList.toggle('dark', effective === 'dark');
-            btn.classList.toggle('manual', !!override);
-            const label = override
-                ? `Tema forçat en mode ${override === 'light' ? 'diürn' : 'nocturn'}. Toca per canviar.`
-                : `Tema automàtic (ara ${effective === 'light' ? 'diürn' : 'nocturn'}). Toca per forçar.`;
-            btn.setAttribute('aria-label', label);
-            btn.title = label;
-        }
+        btn.classList.toggle('light', effective === 'light');
+        btn.classList.toggle('dark', effective === 'dark');
+        btn.classList.toggle('zz', effective === 'zz');
+        btn.classList.toggle('manual', !!THEME_NAMES[override]);
+        const label = THEME_NAMES[override]
+            ? `Tema forçat: ${THEME_NAMES[override]}. Toca per canviar.`
+            : `Tema automàtic (ara ${THEME_NAMES[effective]}). Toca per canviar.`;
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+
+        updateWakeLock();
     }
 
     document.getElementById('themeToggleBtn').addEventListener('click', () => {
-        const override = getThemeOverride();
-        let next;
-        if (!override) {
-            next = 'light';
-        } else if (override === 'light') {
-            next = 'dark';
-        } else {
-            next = null;
-        }
+        const order = [null, 'light', 'dark', 'zz'];
+        const current = THEME_NAMES[getThemeOverride()] ? getThemeOverride() : null;
+        const next = order[(order.indexOf(current) + 1) % order.length];
         setThemeOverride(next);
         applyTheme();
+        showToast(next ? `Tema ${THEME_NAMES[next]}` : 'Tema automàtic (dia de 7 a 20 h)');
     });
 
+    // En mode zz la pantalla no s'apaga (tauleta de nit), si el navegador ho permet
+    let wakeLock = null;
+
+    async function updateWakeLock() {
+        const want = document.documentElement.getAttribute('data-theme') === 'zz' && !document.hidden;
+        if (want && !wakeLock && 'wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            } catch (e) {
+                wakeLock = null;
+            }
+        } else if (!want && wakeLock) {
+            wakeLock.release().catch(() => {});
+            wakeLock = null;
+        }
+    }
+
+    document.addEventListener('visibilitychange', updateWakeLock);
+
+    // ---------- Anunci horari en francès ----------
+    // Modes: silenciat → sempre → només de dia (de 7 h a 23 h)
+    const VOICE_STORAGE_KEY = 'mondaineVoiceMode';
+    const VOICE_MODES = ['off', 'always', 'day'];
+    const VOICE_LABELS = {
+        off: 'Anunci horari silenciat',
+        always: 'Anunci horari activat',
+        day: 'Anunci horari de 7 a 23 h'
+    };
+    const FRENCH_HOURS = ['minuit', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze',
+        'midi', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf', 'vingt', 'vingt et une',
+        'vingt-deux', 'vingt-trois'];
+
+    let voiceMode = readStorage(VOICE_STORAGE_KEY, 'off');
+    if (!VOICE_MODES.includes(voiceMode)) voiceMode = 'off';
+    let lastAnnounceKey = null;
+    let audioCtx = null;
+
+    function frenchHourPhrase(h) {
+        if (h === 0) return 'Il est minuit.';
+        if (h === 12) return 'Il est midi.';
+        return `Il est ${FRENCH_HOURS[h]} heure${h === 1 ? '' : 's'}.`;
+    }
+
+    // Tria una veu femenina francesa, preferint les de més qualitat (Premium, Enhanced, Natural…)
+    const FEMALE_VOICE_NAMES = ['amélie', 'amelie', 'audrey', 'aurélie', 'aurelie', 'marie', 'virginie', 'julie', 'hortense',
+        'denise', 'vivienne', 'eloise', 'éloïse', 'brigitte', 'coralie', 'céline', 'celine', 'léa', 'chantal', 'sylvie',
+        'google français', 'google french'];
+    const MALE_VOICE_NAMES = ['thomas', 'jacques', 'paul', 'henri', 'claude', 'rémy', 'remy', 'nicolas', 'daniel',
+        'sébastien', 'olivier', 'antoine', 'jérôme', 'yves', 'fabrice', 'alain', 'guillaume', 'mathieu', 'remi'];
+
+    function pickFrenchVoice() {
+        if (!('speechSynthesis' in window)) return null;
+        const voices = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang));
+        let best = null;
+        let bestScore = -Infinity;
+        voices.forEach(v => {
+            const name = v.name.toLowerCase();
+            let score = 0;
+            if (FEMALE_VOICE_NAMES.some(n => name.includes(n))) score += 10;
+            if (MALE_VOICE_NAMES.some(n => name.includes(n))) score -= 20;
+            if (/^fr[-_]fr/i.test(v.lang)) score += 3;
+            if (/premium|enhanced|natural|neural|amélioré|siri/i.test(v.name)) score += 4;
+            if (v.localService) score += 1;
+            if (score > bestScore) {
+                bestScore = score;
+                best = v;
+            }
+        });
+        return best;
+    }
+
+    function speakFrench(text, volume = 1) {
+        if (!('speechSynthesis' in window)) return;
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'fr-FR';
+        const voice = pickFrenchVoice();
+        if (voice) u.voice = voice;
+        u.rate = 0.92;
+        u.pitch = 1.05;
+        u.volume = volume;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+    }
+
+    // Dos tons suaus, com un avís d'estació, abans de la veu
+    function playChime() {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return Promise.resolve();
+        if (!audioCtx) audioCtx = new AC();
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+
+        const start = audioCtx.currentTime + 0.05;
+        [[783.99, 0], [659.25, 0.42]].forEach(([freq, offset]) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, start + offset);
+            gain.gain.exponentialRampToValueAtTime(0.16, start + offset + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 1.3);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(start + offset);
+            osc.stop(start + offset + 1.4);
+        });
+        return new Promise(resolve => setTimeout(resolve, 1300));
+    }
+
+    function hourKey(now) {
+        return `${fmtKey(now)}T${now.getHours()}`;
+    }
+
+    function maybeAnnounceHour(now) {
+        if (now.getMinutes() !== 0 || now.getSeconds() > 30) return;
+        const key = hourKey(now);
+        if (key === lastAnnounceKey) return;
+        lastAnnounceKey = key;
+
+        const h = now.getHours();
+        if (voiceMode === 'off') return;
+        if (voiceMode === 'day' && (h < 7 || h > 23)) return;
+
+        playChime().then(() => speakFrench(frenchHourPhrase(h)));
+    }
+
+    function applyVoiceButton() {
+        const btn = document.getElementById('voiceToggleBtn');
+        VOICE_MODES.forEach(m => btn.classList.toggle(m, m === voiceMode));
+        btn.setAttribute('aria-label', VOICE_LABELS[voiceMode]);
+        btn.title = VOICE_LABELS[voiceMode];
+    }
+
+    document.getElementById('voiceToggleBtn').addEventListener('click', () => {
+        voiceMode = VOICE_MODES[(VOICE_MODES.indexOf(voiceMode) + 1) % VOICE_MODES.length];
+        writeStorage(VOICE_STORAGE_KEY, voiceMode);
+        applyVoiceButton();
+        showToast(VOICE_LABELS[voiceMode]);
+
+        // El toc de l'usuari "desbloqueja" l'àudio a l'iPhone, i de pas se sent la veu triada
+        if (voiceMode === 'always') {
+            playChime().then(() => speakFrench('Annonce horaire activée.'));
+        } else if (voiceMode === 'day') {
+            speakFrench('Annonce horaire de sept heures à vingt-trois heures.');
+        } else if ('speechSynthesis' in window) {
+            speechSynthesis.cancel();
+        }
+    });
+
+    // Si l'anunci ja estava activat d'una altra sessió, el primer toc a la pàgina desbloqueja l'àudio
+    document.addEventListener('pointerdown', () => {
+        if (voiceMode === 'off') return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC && !audioCtx) audioCtx = new AC();
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        speakFrench(' ', 0);
+    }, { once: true, capture: true });
+
+    if ('speechSynthesis' in window) {
+        // Algunes plataformes carreguen la llista de veus amb retard
+        speechSynthesis.getVoices();
+        speechSynthesis.addEventListener?.('voiceschanged', () => speechSynthesis.getVoices());
+    }
+
     // ---------- Inici ----------
+    lastAnnounceKey = hourKey(new Date()); // no s'anuncia l'hora només per obrir la pàgina
+    applyVoiceButton();
     applyTheme();
     renderCalendar();
     currentDateKey = fmtKey(new Date());
@@ -1385,6 +1729,13 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
         document.documentElement.classList.add('theme-ready');
     }));
+
+    // App instal·lable: el service worker només funciona servit per http(s), no obrint el fitxer directament
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+    }
 </script>
 </body>
 </html>
