@@ -343,6 +343,7 @@
             text-transform: capitalize;
             color: var(--text-color);
             min-width: 0;
+            white-space: nowrap; /* el nom del mes mai no passa a dues línies */
             padding: 4px 6px;
             cursor: pointer;
             user-select: none;
@@ -1301,10 +1302,20 @@
         const totalDays = new Date(year, month + 1, 0).getDate();
         const fragment = document.createDocumentFragment();
 
-        for (let i = 0; i < firstDayIndex; i++) {
+        // Les caselles buides porten un número invisible: així una fila buida fa la mateixa alçada
+        // que una de plena i el calendari (i el rellotge) no salten en canviar de mes
+        const makeEmptyCell = () => {
             const emptyCell = document.createElement('div');
             emptyCell.className = 'day empty';
-            fragment.appendChild(emptyCell);
+            const filler = document.createElement('span');
+            filler.className = 'day-number';
+            filler.textContent = '0';
+            emptyCell.appendChild(filler);
+            return emptyCell;
+        };
+
+        for (let i = 0; i < firstDayIndex; i++) {
+            fragment.appendChild(makeEmptyCell());
         }
 
         for (let day = 1; day <= totalDays; day++) {
@@ -1332,9 +1343,7 @@
         // Sempre 6 setmanes (42 caselles): el calendari té la mateixa mida tots els mesos
         const trailingEmpty = 42 - (firstDayIndex + totalDays);
         for (let i = 0; i < trailingEmpty; i++) {
-            const emptyCell = document.createElement('div');
-            emptyCell.className = 'day empty';
-            fragment.appendChild(emptyCell);
+            fragment.appendChild(makeEmptyCell());
         }
 
         grid.appendChild(fragment);
