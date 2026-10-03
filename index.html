@@ -438,13 +438,22 @@
         }
 
         /* Botons de la cantonada: anunci horari i tema */
+        /* En vertical, un botó a cada cantonada superior: un rellotge rodó mai no arriba a les
+           cantonades del seu quadrat, així que els botons no el poden tapar sigui quina sigui la mida */
         .corner-controls {
             position: absolute;
             top: clamp(8px, 2vh, 14px);
+            left: clamp(8px, 2vh, 14px);
             right: clamp(8px, 2vh, 14px);
             display: flex;
+            justify-content: space-between;
             gap: 8px;
             z-index: 10;
+            pointer-events: none;
+        }
+
+        .corner-controls .ctrl-btn {
+            pointer-events: auto;
         }
 
         .ctrl-btn {
@@ -485,6 +494,10 @@
         .voice-toggle-btn.always .icon-voice-on,
         .voice-toggle-btn.day .icon-voice-on {
             display: block;
+        }
+
+        .voice-toggle-btn.holding {
+            box-shadow: 0 0 0 3px var(--mondaine-red);
         }
 
         .voice-toggle-btn.off svg {
@@ -614,6 +627,7 @@
                 position: static;
                 grid-area: controls;
                 justify-self: end;
+                justify-content: flex-end;
             }
 
             /* El rellotge es dimensiona segons la seva pròpia columna (abans ho feia segons
@@ -1679,10 +1693,11 @@
         voices.forEach(v => {
             const name = v.name.toLowerCase();
             let score = 0;
+            if (name.includes('google')) score += 30; // veu preferida de l'usuari (Chrome / Android)
             if (FEMALE_VOICE_NAMES.some(n => name.includes(n))) score += 10;
             if (MALE_VOICE_NAMES.some(n => name.includes(n))) score -= 20;
             if (/^fr[-_]fr/i.test(v.lang)) score += 3;
-            if (/premium|enhanced|natural|neural|amélioré|siri/i.test(v.name)) score += 4;
+            if (/premium|enhanced|natural|neural|amélioré|améliorée|millorada|mejorada|siri/i.test(v.name)) score += 4;
             if (v.localService) score += 1;
             if (score > bestScore) {
                 bestScore = score;
@@ -1714,10 +1729,16 @@
         return options[Math.floor(Math.random() * options.length)];
     }
 
+    // Salutació en activar l'anunci: "belle soirée" a partir de les 19 h (i de matinada), si no "belle journée"
+    function activationGreeting(h) {
+        const evening = h >= 19 || h < 5;
+        return ['Salut !', `Je te souhaite une belle ${evening ? 'soirée' : 'journée'}.`];
+    }
+
     // Anunci amable segons el moment del dia (amb una mica de varietat perquè no soni repetitiu)
     function friendlyAnnouncement(h) {
         const hour = frenchHourPhrase(h);
-        if (h >= 5 && h <= 11) return [pick(['Bonjour !', 'Coucou, bonjour !']), hour];
+        if (h >= 5 && h <= 11) return ['Bonjour !', hour];
         if (h === 12) return [hour, pick(['Bon appétit !', 'Bonne pause de midi !'])];
         if (h >= 13 && h <= 17) return [hour, pick(['Bon après-midi !', 'Belle après-midi à toi !'])];
         if (h >= 18 && h <= 21) return [pick(['Bonsoir !', 'Bonsoir à toi !']), hour];
@@ -1772,19 +1793,71 @@
         btn.title = VOICE_LABELS[voiceMode];
     }
 
-    document.getElementById('voiceToggleBtn').addEventListener('click', () => {
+    // Botó de l'altaveu: toc curt = canvia el mode; mantenir premut = prova de veu ara mateix.
+    // La prova es dispara en aixecar el dit (no amb un temporitzador) perquè l'iPhone només deixa
+    // parlar com a resposta directa a un toc.
+    const voiceBtn = document.getElementById('voiceToggleBtn');
+    const VOICE_HOLD_MS = 600;
+    let voicePressStart = 0;
+    let voiceHoldTimer = null;
+    let suppressVoiceClick = false;
+
+    function playVoiceTest() {
+        const voice = pickFrenchVoice();
+        showToast(`Prova de veu: ${voice ? voice.name : 'veu del sistema'}`);
+        playChime().then(() => speakFrench(friendlyAnnouncement(new Date().getHours())));
+    }
+
+    function cycleVoiceMode() {
         voiceMode = VOICE_MODES[(VOICE_MODES.indexOf(voiceMode) + 1) % VOICE_MODES.length];
         writeStorage(VOICE_STORAGE_KEY, voiceMode);
         applyVoiceButton();
         showToast(VOICE_LABELS[voiceMode]);
 
         // El toc de l'usuari "desbloqueja" l'àudio a l'iPhone, i de pas se sent la veu triada
-        if (voiceMode === 'always') {
-            playChime().then(() => speakFrench(['Coucou !', "Je te dirai l'heure, à chaque heure pile."]));
-        } else if (voiceMode === 'day') {
-            speakFrench("D'accord ! Je te dirai l'heure de sept heures à vingt-trois heures.");
+        if (voiceMode === 'always' || voiceMode === 'day') {
+            playChime().then(() => speakFrench(activationGreeting(new Date().getHours())));
         } else if ('speechSynthesis' in window) {
             speechSynthesis.cancel();
+        }
+    }
+
+    voiceBtn.addEventListener('pointerdown', () => {
+        voicePressStart = Date.now();
+        clearTimeout(voiceHoldTimer);
+        // Senyal visual: ja pots deixar anar per escoltar la prova
+        voiceHoldTimer = setTimeout(() => voiceBtn.classList.add('holding'), VOICE_HOLD_MS);
+    });
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => {
+        voiceBtn.addEventListener(type, () => {
+            clearTimeout(voiceHoldTimer);
+            voiceBtn.classList.remove('holding');
+        });
+    });
+
+    voiceBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    voiceBtn.addEventListener('touchend', (e) => {
+        if (voicePressStart && Date.now() - voicePressStart >= VOICE_HOLD_MS) {
+            e.preventDefault();
+            suppressVoiceClick = true;
+            voicePressStart = 0;
+            playVoiceTest();
+        }
+    });
+
+    voiceBtn.addEventListener('click', () => {
+        if (suppressVoiceClick) {
+            suppressVoiceClick = false;
+            return;
+        }
+        const longPress = voicePressStart && Date.now() - voicePressStart >= VOICE_HOLD_MS;
+        voicePressStart = 0;
+        if (longPress) {
+            playVoiceTest();
+        } else {
+            cycleVoiceMode();
         }
     });
 
