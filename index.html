@@ -295,6 +295,131 @@
             transition: var(--transition-theme);
         }
 
+        /* Lliscar en vertical sobre el calendari canvia de vista: el navegador no ha de desplaçar la pàgina */
+        .calendar-section {
+            container-type: inline-size;
+            touch-action: none;
+        }
+
+        /* El calendari es manté a dins (invisible) quan es veu una altra vista: així el marc
+           conserva la mida i el rellotge no salta */
+        .calendar-header-row,
+        .calendar-grid {
+            transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+        }
+
+        .calendar-section:not([data-view="calendar"]) .calendar-header-row,
+        .calendar-section:not([data-view="calendar"]) .calendar-grid {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(14px);
+        }
+
+        .alt-view {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-14px);
+            transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+            pointer-events: none;
+            /* Les mides del text es calculen sobre el requadre sencer: així omplen l'espai del calendari */
+            container-type: size;
+            padding: 6% 8%;
+        }
+
+        .calendar-section[data-view="date"] .alt-view--date,
+        .calendar-section[data-view="temp"] .alt-view--temp {
+            opacity: 1;
+            visibility: visible;
+            transform: none;
+        }
+
+        .alt-big {
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 300;
+            font-size: min(29cqw, 52cqh);
+            line-height: 1;
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-color);
+            white-space: nowrap;
+        }
+
+        .alt-caption {
+            margin-top: 0.6em;
+            max-width: 90%;
+            font-size: min(6cqw, 9cqh);
+            font-weight: 600;
+            color: var(--widget-text);
+            text-transform: capitalize;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .alt-temp-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.08em;
+        }
+
+        .alt-temp-row .alt-big {
+            font-size: min(25cqw, 50cqh);
+        }
+
+        .alt-emoji {
+            font-size: min(19cqw, 40cqh);
+            line-height: 1;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        }
+
+        /* En mode zz l'emoticona també passa a to taronja apagat, per no enlluernar de nit */
+        html[data-theme="zz"] .alt-emoji {
+            /* silueta d'un sol color: el text transparent i una ombra taronja sense desplaçament */
+            color: transparent;
+            text-shadow: 0 0 0 var(--zz);
+            opacity: 0.85;
+        }
+
+        .calendar-section {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Tres puntets a la dreta indiquen quina vista es veu */
+        .view-dots {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            pointer-events: none;
+        }
+
+        .view-dots span {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: var(--widget-text);
+            opacity: 0.35;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+        }
+
+        .calendar-section[data-view="calendar"] .view-dots span:nth-child(1),
+        .calendar-section[data-view="date"] .view-dots span:nth-child(2),
+        .calendar-section[data-view="temp"] .view-dots span:nth-child(3) {
+            opacity: 1;
+            background-color: var(--mondaine-red);
+        }
+
         .holiday-tooltip {
             position: fixed;
             z-index: 50;
@@ -904,7 +1029,7 @@
         </div>
     </div>
 
-    <div class="calendar-section">
+    <div class="calendar-section" data-view="calendar">
         <div class="calendar-header-row">
             <button class="cal-nav-btn" id="prevMonthBtn" type="button" data-i18n-label="prevMonth">‹</button>
             <div class="calendar-header" id="calendarHeader"></div>
@@ -919,6 +1044,20 @@
             <div class="day-name">Ds</div>
             <div class="day-name">Dg</div>
         </div>
+
+        <!-- Vistes alternatives: lliscant cap avall es passa de calendari → data → temperatura → calendari -->
+        <div class="alt-view alt-view--date" aria-hidden="true">
+            <div class="alt-big" id="altDate">--·--</div>
+            <div class="alt-caption" id="altDateCaption"></div>
+        </div>
+        <div class="alt-view alt-view--temp" aria-hidden="true">
+            <div class="alt-temp-row">
+                <span class="alt-emoji" id="altEmoji" aria-hidden="true">🌡️</span>
+                <span class="alt-big" id="altTemp">--°</span>
+            </div>
+            <div class="alt-caption" id="altTempCaption"></div>
+        </div>
+        <div class="view-dots" aria-hidden="true"><span></span><span></span><span></span></div>
     </div>
 </div>
 
@@ -1089,6 +1228,7 @@
     setInterval(() => checkMinute(new Date()), 1000);
 
     function onMinuteChange(now) {
+        updateAltViews();
         // Canvi de dia: es compara la data, no l'hora 00:00, perquè si la pàgina estava
         // en segon pla a mitjanit el navegador no executa el rellotge i aquell minut es perdria
         const dateKey = fmtKey(now);
@@ -1361,6 +1501,7 @@
 
     function setText(id, text) {
         document.getElementById(id).innerText = text;
+        if (id === 'tempValue' || id === 'cityValue') updateAltViews();
     }
 
     function distanceKm(a, b) {
@@ -1395,7 +1536,7 @@
             // Sense "elevation=nan": així l'API usa un model d'elevació de 90 m al punt exacte
             // (amb "nan" retornava l'alçada mitjana de tota la cel·la del model, p. ex. 0 m a Barcelona)
             const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-                `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day` +
+                `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code` +
                 `&hourly=weather_code,precipitation_probability&forecast_days=2&timezone=auto`;
 
             // Només es torna a geolocalitzar la població si t'has mogut més d'1 km
@@ -1409,6 +1550,7 @@
             ]);
 
             const cur = weatherData && weatherData.current;
+            currentWeatherEmoji = cur ? weatherEmoji(cur.weather_code, cur.is_day) : '🌡️';
             setText('tempValue', cur && cur.temperature_2m != null ? `${Math.round(cur.temperature_2m)}°` : '--°');
             setText('feelsValue', cur && cur.apparent_temperature != null ? `${Math.round(cur.apparent_temperature)}°` : '--°');
             setText('humValue', cur && cur.relative_humidity_2m != null ? `${Math.round(cur.relative_humidity_2m)}%` : '--%');
@@ -1434,7 +1576,27 @@
         });
     }
 
+    // Emoticona del temps que fa ara (codis WMO d'Open-Meteo)
+    let currentWeatherEmoji = '🌡️';
+
+    function weatherEmoji(code, isDay) {
+        const day = isDay !== 0;
+        if (code == null) return '🌡️';
+        if (code === 0) return day ? '☀️' : '🌙';
+        if (code === 1) return day ? '🌤️' : '🌙';
+        if (code === 2) return day ? '⛅' : '☁️';
+        if (code === 3) return '☁️';
+        if (code === 45 || code === 48) return '🌫️';
+        if (code >= 51 && code <= 57) return '🌦️';
+        if (code >= 61 && code <= 67) return '🌧️';
+        if ((code >= 71 && code <= 77) || code === 85 || code === 86) return '🌨️';
+        if (code >= 80 && code <= 82) return day ? '🌦️' : '🌧️';
+        if (code >= 95) return '⛈️';
+        return '🌡️';
+    }
+
     function setFallbackData() {
+        currentWeatherEmoji = '🌡️';
         setText('tempValue', '--°');
         setText('feelsValue', '--°');
         setText('humValue', '--%');
@@ -1667,11 +1829,56 @@
         const dy = t.clientY - touchStartY;
         touchStartX = null;
         touchStartY = null;
+        handleCalendarSwipe(dx, dy);
+    }, { passive: true });
 
-        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    // Amb el ratolí (escriptori) també es pot arrossegar
+    let mouseStart = null;
+    calendarSectionEl.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') mouseStart = { x: e.clientX, y: e.clientY };
+    });
+    window.addEventListener('pointerup', (e) => {
+        if (!mouseStart || e.pointerType !== 'mouse') return;
+        const dx = e.clientX - mouseStart.x;
+        const dy = e.clientY - mouseStart.y;
+        mouseStart = null;
+        handleCalendarSwipe(dx, dy);
+    });
+
+    // Vertical: canvia de vista (avall = següent, amunt = anterior). Horitzontal: canvia de mes (només al calendari)
+    function handleCalendarSwipe(dx, dy) {
+        if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+            setCalendarView(calendarViewIndex + (dy > 0 ? 1 : -1));
+        } else if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && calendarViewIndex === 0) {
             renderCalendar(dx < 0 ? monthOffset + 1 : monthOffset - 1);
         }
-    }, { passive: true });
+    }
+
+    // ---------- Vistes del requadre del calendari: calendari → data → temperatura ----------
+    const CALENDAR_VIEWS = ['calendar', 'date', 'temp'];
+    let calendarViewIndex = 0;
+
+    function setCalendarView(index) {
+        calendarViewIndex = (index + CALENDAR_VIEWS.length) % CALENDAR_VIEWS.length;
+        const view = CALENDAR_VIEWS[calendarViewIndex];
+        hideHolidayTooltip();
+        updateAltViews();
+        calendarSectionEl.dataset.view = view;
+        calendarSectionEl.querySelector('.alt-view--date').setAttribute('aria-hidden', String(view !== 'date'));
+        calendarSectionEl.querySelector('.alt-view--temp').setAttribute('aria-hidden', String(view !== 'temp'));
+    }
+
+    function updateAltViews() {
+        const now = new Date();
+        document.getElementById('altDate').textContent = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}`;
+        document.getElementById('altDateCaption').textContent =
+            new Intl.DateTimeFormat(T().locale, { weekday: 'long' }).format(now);
+
+        document.getElementById('altTemp').textContent = document.getElementById('tempValue').innerText || '--°';
+        document.getElementById('altEmoji').textContent = currentWeatherEmoji;
+        const city = document.getElementById('cityValue').innerText;
+        document.getElementById('altTempCaption').textContent = (city && city !== '--' && city !== '…') ? city : '';
+    }
 
     // ---------- Etiqueta dels festius ----------
     const holidayTooltip = document.getElementById('holidayTooltip');
@@ -2230,6 +2437,7 @@
         });
 
         renderWeatherLabel();
+        updateAltViews();
         applyVoiceButton();
         applyTheme();
         renderCalendar();
