@@ -484,7 +484,7 @@
         .calendar-header {
             text-align: center;
             font-weight: 800;
-            font-size: clamp(1rem, 4.6vw, 1.4rem);
+            font-size: calc(clamp(1rem, 4.6vw, 1.4rem) * var(--cal-scale, 1));
             text-transform: capitalize;
             color: var(--text-color);
             min-width: 0;
@@ -530,13 +530,13 @@
 
         .day-name {
             font-weight: 700;
-            font-size: clamp(0.72rem, min(3.4vw, 2.3vh), 0.95rem);
+            font-size: calc(clamp(0.72rem, min(3.4vw, 2.3vh), 0.95rem) * var(--cal-scale, 1));
             color: var(--widget-text);
         }
 
         .day {
             position: relative;
-            font-size: clamp(0.9rem, min(4.9vw, 2.9vh), 1.3rem);
+            font-size: calc(clamp(0.9rem, min(4.9vw, 2.9vh), 1.3rem) * var(--cal-scale, 1));
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             display: flex;
@@ -877,7 +877,7 @@
             }
 
             .calendar-header {
-                font-size: clamp(0.9rem, 1.8vw, 1.3rem);
+                font-size: calc(clamp(0.9rem, 1.8vw, 1.3rem) * var(--cal-scale, 1));
                 margin-bottom: clamp(2px, 0.8vh, 10px);
             }
 
@@ -886,11 +886,11 @@
             }
 
             .day-name {
-                font-size: clamp(0.65rem, min(1.5vw, 2.6vh), 0.95rem);
+                font-size: calc(clamp(0.65rem, min(1.5vw, 2.6vh), 0.95rem) * var(--cal-scale, 1));
             }
 
             .day {
-                font-size: clamp(0.8rem, min(1.9vw, 3.5vh), 1.25rem);
+                font-size: calc(clamp(0.8rem, min(1.9vw, 3.5vh), 1.25rem) * var(--cal-scale, 1));
             }
 
             .day-number {
@@ -910,15 +910,15 @@
             }
 
             .calendar-header {
-                font-size: clamp(1.3rem, 2vw, 1.9rem);
+                font-size: calc(clamp(1.3rem, 2vw, 1.9rem) * var(--cal-scale, 1));
             }
 
             .day-name {
-                font-size: clamp(0.85rem, 1.1vw, 1.15rem);
+                font-size: calc(clamp(0.85rem, 1.1vw, 1.15rem) * var(--cal-scale, 1));
             }
 
             .day {
-                font-size: clamp(1.05rem, min(1.6vw, 2.9vh), 1.7rem);
+                font-size: calc(clamp(1.05rem, min(1.6vw, 2.9vh), 1.7rem) * var(--cal-scale, 1));
             }
 
             .calendar-grid {
@@ -1806,6 +1806,30 @@
         return min;
     }
 
+    // Si el calendari no hi cap (p. ex. iPhone en horitzontal, on la pantalla visible és més baixa que
+    // el que diuen les unitats vh), s'encongeix la lletra el just perquè no es talli el nom del mes.
+    // Sempre es mesura amb 6 setmanes, així que l'escala no canvia d'un mes a l'altre.
+    function fitCalendar() {
+        const section = document.querySelector('.calendar-section');
+        if (!section) return;
+        section.style.setProperty('--cal-scale', '1');
+        for (let i = 0; i < 4; i++) {
+            // Centrat en vertical, el que sobresurt per dalt no compta a scrollHeight: se sumen les peces
+            const cs = getComputedStyle(section);
+            const headerRow = section.querySelector('.calendar-header-row');
+            const grid = section.querySelector('.calendar-grid');
+            const avail = section.clientHeight;
+            const need = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) +
+                headerRow.offsetHeight + parseFloat(getComputedStyle(headerRow).marginBottom) + grid.offsetHeight;
+            if (!avail || need <= avail + 1) break;
+            const current = parseFloat(section.style.getPropertyValue('--cal-scale')) || 1;
+            const next = Math.max(0.55, current * (avail / need) * 0.98);
+            section.style.setProperty('--cal-scale', next.toFixed(3));
+        }
+    }
+
+    window.addEventListener('resize', () => requestAnimationFrame(fitCalendar));
+    window.addEventListener('orientationchange', () => setTimeout(fitCalendar, 300));
     window.addEventListener('resize', sizeClockForPortrait);
     window.addEventListener('orientationchange', () => setTimeout(sizeClockForPortrait, 250));
 
@@ -2563,6 +2587,8 @@
     requestAnimationFrame(updateClock);
     sizeClockForPortrait();
     setTimeout(sizeClockForPortrait, 300);
+    requestAnimationFrame(fitCalendar);
+    setTimeout(fitCalendar, 350);
     updateWidgetsFade();
 
     // Les transicions de tema s'activen només després del primer pintat
