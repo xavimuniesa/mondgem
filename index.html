@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html lang="ca">
+<html lang="ca" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <!-- L'app ja es tradueix sola (CA/FR/DE/EN): el traductor de Chrome no hi ha de tocar -->
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" id="themeColorMeta" content="#161616">
     <meta name="mobile-web-app-capable" content="yes">
@@ -520,7 +522,8 @@
         .calendar-grid {
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            /* minmax(0, 1fr): cap text llarg pot eixamplar una columna i empènyer el diumenge fora */
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             grid-template-rows: auto repeat(6, auto);
             gap: clamp(4px, 1vh, 10px);
             text-align: center;
@@ -529,6 +532,10 @@
         }
 
         .day-name {
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
             font-weight: 700;
             font-size: calc(clamp(0.72rem, min(3.4vw, 2.3vh), 0.95rem) * var(--cal-scale, 1));
             color: var(--widget-text);
