@@ -45,8 +45,8 @@
             --card-shadow: rgba(0, 0, 0, 0.6);
             --today-text: #ffffff;
             --today-glow: rgba(227, 6, 19, 0.6);
-            /* Festius en bordeus i dissabtes en verd maragda (més clars en fosc, perquè es llegeixin) */
-            --holiday-color: #e8778b;
+            /* Diumenges i festius en vermell, dissabtes en verd maragda (més clars en fosc, perquè es llegeixin) */
+            --holiday-color: #ff3b45;
             --saturday-color: #3fd19a;
             --transition-theme: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
@@ -61,7 +61,7 @@
             --border-color-soft: #e4e6ea;
             --nav-active-bg: rgba(0, 0, 0, 0.06);
             --card-shadow: rgba(30, 30, 40, 0.18);
-            --holiday-color: #7b1e2e;
+            --holiday-color: #e30613;
             --saturday-color: #00845f;
         }
 
@@ -568,6 +568,7 @@
             color: var(--saturday-color);
         }
 
+        .day.sunday:not(.today) .day-number,
         .day.holiday:not(.today) .day-number {
             color: var(--holiday-color);
             font-weight: 800;
@@ -1514,8 +1515,9 @@
             const isToday = isCurrentMonth && day === today;
 
             const dayCell = document.createElement('div');
-            const isSaturday = (firstDayIndex + day - 1) % 7 === 5;
-            dayCell.className = ['day', isToday && 'today', holidayName && 'holiday', isSaturday && 'saturday']
+            const weekday = (firstDayIndex + day - 1) % 7; // 0 = dilluns … 6 = diumenge
+            dayCell.className = ['day', isToday && 'today', holidayName && 'holiday',
+                weekday === 5 && 'saturday', weekday === 6 && 'sunday']
                 .filter(Boolean).join(' ');
             if (holidayName) {
                 // Sense "title": a l'escriptori mostrava una segona etiqueta del navegador
