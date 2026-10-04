@@ -29,7 +29,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -143,13 +143,12 @@
             display: grid;
             grid-template-areas:
                 "clock"
-                "info"
                 "calendar";
             /* minmax(0, 1fr): sense això, la franja lliscable d'indicadors eixampla la columna
                i desplaça el rellotge i el calendari fora de la pantalla */
             grid-template-columns: minmax(0, 1fr);
             /* La fila del rellotge s'emporta l'espai sobrant (el rellotge es dimensiona per JS) */
-            grid-template-rows: minmax(0, 1fr) auto auto;
+            grid-template-rows: minmax(0, 1fr) auto;
             align-items: stretch;
             gap: clamp(8px, 2vh, 20px);
             overflow: hidden;
@@ -337,13 +336,202 @@
             transform: translateY(-14px);
             transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
             pointer-events: none;
-            /* Les mides del text es calculen sobre el requadre sencer: així omplen l'espai del calendari */
-            container-type: size;
-            padding: 6% 8%;
         }
 
-        .calendar-section[data-view="date"] .alt-view--date,
-        .calendar-section[data-view="temp"] .alt-view--temp {
+        .info-section[hidden] {
+            display: none !important;
+        }
+
+        /* ---------- Pàgines de la finestra d'informació ---------- */
+        .info-page {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6% 8% 13%;
+            /* Les mides del text es calculen sobre el requadre sencer: així omplen l'espai del calendari */
+            container-type: size;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(var(--page-from, 22px));
+            transition: opacity 0.26s ease, transform 0.26s ease, visibility 0.26s;
+        }
+
+        .info-page.active {
+            opacity: 1;
+            visibility: visible;
+            transform: none;
+        }
+
+        /* Pàgina 1: població (gran) i, a sota, el temps */
+        .page-place {
+            max-width: 100%;
+            margin-bottom: 0.3em;
+            font-family: 'Hiragino Kaku Gothic Std', 'Hiragino Kaku Gothic StdN', 'HiraKakuStd-W8', 'HiraKakuStdN-W8',
+                'Hiragino Sans', 'HiraginoSans-W8', 'HiraginoSans-W7', 'Hiragino Kaku Gothic ProN', 'HiraKakuProN-W6',
+                -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 800;
+            font-size: min(9cqw, 14cqh);
+            line-height: 1.1;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Pàgina 2: DIJOUS / 10 d'octubre de 2027 */
+        .page-weekday {
+            font-family: 'Hiragino Kaku Gothic Std', 'Hiragino Kaku Gothic StdN', 'HiraKakuStd-W8', 'HiraKakuStdN-W8',
+                'Hiragino Sans', 'HiraginoSans-W8', 'HiraginoSans-W7', 'Hiragino Kaku Gothic ProN', 'HiraKakuProN-W6',
+                -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 800;
+            font-size: min(17cqw, 34cqh); /* l'ajusta fitAltViews() */
+            line-height: 1;
+            letter-spacing: 0.04em;
+            color: var(--text-color);
+            white-space: nowrap;
+        }
+
+        .page-longdate {
+            margin-top: 0.55em;
+            max-width: 100%;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 500;
+            font-size: min(7.4cqw, 12cqh);
+            letter-spacing: 0.02em;
+            color: var(--widget-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Pàgines 3 i 4: indicadors en graella */
+        .metrics-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 4cqh 4cqw;
+        }
+
+        .metrics-grid--two {
+            grid-template-rows: minmax(0, 1fr);
+        }
+
+        .metric {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-main {
+            max-width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.22em;
+            font-family: 'Hiragino Kaku Gothic Std', 'Hiragino Kaku Gothic StdN', 'HiraKakuStd-W8', 'HiraKakuStdN-W8',
+                'Hiragino Sans', 'HiraginoSans-W8', 'HiraginoSans-W7', 'Hiragino Kaku Gothic ProN', 'HiraKakuProN-W6',
+                -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 800;
+            font-size: min(13.5cqw, 21cqh);
+            line-height: 1;
+            color: var(--text-color);
+        }
+
+        .metrics-grid--two .metric-main {
+            flex-direction: column;
+            gap: 0.25em;
+            font-size: min(12.5cqw, 26cqh);
+        }
+
+        .metric-value {
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Unitat petita al costat de la xifra (km/h) */
+        .metric-value small {
+            font-size: 0.42em;
+            font-weight: 700;
+            letter-spacing: 0;
+            color: var(--widget-text);
+        }
+
+        .metric-icon {
+            width: 0.72em;
+            height: 0.72em;
+            flex-shrink: 0;
+            fill: none;
+            stroke: var(--widget-text);
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .metric-label {
+            margin-top: 0.5em;
+            max-width: 100%;
+            font-family: 'Hiragino Kaku Gothic Std', 'Hiragino Kaku Gothic StdN', 'HiraKakuStd-W8', 'HiraKakuStdN-W8',
+                'Hiragino Sans', 'HiraginoSans-W8', 'HiraginoSans-W7', 'Hiragino Kaku Gothic ProN', 'HiraKakuProN-W6',
+                -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 700;
+            font-size: min(3.9cqw, 6.5cqh);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--widget-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Puntets de les pàgines, a baix */
+        .page-dots {
+            position: absolute;
+            left: 50%;
+            bottom: 5%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 7px;
+            pointer-events: none;
+        }
+
+        .page-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--widget-text);
+            opacity: 0.35;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+        }
+
+        .page-dots span.active {
+            opacity: 1;
+            background-color: var(--mondaine-red);
+        }
+
+        /* Botó de pantalla sempre encesa */
+        .awake-btn.on .icon-awake-on,
+        .awake-btn:not(.on) .icon-awake-off {
+            display: block;
+        }
+
+        .awake-btn:not(.on) svg {
+            stroke: var(--widget-text);
+        }
+
+        .awake-btn.on {
+            box-shadow: inset 0 0 0 1.5px var(--mondaine-red);
+        }
+
+        .calendar-section[data-view="info"] .alt-view--info {
             opacity: 1;
             visibility: visible;
             transform: none;
@@ -436,8 +624,7 @@
         }
 
         .calendar-section[data-view="calendar"] .view-dots span:nth-child(1),
-        .calendar-section[data-view="date"] .view-dots span:nth-child(2),
-        .calendar-section[data-view="temp"] .view-dots span:nth-child(3) {
+        .calendar-section[data-view="info"] .view-dots span:nth-child(2) {
             opacity: 1;
             background-color: var(--mondaine-red);
         }
@@ -841,10 +1028,9 @@
                     "clock ."
                     "clock controls"
                     "clock calendar"
-                    "clock info"
                     "clock .";
                 grid-template-columns: minmax(0, 1fr) minmax(0, clamp(240px, 36vw, 340px));
-                grid-template-rows: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
                 align-items: stretch;
                 column-gap: clamp(12px, 3vw, 40px);
                 row-gap: clamp(6px, 1.6vh, 14px);
@@ -938,6 +1124,7 @@
 
 <div class="app-card">
     <div class="corner-controls">
+        <div class="ctrl-group">
         <button class="ctrl-btn voice-toggle-btn off" id="voiceToggleBtn" type="button" aria-label="Anunci horari: silenciat">
             <svg class="icon-voice-off" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 9h3l5-4v14l-5-4H4z"/>
@@ -954,6 +1141,18 @@
                 </svg>
             </span>
         </button>
+
+        <button class="ctrl-btn awake-btn" id="awakeBtn" type="button" aria-pressed="false" aria-label="Pantalla sempre encesa">
+            <svg class="icon-awake-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                <path d="M4 4l16 16"/>
+            </svg>
+            <svg class="icon-awake-on" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                <circle cx="12" cy="12" r="2.6"/>
+            </svg>
+        </button>
+        </div>
 
         <div class="ctrl-group">
             <div class="lang-control" id="langControl">
@@ -1038,55 +1237,6 @@
 
     </div>
 
-    <div class="info-section">
-        <div class="widgets-container" id="widgetsContainer">
-            <div class="widget widget--location" data-i18n-label="location" role="group">
-                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
-                    <circle cx="12" cy="9" r="2.3" fill="none"/>
-                </svg>
-                <div class="location-value" id="cityValue">…</div>
-            </div>
-
-            <div class="widget" data-i18n-label="altitude" role="group">
-                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8 3l4 8 5-5 5 15H2L8 3z"/>
-                </svg>
-                <div class="widget-value" id="altValue">--m</div>
-            </div>
-
-            <div class="widget" data-i18n-label="temperature" role="group">
-                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
-                </svg>
-                <div class="widget-value" id="tempValue">--°</div>
-            </div>
-
-            <div class="widget" data-i18n-label="humidity" role="group">
-                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/>
-                </svg>
-                <div class="widget-value" id="humValue">--%</div>
-            </div>
-
-            <div class="widget" data-i18n-label="feels" role="group">
-                <svg class="widget-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M11 14.76V4.5a2.5 2.5 0 0 0-5 0v10.26a4.5 4.5 0 1 0 5 0z"/>
-                    <path d="M15 8c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0M15 13c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0"/>
-                </svg>
-                <div class="widget-value" id="feelsValue">--°</div>
-            </div>
-
-            <div class="widget" data-i18n-label="forecast" role="group">
-                <svg class="widget-icon" id="weatherCondIcon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/>
-                </svg>
-                <div class="widget-value" id="weatherCondValue">--</div>
-            </div>
-
-        </div>
-    </div>
-
     <div class="calendar-section" data-view="calendar">
         <div class="calendar-header-row">
             <button class="cal-nav-btn" id="prevMonthBtn" type="button" data-i18n-label="prevMonth">‹</button>
@@ -1103,19 +1253,73 @@
             <div class="day-name">Dg</div>
         </div>
 
-        <!-- Vistes alternatives: lliscant cap avall es passa de calendari → data → temperatura → calendari -->
-        <div class="alt-view alt-view--date" aria-hidden="true">
-            <div class="alt-big" id="altDate">--·--</div>
-            <div class="alt-caption" id="altDateCaption"></div>
-        </div>
-        <div class="alt-view alt-view--temp" aria-hidden="true">
-            <div class="alt-temp-row">
-                <span class="alt-emoji" id="altEmoji" aria-hidden="true">🌡️</span>
-                <span class="alt-big" id="altTemp">--°</span>
+        <!-- Finestra d'informació: lliscant amunt/avall s'alterna amb el calendari;
+             lliscant de costat es passa d'una pàgina a l'altra -->
+        <div class="alt-view alt-view--info" aria-hidden="true">
+            <div class="info-page info-page--place active">
+                <div class="page-place" id="pagePlace">…</div>
+                <div class="alt-temp-row">
+                    <span class="alt-emoji" id="altEmoji" aria-hidden="true">🌡️</span>
+                    <span class="alt-big" id="altTemp">--°</span>
+                </div>
             </div>
-            <div class="alt-caption" id="altTempCaption"></div>
+            <div class="info-page info-page--date">
+                <div class="page-weekday" id="pageWeekday"></div>
+                <div class="page-longdate" id="pageLongDate"></div>
+            </div>
+            <div class="info-page info-page--metrics">
+                <div class="metrics-grid">
+                    <div class="metric metric--temp">
+                        <div class="metric-main">
+                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                            <span class="metric-value" id="mTemp">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="temperature"></div>
+                    </div>
+                    <div class="metric metric--hum">
+                        <div class="metric-main">
+                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/></svg>
+                            <span class="metric-value" id="mHum">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="humidity"></div>
+                    </div>
+                    <div class="metric metric--feels">
+                        <div class="metric-main">
+                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 14.76V4.5a2.5 2.5 0 0 0-5 0v10.26a4.5 4.5 0 1 0 5 0z"/><path d="M15 8c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0M15 13c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0"/></svg>
+                            <span class="metric-value" id="mFeels">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="feels"></div>
+                    </div>
+                    <div class="metric metric--wind">
+                        <div class="metric-main">
+                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5a2.5 2.5 0 1 0-2.5-2.5M3 12h15.5a2.5 2.5 0 1 1-2.5 2.5M3 16h8"/></svg>
+                            <span class="metric-value" id="mWind">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="wind"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="info-page info-page--forecast">
+                <div class="metrics-grid metrics-grid--two">
+                    <div class="metric metric--forecast">
+                        <div class="metric-main">
+                            <svg class="metric-icon" id="mForecastIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/></svg>
+                            <span class="metric-value" id="mForecast">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="next12h"></div>
+                    </div>
+                    <div class="metric metric--alt">
+                        <div class="metric-main">
+                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>
+                            <span class="metric-value" id="mAlt">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="altitude"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
         </div>
-        <div class="view-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="view-dots" aria-hidden="true"><span></span><span></span></div>
     </div>
 </div>
 
@@ -1134,6 +1338,11 @@
             locale: 'ca-ES', speech: 'ca-ES',
             langName: 'Català',
             days: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
+            wind: 'Vent', next12h: 'Properes 12 h',
+            compass: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
+            awakeLabel: 'Pantalla sempre encesa',
+            awakeOn: 'Pantalla sempre encesa', awakeOff: 'La pantalla s’apaga com sempre',
+            awakeUnsupported: 'Aquest navegador no pot mantenir la pantalla encesa',
             location: 'Població', altitude: 'Altitud', temperature: 'Temperatura', humidity: 'Humitat',
             feels: 'Sensació tèrmica', forecast: 'Previsió properes 12 hores',
             prevMonth: 'Mes anterior', nextMonth: 'Mes següent', language: 'Idioma',
@@ -1155,6 +1364,11 @@
             locale: 'fr-FR', speech: 'fr-FR',
             langName: 'Français',
             days: ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'],
+            wind: 'Vent', next12h: 'Prochaines 12 h',
+            compass: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
+            awakeLabel: 'Écran toujours allumé',
+            awakeOn: 'Écran toujours allumé', awakeOff: 'L’écran s’éteint normalement',
+            awakeUnsupported: 'Ce navigateur ne peut pas garder l’écran allumé',
             location: 'Localité', altitude: 'Altitude', temperature: 'Température', humidity: 'Humidité',
             feels: 'Ressenti', forecast: 'Prévisions des 12 prochaines heures',
             prevMonth: 'Mois précédent', nextMonth: 'Mois suivant', language: 'Langue',
@@ -1176,6 +1390,11 @@
             locale: 'de-DE', speech: 'de-DE',
             langName: 'Deutsch',
             days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+            wind: 'Wind', next12h: 'Nächste 12 Std.',
+            compass: ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'],
+            awakeLabel: 'Bildschirm bleibt an',
+            awakeOn: 'Bildschirm bleibt an', awakeOff: 'Bildschirm schaltet sich normal ab',
+            awakeUnsupported: 'Dieser Browser kann den Bildschirm nicht wach halten',
             location: 'Ort', altitude: 'Höhe', temperature: 'Temperatur', humidity: 'Luftfeuchtigkeit',
             feels: 'Gefühlt', forecast: 'Vorhersage für die nächsten 12 Stunden',
             prevMonth: 'Vorheriger Monat', nextMonth: 'Nächster Monat', language: 'Sprache',
@@ -1197,6 +1416,11 @@
             locale: 'en-GB', speech: 'en-GB',
             langName: 'English',
             days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+            wind: 'Wind', next12h: 'Next 12 h',
+            compass: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+            awakeLabel: 'Screen always on',
+            awakeOn: 'Screen stays on', awakeOff: 'Screen sleeps as usual',
+            awakeUnsupported: 'This browser can’t keep the screen on',
             location: 'Location', altitude: 'Altitude', temperature: 'Temperature', humidity: 'Humidity',
             feels: 'Feels like', forecast: 'Forecast for the next 12 hours',
             prevMonth: 'Previous month', nextMonth: 'Next month', language: 'Language',
@@ -1239,7 +1463,7 @@
         mark.setAttribute("x2", "150");
         mark.setAttribute("y2", isHour ? "52" : "32");
         mark.setAttribute("stroke", "#000000");
-        mark.setAttribute("stroke-width", isHour ? "11" : "3.5");
+        mark.setAttribute("stroke-width", isHour ? "9.17" : "3.5"); // hores: 11 − 1/6
         mark.setAttribute("stroke-linecap", "butt");
         mark.setAttribute("class", isHour ? "mark-hour" : "mark-minute");
         mark.setAttribute("transform", `rotate(${angle} 150 150)`);
@@ -1560,9 +1784,12 @@
     let lastGeoCoords = null;
     let fetchInProgress = false;
 
-    function setText(id, text) {
-        document.getElementById(id).innerText = text;
-        if (id === 'tempValue' || id === 'cityValue') updateAltViews();
+    // Últimes dades conegudes (null = sense dada → es mostra "--")
+    const wx = { temp: null, feels: null, hum: null, alt: null, city: null, windSpeed: null, windDir: null };
+
+    function setWeather(values) {
+        Object.assign(wx, values);
+        renderInfo();
     }
 
     function distanceKm(a, b) {
@@ -1597,7 +1824,7 @@
             // Sense "elevation=nan": així l'API usa un model d'elevació de 90 m al punt exacte
             // (amb "nan" retornava l'alçada mitjana de tota la cel·la del model, p. ex. 0 m a Barcelona)
             const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-                `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code` +
+                `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m` +
                 `&hourly=weather_code,precipitation_probability&forecast_days=2&timezone=auto`;
 
             // Només es torna a geolocalitzar la població si t'has mogut més d'1 km
@@ -1612,16 +1839,21 @@
 
             const cur = weatherData && weatherData.current;
             currentWeatherEmoji = cur ? weatherEmoji(cur.weather_code, cur.is_day) : '🌡️';
-            setText('tempValue', cur && cur.temperature_2m != null ? `${Math.round(cur.temperature_2m)}°` : '--°');
-            setText('feelsValue', cur && cur.apparent_temperature != null ? `${Math.round(cur.apparent_temperature)}°` : '--°');
-            setText('humValue', cur && cur.relative_humidity_2m != null ? `${Math.round(cur.relative_humidity_2m)}%` : '--%');
-            setText('altValue', weatherData && weatherData.elevation != null ? `${Math.round(weatherData.elevation)}m` : '--m');
+            const num = v => (v == null || Number.isNaN(Number(v)) ? null : Math.round(Number(v)));
+            setWeather({
+                temp: num(cur && cur.temperature_2m),
+                feels: num(cur && cur.apparent_temperature),
+                hum: num(cur && cur.relative_humidity_2m),
+                alt: num(weatherData && weatherData.elevation),
+                windSpeed: num(cur && cur.wind_speed_10m),
+                windDir: cur && cur.wind_direction_10m != null ? Number(cur.wind_direction_10m) : null
+            });
 
             applyWeatherCondition(weatherData);
 
             if (geoData !== undefined) {
                 const place = geoData && (geoData.city || geoData.locality || geoData.principalSubdivision || geoData.countryName);
-                setText('cityValue', place || '--');
+                setWeather({ city: place || null });
                 if (place) lastGeoCoords = coords;
             }
 
@@ -1658,13 +1890,9 @@
 
     function setFallbackData() {
         currentWeatherEmoji = '🌡️';
-        setText('tempValue', '--°');
-        setText('feelsValue', '--°');
-        setText('humValue', '--%');
-        setText('altValue', '--m');
-        setText('cityValue', '--');
-        setText('weatherCondValue', '--');
         lastWeather = null;
+        setWeather({ temp: null, feels: null, hum: null, alt: null, city: null, windSpeed: null, windDir: null });
+        applyWeatherCondition(null);
     }
 
     const WEATHER_ICONS = {
@@ -1684,8 +1912,8 @@
     // Previsió de les properes 12 hores (abans s'usava el dia sencer, i a la nit
     // seguia mostrant la pluja del matí, que ja havia passat)
     function applyWeatherCondition(weatherData) {
-        const valueEl = document.getElementById('weatherCondValue');
-        const iconEl = document.getElementById('weatherCondIcon');
+        const valueEl = document.getElementById('mForecast');
+        const iconEl = document.getElementById('mForecastIcon');
 
         const hourly = weatherData && weatherData.hourly;
         const current = weatherData && weatherData.current;
@@ -1739,7 +1967,7 @@
         if (!lastWeather) return;
         let label = T().weather[lastWeather.kind];
         if (lastWeather.prob !== null) label += ` ${Math.round(lastWeather.prob)}%`;
-        document.getElementById('weatherCondValue').innerText = label;
+        document.getElementById('mForecast').innerText = label;
     }
 
     // Les dades es refresquen soles cada 15 min i en tornar a obrir la pestanya
@@ -1758,7 +1986,6 @@
         const isPortrait = window.matchMedia('(orientation: portrait)').matches;
         const svg = document.querySelector('.clock-svg');
         const appCard = document.querySelector('.app-card');
-        const infoSection = document.querySelector('.info-section');
         const calendarSection = document.querySelector('.calendar-section');
         const clockSection = document.querySelector('.clock-section');
 
@@ -1776,7 +2003,7 @@
                 - parseFloat(cardStyles.paddingBottom);
 
             const svgMargin = parseFloat(getComputedStyle(svg).marginBottom) || 0;
-            const used = infoSection.offsetHeight + calendarSection.offsetHeight + (gap * 2) + svgMargin;
+            const used = calendarSection.offsetHeight + gap + svgMargin; // ja no hi ha barra de dades
             const available = totalHeight - used;
             const maxByWidth = clockSection.clientWidth;
 
@@ -1930,56 +2157,132 @@
         handleCalendarSwipe(dx, dy);
     });
 
-    // Vertical: canvia de vista (avall = següent, amunt = anterior). Horitzontal: canvia de mes (només al calendari)
+    // Vertical: alterna calendari ⇅ finestra d'informació (avall des del calendari, amunt per tornar).
+    // Horitzontal: al calendari canvia de mes; a la finestra d'informació canvia de pàgina.
     function handleCalendarSwipe(dx, dy) {
-        if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5) {
-            setCalendarView(calendarViewIndex + (dy > 0 ? 1 : -1));
-        } else if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && calendarViewIndex === 0) {
+        const vertical = Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5;
+        const horizontal = Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5;
+        if (vertical) {
+            setCalendarView(calendarView === 'calendar' ? 'info' : 'calendar');
+        } else if (horizontal && calendarView === 'calendar') {
             renderCalendar(dx < 0 ? monthOffset + 1 : monthOffset - 1);
+        } else if (horizontal) {
+            // Lliscar cap a la dreta mostra la pàgina de l'esquerra (la data, des de la primera)
+            setInfoPage(infoPageIndex + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
         }
     }
 
-    // ---------- Vistes del requadre del calendari: calendari → data → temperatura ----------
-    const CALENDAR_VIEWS = ['calendar', 'date', 'temp'];
-    let calendarViewIndex = 0;
+    // A l'escriptori, també amb les fletxes del teclat
+    document.addEventListener('keydown', (e) => {
+        if (e.target.closest && e.target.closest('input, textarea, select')) return;
+        if (e.key === 'ArrowDown' && calendarView === 'calendar') setCalendarView('info');
+        else if (e.key === 'ArrowUp' && calendarView === 'info') setCalendarView('calendar');
+        else if (e.key === 'ArrowLeft') handleCalendarSwipe(60, 0);
+        else if (e.key === 'ArrowRight') handleCalendarSwipe(-60, 0);
+    });
 
-    function setCalendarView(index) {
-        calendarViewIndex = (index + CALENDAR_VIEWS.length) % CALENDAR_VIEWS.length;
-        const view = CALENDAR_VIEWS[calendarViewIndex];
+    // ---------- Requadre del calendari: calendari ⇅ finestra d'informació ----------
+    let calendarView = 'calendar';
+    const infoViewEl = calendarSectionEl.querySelector('.alt-view--info');
+
+    function setCalendarView(view) {
+        calendarView = view;
         hideHolidayTooltip();
-        updateAltViews();
         calendarSectionEl.dataset.view = view;
-        calendarSectionEl.querySelector('.alt-view--date').setAttribute('aria-hidden', String(view !== 'date'));
-        calendarSectionEl.querySelector('.alt-view--temp').setAttribute('aria-hidden', String(view !== 'temp'));
+        infoViewEl.setAttribute('aria-hidden', String(view !== 'info'));
+        if (view === 'info') {
+            renderInfo();
+            requestAnimationFrame(fitAltViews);
+        }
     }
 
-    function updateAltViews() {
+    // Pàgines, d'esquerra a dreta: data · població i temps (la que surt primer) · indicadors · previsió i altitud
+    const INFO_PAGES = ['date', 'place', 'metrics', 'forecast'];
+    let infoPageIndex = 1;
+
+    function setInfoPage(index, direction = 1) {
+        infoPageIndex = (index + INFO_PAGES.length) % INFO_PAGES.length;
+        const name = INFO_PAGES[infoPageIndex];
+        infoViewEl.querySelectorAll('.info-page').forEach((page) => {
+            const active = page.classList.contains(`info-page--${name}`);
+            // La pàgina que entra ve del costat cap on llisques; la que surt marxa cap a l'altre
+            page.style.setProperty('--page-from', `${(active ? 1 : -1) * direction * 22}px`);
+            page.classList.toggle('active', active);
+            page.setAttribute('aria-hidden', String(!active));
+        });
+        infoViewEl.querySelectorAll('.page-dots span').forEach((dot, i) => dot.classList.toggle('active', i === infoPageIndex));
+        requestAnimationFrame(fitAltViews);
+    }
+
+    function compassPoint(deg) {
+        if (deg == null || Number.isNaN(deg)) return '';
+        return T().compass[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+    }
+
+    // Omple totes les pàgines amb l'última dada coneguda, en l'idioma triat
+    function renderInfo() {
+        const t = T();
         const now = new Date();
-        document.getElementById('altDate').textContent = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}`;
-        document.getElementById('altDateCaption').textContent =
-            new Intl.DateTimeFormat(T().locale, { weekday: 'long' }).format(now);
+        const dash = '--';
+        const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
 
-        document.getElementById('altTemp').textContent = document.getElementById('tempValue').innerText || '--°';
-        document.getElementById('altEmoji').textContent = currentWeatherEmoji;
-        const city = document.getElementById('cityValue').innerText;
-        document.getElementById('altTempCaption').textContent = (city && city !== '--' && city !== '…') ? city : '';        fitAltViews();
+        // Població i temps
+        set('pagePlace', wx.city || dash);
+        set('altTemp', wx.temp != null ? `${wx.temp}°` : '--°');
+        set('altEmoji', currentWeatherEmoji);
+
+        // Data: DIJOUS / 10 d'octubre de 2027
+        set('pageWeekday', new Intl.DateTimeFormat(t.locale, { weekday: 'long' }).format(now).toLocaleUpperCase(t.locale));
+        let longDate = new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+        if (currentLang === 'ca') longDate = longDate.replace(/ del (\d{4})$/, ' de $1'); // «10 d’octubre de 2027»
+        set('pageLongDate', longDate);
+
+        // Indicadors
+        set('mTemp', wx.temp != null ? `${wx.temp}°` : dash);
+        set('mFeels', wx.feels != null ? `${wx.feels}°` : dash);
+        set('mHum', wx.hum != null ? `${wx.hum}%` : dash);
+        const windEl = document.getElementById('mWind');
+        if (windEl) {
+            windEl.textContent = wx.windSpeed != null ? String(wx.windSpeed) : dash;
+            if (wx.windSpeed != null) {
+                const unit = document.createElement('small');
+                unit.textContent = ' km/h';
+                windEl.appendChild(unit);
+            }
+        }
+        const windLabel = infoViewEl.querySelector('.metric--wind .metric-label');
+        const dir = wx.windSpeed ? compassPoint(wx.windDir) : '';
+        if (windLabel) windLabel.textContent = dir ? `${t.wind} · ${dir}` : t.wind;
+        set('mAlt', wx.alt != null ? `${wx.alt} m` : dash);
+        if (!lastWeather) set('mForecast', dash);
+        else renderWeatherLabel();
+
+        fitAltViews();
     }
 
-    // La data i la temperatura s'escalen perquè omplin el requadre del calendari (amplada i alçada),
+    // La temperatura i el dia de la setmana s'escalen perquè omplin la finestra,
     // sigui quina sigui la font que tingui el dispositiu (Hiragino al Mac/iPhone, una altra a Windows/Android)
     function fitAltViews() {
-        [['.alt-view--date', '#altDate'], ['.alt-view--temp', '.alt-temp-row']].forEach(([viewSel, targetSel]) => {
-            const view = document.querySelector(viewSel);
-            const el = view && view.querySelector(targetSel);
+        [['.info-page--place', '.alt-temp-row', 0.84, 0.42],
+         ['.info-page--date', '.page-weekday', 0.86, 0.3]].forEach(([pageSel, targetSel, wRatio, hRatio]) => {
+            const page = infoViewEl.querySelector(pageSel);
+            const el = page && page.querySelector(targetSel);
             if (!el) return;
-            const maxW = view.clientWidth * 0.84;
-            const maxH = view.clientHeight * 0.5;
+            const cs = getComputedStyle(page);
+            const innerW = page.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+            const maxW = Math.min(page.clientWidth * wRatio, innerW);
+            const maxH = page.clientHeight * hRatio;
             if (!maxW || !maxH) return;
             el.style.fontSize = '100px';
             const w = el.getBoundingClientRect().width;
             if (!w) return;
             el.style.fontSize = `${Math.floor(Math.min(100 * maxW / w, maxH))}px`;
         });
+    }
+
+    // Abans hi havia vistes separades; ara tot es refresca des de renderInfo()
+    function updateAltViews() {
+        renderInfo();
     }
 
     window.addEventListener('resize', () => requestAnimationFrame(fitAltViews));
@@ -2039,51 +2342,6 @@
             hideHolidayTooltip();
         }
     });
-
-    // ---------- Franja d'indicadors: roda i arrossegament amb ratolí, i difuminat a les vores ----------
-    const widgetsContainer = document.getElementById('widgetsContainer');
-
-    function updateWidgetsFade() {
-        const maxScroll = widgetsContainer.scrollWidth - widgetsContainer.clientWidth;
-        widgetsContainer.classList.toggle('fade-left', widgetsContainer.scrollLeft > 4);
-        widgetsContainer.classList.toggle('fade-right', widgetsContainer.scrollLeft < maxScroll - 4);
-    }
-
-    widgetsContainer.addEventListener('scroll', updateWidgetsFade, { passive: true });
-    window.addEventListener('resize', updateWidgetsFade);
-
-    // La roda vertical del ratolí desplaça la franja en horitzontal (a l'escriptori no hi ha barra)
-    widgetsContainer.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-        const maxScroll = widgetsContainer.scrollWidth - widgetsContainer.clientWidth;
-        if (maxScroll <= 0) return;
-        e.preventDefault();
-        widgetsContainer.scrollLeft += e.deltaY;
-    }, { passive: false });
-
-    // Arrossegar amb el ratolí
-    let dragStartX = null;
-    let dragStartScroll = 0;
-
-    widgetsContainer.addEventListener('pointerdown', (e) => {
-        if (e.pointerType !== 'mouse') return;
-        dragStartX = e.clientX;
-        dragStartScroll = widgetsContainer.scrollLeft;
-        widgetsContainer.classList.add('dragging');
-        widgetsContainer.setPointerCapture(e.pointerId);
-    });
-
-    widgetsContainer.addEventListener('pointermove', (e) => {
-        if (dragStartX === null) return;
-        widgetsContainer.scrollLeft = dragStartScroll - (e.clientX - dragStartX);
-    });
-
-    const endDrag = () => {
-        dragStartX = null;
-        widgetsContainer.classList.remove('dragging');
-    };
-    widgetsContainer.addEventListener('pointerup', endDrag);
-    widgetsContainer.addEventListener('pointercancel', endDrag);
 
     // ---------- Avís breu (toast) ----------
     const toastEl = document.getElementById('toast');
@@ -2169,11 +2427,35 @@
         showToast(next ? T().themeToast(T().themeNames[next]) : T().themeAutoToast);
     });
 
-    // En mode zz la pantalla no s'apaga (tauleta de nit), si el navegador ho permet
+    // Pantalla sempre encesa: amb el botó de l'ull, o sempre en mode zz (tauleta de nit).
+    // Fa servir l'API Screen Wake Lock: la pantalla no s'enfosqueix ni es bloqueja mentre l'app és a primer pla.
+    const AWAKE_STORAGE_KEY = 'mondaineKeepAwake';
+    let keepAwake = readStorage(AWAKE_STORAGE_KEY, '0') === '1';
     let wakeLock = null;
 
+    function applyAwakeButton() {
+        const btn = document.getElementById('awakeBtn');
+        btn.classList.toggle('on', keepAwake);
+        btn.setAttribute('aria-pressed', String(keepAwake));
+        btn.setAttribute('aria-label', T().awakeLabel);
+        btn.title = T().awakeLabel;
+    }
+
+    document.getElementById('awakeBtn').addEventListener('click', () => {
+        keepAwake = !keepAwake;
+        writeStorage(AWAKE_STORAGE_KEY, keepAwake ? '1' : '0');
+        applyAwakeButton();
+        if (keepAwake && !('wakeLock' in navigator)) showToast(T().awakeUnsupported);
+        else showToast(keepAwake ? T().awakeOn : T().awakeOff);
+        updateWakeLock();
+    });
+
+    // Alguns navegadors només ho concedeixen després d'un toc: es torna a demanar en tocar la pantalla
+    document.addEventListener('click', () => { if (!wakeLock) updateWakeLock(); }, { capture: true });
+
     async function updateWakeLock() {
-        const want = document.documentElement.getAttribute('data-theme') === 'zz' && !document.hidden;
+        const want = !document.hidden &&
+            (keepAwake || document.documentElement.getAttribute('data-theme') === 'zz');
         if (want && !wakeLock && 'wakeLock' in navigator) {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
@@ -2541,8 +2823,11 @@
             el.setAttribute('aria-label', I18N[el.dataset.lang].langName);
         });
 
-        renderWeatherLabel();
-        updateAltViews();
+        document.querySelectorAll('[data-i18n-text]').forEach((el) => {
+            el.textContent = t[el.dataset.i18nText] || '';
+        });
+        renderInfo();
+        applyAwakeButton();
         applyVoiceButton();
         applyTheme();
         renderCalendar();
@@ -2587,6 +2872,7 @@
 
     // ---------- Inici ----------
     lastAnnounceKey = hourKey(new Date()); // no s'anuncia l'hora només per obrir la pàgina
+    setInfoPage(infoPageIndex);
     applyLanguage(); // textos, botons, tema i calendari
     currentDateKey = fmtKey(new Date());
     refreshOfficialHolidays(false);
@@ -2596,7 +2882,6 @@
     setTimeout(sizeClockForPortrait, 300);
     requestAnimationFrame(fitCalendar);
     setTimeout(fitCalendar, 350);
-    updateWidgetsFade();
 
     // Les transicions de tema s'activen només després del primer pintat
     requestAnimationFrame(() => requestAnimationFrame(() => {
