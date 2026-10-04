@@ -1,19 +1,18 @@
 {
-  "name": "Quinqué i pèndol",
-  "short_name": "Quinqué",
-  "description": "Natura morta de Laura López amb quinqué que s'encén de nit; la paret gira i mostra un rellotge de pèndol amb carilló de Westminster, calendari i temps.",
+  "name": "Rellotge i calendari",
+  "short_name": "Rellotge",
+  "description": "Rellotge d'estació amb calendari, festius de Catalunya i el temps del lloc on ets.",
   "lang": "ca",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
-  "background_color": "#0c0a08",
-  "theme_color": "#1a120c",
+  "background_color": "#161616",
+  "theme_color": "#161616",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
