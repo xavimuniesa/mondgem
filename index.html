@@ -457,6 +457,67 @@
             font-variant-numeric: tabular-nums;
         }
 
+        /* Pàgina de localització: localitat, comunitat/regió/land…, país, altitud i coordenades */
+        .info-page--location {
+            justify-content: center;
+            gap: 0;
+        }
+
+        .loc-name {
+            max-width: 100%;
+            font-family: 'Hiragino Kaku Gothic Std', 'Hiragino Kaku Gothic StdN', 'HiraKakuStd-W8', 'HiraKakuStdN-W8',
+                'Hiragino Sans', 'HiraginoSans-W8', 'HiraginoSans-W7', 'Hiragino Kaku Gothic ProN', 'HiraKakuProN-W6',
+                -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 800;
+            font-size: min(11cqw, 15cqh);
+            line-height: 1.1;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loc-region,
+        .loc-country {
+            max-width: 100%;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 600;
+            font-size: min(5.6cqw, 8cqh);
+            line-height: 1.3;
+            color: var(--widget-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loc-region {
+            margin-top: 0.35em;
+        }
+
+        .loc-country:empty,
+        .loc-region:empty {
+            display: none;
+        }
+
+        .loc-facts {
+            width: 100%;
+            margin-top: 9cqh;
+            display: grid;
+            grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+            gap: 4cqw;
+        }
+
+        .loc-facts .metric-main {
+            font-size: min(8cqw, 11cqh);
+        }
+
+        .loc-facts .loc-coords {
+            font-size: 0.62em;
+            line-height: 1.25;
+            white-space: pre;
+            text-align: left;
+        }
+
         /* Unitat petita al costat de la xifra (km/h) */
         .metric-value small {
             font-size: 0.42em;
@@ -1269,12 +1330,12 @@
             </div>
             <div class="info-page info-page--metrics">
                 <div class="metrics-grid">
-                    <div class="metric metric--temp">
+                    <div class="metric metric--forecast">
                         <div class="metric-main">
-                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                            <span class="metric-value" id="mTemp">--</span>
+                            <svg class="metric-icon" id="mForecastIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/></svg>
+                            <span class="metric-value" id="mForecast">--</span>
                         </div>
-                        <div class="metric-label" data-i18n-text="temperature"></div>
+                        <div class="metric-label" data-i18n-text="next12h"></div>
                     </div>
                     <div class="metric metric--hum">
                         <div class="metric-main">
@@ -1299,21 +1360,24 @@
                     </div>
                 </div>
             </div>
-            <div class="info-page info-page--forecast">
-                <div class="metrics-grid metrics-grid--two">
-                    <div class="metric metric--forecast">
-                        <div class="metric-main">
-                            <svg class="metric-icon" id="mForecastIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/></svg>
-                            <span class="metric-value" id="mForecast">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="next12h"></div>
-                    </div>
-                    <div class="metric metric--alt">
+            <div class="info-page info-page--location">
+                <div class="loc-name" id="locName">…</div>
+                <div class="loc-region" id="locRegion"></div>
+                <div class="loc-country" id="locCountry"></div>
+                <div class="loc-facts">
+                    <div class="metric">
                         <div class="metric-main">
                             <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>
                             <span class="metric-value" id="mAlt">--</span>
                         </div>
                         <div class="metric-label" data-i18n-text="altitude"></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-main">
+                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/><circle cx="12" cy="12" r="1.6"/></svg>
+                            <span class="metric-value loc-coords" id="mCoords">--</span>
+                        </div>
+                        <div class="metric-label" data-i18n-text="coordinates"></div>
                     </div>
                 </div>
             </div>
@@ -1339,12 +1403,13 @@
             langName: 'Català',
             days: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
             wind: 'Vent', next12h: 'Properes 12 h',
+            coordinates: 'Coordenades', hemi: ['N', 'S', 'E', 'O'],
             compass: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
             awakeLabel: 'Pantalla sempre encesa',
             awakeOn: 'Pantalla sempre encesa', awakeOff: 'La pantalla s’apaga com sempre',
             awakeUnsupported: 'Aquest navegador no pot mantenir la pantalla encesa',
             location: 'Població', altitude: 'Altitud', temperature: 'Temperatura', humidity: 'Humitat',
-            feels: 'Sensació tèrmica', forecast: 'Previsió properes 12 hores',
+            feels: 'Sensació', forecast: 'Previsió properes 12 hores',
             prevMonth: 'Mes anterior', nextMonth: 'Mes següent', language: 'Idioma',
             weather: { snow: 'Neu', rain: 'Pluja', fog: 'Boira', clear: 'Serè', clearNight: 'Serè', cloud: 'Núvols' },
             themeNames: { light: 'diürn', dark: 'nocturn', zz: 'zz (tauleta de nit)' },
@@ -1365,6 +1430,7 @@
             langName: 'Français',
             days: ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'],
             wind: 'Vent', next12h: 'Prochaines 12 h',
+            coordinates: 'Coordonnées', hemi: ['N', 'S', 'E', 'O'],
             compass: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
             awakeLabel: 'Écran toujours allumé',
             awakeOn: 'Écran toujours allumé', awakeOff: 'L’écran s’éteint normalement',
@@ -1391,6 +1457,7 @@
             langName: 'Deutsch',
             days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
             wind: 'Wind', next12h: 'Nächste 12 Std.',
+            coordinates: 'Koordinaten', hemi: ['N', 'S', 'O', 'W'],
             compass: ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'],
             awakeLabel: 'Bildschirm bleibt an',
             awakeOn: 'Bildschirm bleibt an', awakeOff: 'Bildschirm schaltet sich normal ab',
@@ -1417,6 +1484,7 @@
             langName: 'English',
             days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
             wind: 'Wind', next12h: 'Next 12 h',
+            coordinates: 'Coordinates', hemi: ['N', 'S', 'E', 'W'],
             compass: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
             awakeLabel: 'Screen always on',
             awakeOn: 'Screen stays on', awakeOff: 'Screen sleeps as usual',
@@ -1772,10 +1840,8 @@
         }
 
         grid.appendChild(fragment);
-
-        if (typeof sizeClockForPortrait === 'function') {
-            requestAnimationFrame(sizeClockForPortrait);
-        }
+        // El calendari sempre té la mateixa alçada (6 setmanes): no cal tornar a calcular el rellotge.
+        // (Abans es recalculava i, durant un fotograma, el rellotge tornava a la mida per defecte: rebotava.)
     }
 
     // ---------- Dades meteorològiques i ubicació ----------
@@ -1785,7 +1851,28 @@
     let fetchInProgress = false;
 
     // Últimes dades conegudes (null = sense dada → es mostra "--")
-    const wx = { temp: null, feels: null, hum: null, alt: null, city: null, windSpeed: null, windDir: null };
+    const wx = { temp: null, feels: null, hum: null, alt: null, city: null, windSpeed: null, windDir: null,
+        region: null, country: null, countryCode: null, lat: null, lon: null };
+
+    // Comunitat autònoma, regió, Land… (nivell 4) i, on és el costum, també el departament o comtat (nivell 6)
+    const COUNTRIES_WITH_COUNTY = ['FR', 'GB', 'IE', 'US'];
+
+    function placeDetails(geo) {
+        if (!geo) return { region: null, country: null, countryCode: null };
+        const admin = (geo.localityInfo && Array.isArray(geo.localityInfo.administrative)) ? geo.localityInfo.administrative : [];
+        const level6 = admin.find(a => a.adminLevel === 6);
+        const parts = [];
+        const place = geo.city || geo.locality;
+        if (COUNTRIES_WITH_COUNTY.includes(geo.countryCode) && level6 && level6.name && level6.name !== place) parts.push(level6.name);
+        if (geo.principalSubdivision && geo.principalSubdivision !== place && !parts.includes(geo.principalSubdivision)) {
+            parts.push(geo.principalSubdivision);
+        }
+        return {
+            region: parts.join(' · ') || null,
+            country: geo.countryName || null,
+            countryCode: geo.countryCode || null
+        };
+    }
 
     function setWeather(values) {
         Object.assign(wx, values);
@@ -1841,6 +1928,7 @@
             currentWeatherEmoji = cur ? weatherEmoji(cur.weather_code, cur.is_day) : '🌡️';
             const num = v => (v == null || Number.isNaN(Number(v)) ? null : Math.round(Number(v)));
             setWeather({
+                lat, lon,
                 temp: num(cur && cur.temperature_2m),
                 feels: num(cur && cur.apparent_temperature),
                 hum: num(cur && cur.relative_humidity_2m),
@@ -1853,7 +1941,7 @@
 
             if (geoData !== undefined) {
                 const place = geoData && (geoData.city || geoData.locality || geoData.principalSubdivision || geoData.countryName);
-                setWeather({ city: place || null });
+                setWeather({ city: place || null, ...placeDetails(geoData) });
                 if (place) lastGeoCoords = coords;
             }
 
@@ -1891,7 +1979,8 @@
     function setFallbackData() {
         currentWeatherEmoji = '🌡️';
         lastWeather = null;
-        setWeather({ temp: null, feels: null, hum: null, alt: null, city: null, windSpeed: null, windDir: null });
+        setWeather({ temp: null, feels: null, hum: null, alt: null, city: null, windSpeed: null, windDir: null,
+            region: null, country: null, countryCode: null, lat: null, lon: null });
         applyWeatherCondition(null);
     }
 
@@ -1989,12 +2078,15 @@
         const calendarSection = document.querySelector('.calendar-section');
         const clockSection = document.querySelector('.clock-section');
 
-        svg.style.width = '';
-        svg.style.height = '';
+        // En horitzontal la mida la posa el CSS
+        if (!isPortrait) {
+            svg.style.width = '';
+            svg.style.height = '';
+            return;
+        }
 
-        if (!isPortrait) return;
-
-        requestAnimationFrame(() => {
+        // En vertical es calcula sense buidar la mida actual (així no hi ha cap fotograma intermedi)
+        {
             const cardStyles = getComputedStyle(appCard);
             const gap = parseFloat(cardStyles.rowGap) || 0;
 
@@ -2007,11 +2099,13 @@
             const available = totalHeight - used;
             const maxByWidth = clockSection.clientWidth;
 
-            let size = Math.max(120, Math.min(available, maxByWidth, 340));
+            let size = Math.round(Math.max(120, Math.min(available, maxByWidth, 340)));
 
             if (isFinite(size) && size > 0) {
-                svg.style.width = `${size}px`;
-                svg.style.height = `${size}px`;
+                if (svg.style.width !== `${size}px`) {
+                    svg.style.width = `${size}px`;
+                    svg.style.height = `${size}px`;
+                }
 
                 // En pantalles molt estretes, els botons de dalt podrien tocar el bisell: s'encongeix el just
                 for (let i = 0; i < 4; i++) {
@@ -2022,7 +2116,7 @@
                     svg.style.height = `${size}px`;
                 }
             }
-        });
+        }
     }
 
     function minButtonClearance(svg) {
@@ -2196,8 +2290,8 @@
         }
     }
 
-    // Pàgines, d'esquerra a dreta: data · població i temps (la que surt primer) · indicadors · previsió i altitud
-    const INFO_PAGES = ['date', 'place', 'metrics', 'forecast'];
+    // Pàgines, d'esquerra a dreta: data · població i temps (la que surt primer) · indicadors · localització
+    const INFO_PAGES = ['date', 'place', 'metrics', 'location'];
     let infoPageIndex = 1;
 
     function setInfoPage(index, direction = 1) {
@@ -2253,7 +2347,18 @@
         const windLabel = infoViewEl.querySelector('.metric--wind .metric-label');
         const dir = wx.windSpeed ? compassPoint(wx.windDir) : '';
         if (windLabel) windLabel.textContent = dir ? `${t.wind} · ${dir}` : t.wind;
+        // Localització: el país no es posa si és l'Estat espanyol
+        set('locName', wx.city || dash);
+        set('locRegion', wx.region || '');
+        set('locCountry', wx.countryCode && wx.countryCode !== 'ES' ? (wx.country || '') : '');
         set('mAlt', wx.alt != null ? `${wx.alt} m` : dash);
+        if (wx.lat != null && wx.lon != null) {
+            const [n, s, e, w] = t.hemi;
+            const fmt = v => Math.abs(v).toLocaleString(t.locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+            set('mCoords', `${fmt(wx.lat)}° ${wx.lat >= 0 ? n : s}\n${fmt(wx.lon)}° ${wx.lon >= 0 ? e : w}`);
+        } else {
+            set('mCoords', dash);
+        }
         if (!lastWeather) set('mForecast', dash);
         else renderWeatherLabel();
 
@@ -2277,6 +2382,23 @@
             const w = el.getBoundingClientRect().width;
             if (!w) return;
             el.style.fontSize = `${Math.floor(Math.min(100 * maxW / w, maxH))}px`;
+        });
+        fitMetricValues();
+    }
+
+    // Si una xifra no cap a la seva casella, només aquella s'encongeix (les altres mantenen la mida)
+    function fitMetricValues() {
+        infoViewEl.querySelectorAll('.metric-main').forEach((main) => {
+            main.style.fontSize = '';
+            const cell = main.parentElement;
+            const avail = cell.clientWidth;
+            const value = main.querySelector('.metric-value');
+            // La xifra pot estar retallada amb «…»: es compta la seva amplada sencera
+            const need = main.scrollWidth + (value ? value.scrollWidth - value.clientWidth : 0);
+            if (avail && need > avail) {
+                const base = parseFloat(getComputedStyle(main).fontSize);
+                main.style.fontSize = `${Math.floor(base * avail / need * 0.97)}px`;
+            }
         });
     }
 
