@@ -674,6 +674,22 @@
             background-color: var(--mondaine-red);
         }
 
+        /* Botó «digues l'hora»: la icona sempre visible; s'il·lumina mentre parla */
+        .ctrl-btn.say-time-btn svg {
+            display: block;
+        }
+
+        .say-time-btn.speaking {
+            box-shadow: inset 0 0 0 1.5px var(--mondaine-red);
+        }
+
+        /* Els avisos llargs (l'hora dita) poden ocupar dues línies */
+        .toast {
+            max-width: min(92vw, 460px);
+            white-space: normal;
+            text-align: center;
+        }
+
         /* Botó de pantalla sempre encesa */
         .awake-btn.on .icon-awake-on,
         .awake-btn:not(.on) .icon-awake-off {
@@ -1428,6 +1444,13 @@
             </span>
         </button>
 
+        <button class="ctrl-btn say-time-btn" id="sayTimeBtn" type="button" aria-label="Digues l'hora">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 18.5l.9-3.1A8.5 8.5 0 1 1 8.6 19z"/>
+                <path d="M12 7.2V12l3 1.8"/>
+            </svg>
+        </button>
+
         <button class="ctrl-btn awake-btn" id="awakeBtn" type="button" aria-pressed="false" aria-label="Pantalla sempre encesa">
             <svg class="icon-awake-off" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
@@ -1662,7 +1685,7 @@
             themeAutoNow: n => `Tema automàtic (ara ${n}). Toca per canviar.`,
             themeToast: n => `Tema ${n}`,
             themeAutoToast: 'Tema automàtic (dia de 7 a 20 h)',
-            voiceLabels: { off: 'Anunci horari silenciat', always: 'Anunci horari activat', day: 'Anunci horari de 7 a 23 h' },
+            voiceLabels: { off: 'So desactivat', always: 'So activat: anunci de les hores en punt' },
             voiceTest: n => `Prova de veu: ${n}`,
             systemVoice: 'veu del sistema',
             voiceBlocked: 'La veu no pot sonar: toca la pantalla',
@@ -1671,6 +1694,7 @@
             installTitle: 'Instal·la el rellotge', installButton: 'Instal·la',
             installHintAndroid: 'Tindràs l’app a la pantalla d’inici, a pantalla completa.',
             installHintIos: 'Toca {share} i després «Afegeix a la pantalla d’inici».',
+            sayTime: 'Digues l’hora',
             langToast: 'Idioma: català'
         },
         fr: {
@@ -1692,7 +1716,7 @@
             themeAutoNow: n => `Thème automatique (actuellement ${n}). Touchez pour changer.`,
             themeToast: n => `Thème ${n}`,
             themeAutoToast: 'Thème automatique (jour de 7 h à 20 h)',
-            voiceLabels: { off: 'Annonce horaire coupée', always: 'Annonce horaire activée', day: 'Annonce horaire de 7 h à 23 h' },
+            voiceLabels: { off: 'Son coupé', always: 'Son activé : annonce des heures pile' },
             voiceTest: n => `Test de voix : ${n}`,
             systemVoice: 'voix du système',
             voiceBlocked: 'La voix ne peut pas sonner : touchez l’écran',
@@ -1701,6 +1725,7 @@
             installTitle: 'Installer l’horloge', installButton: 'Installer',
             installHintAndroid: 'L’app sera sur l’écran d’accueil, en plein écran.',
             installHintIos: 'Touchez {share} puis « Sur l’écran d’accueil ».',
+            sayTime: 'Dire l’heure',
             langToast: 'Langue : français'
         },
         de: {
@@ -1722,7 +1747,7 @@
             themeAutoNow: n => `Automatisches Design (jetzt ${n}). Tippen zum Wechseln.`,
             themeToast: n => `Design ${n}`,
             themeAutoToast: 'Automatisches Design (Tag von 7 bis 20 Uhr)',
-            voiceLabels: { off: 'Zeitansage stumm', always: 'Zeitansage aktiviert', day: 'Zeitansage von 7 bis 23 Uhr' },
+            voiceLabels: { off: 'Ton aus', always: 'Ton an: Ansage zur vollen Stunde' },
             voiceTest: n => `Stimmtest: ${n}`,
             systemVoice: 'Systemstimme',
             voiceBlocked: 'Die Stimme ist blockiert: Bildschirm antippen',
@@ -1731,6 +1756,7 @@
             installTitle: 'Uhr installieren', installButton: 'Installieren',
             installHintAndroid: 'Die App liegt dann im Vollbild auf dem Startbildschirm.',
             installHintIos: 'Tippe auf {share} und dann „Zum Home-Bildschirm“.',
+            sayTime: 'Uhrzeit ansagen',
             langToast: 'Sprache: Deutsch'
         },
         en: {
@@ -1752,7 +1778,7 @@
             themeAutoNow: n => `Automatic theme (now ${n}). Tap to change.`,
             themeToast: n => `Theme: ${n}`,
             themeAutoToast: 'Automatic theme (day from 7 am to 8 pm)',
-            voiceLabels: { off: 'Hourly announcement muted', always: 'Hourly announcement on', day: 'Hourly announcement 7 am – 11 pm' },
+            voiceLabels: { off: 'Sound off', always: 'Sound on: hourly announcement' },
             voiceTest: n => `Voice test: ${n}`,
             systemVoice: 'system voice',
             voiceBlocked: 'The voice is blocked: tap the screen',
@@ -1761,6 +1787,7 @@
             installTitle: 'Install the clock', installButton: 'Install',
             installHintAndroid: 'Get the app on your home screen, full screen.',
             installHintIos: 'Tap {share}, then “Add to Home Screen”.',
+            sayTime: 'Say the time',
             langToast: 'Language: English'
         }
     };
@@ -2863,11 +2890,12 @@
     document.addEventListener('visibilitychange', updateWakeLock);
 
     // ---------- Anunci horari (en l'idioma triat) ----------
-    // Modes: silenciat → sempre → només de dia (de 7 h a 23 h)
+    // L'altaveu només activa o desactiva el so (l'anunci de les hores en punt)
     const VOICE_STORAGE_KEY = 'mondaineVoiceMode';
-    const VOICE_MODES = ['off', 'always', 'day'];
+    const VOICE_MODES = ['off', 'always'];
 
     let voiceMode = readStorage(VOICE_STORAGE_KEY, 'off');
+    if (voiceMode === 'day') voiceMode = 'always'; // l'antic mode «de dia» passa a «activat»
     if (!VOICE_MODES.includes(voiceMode)) voiceMode = 'off';
     let lastAnnounceKey = null;
     let audioCtx = null;
@@ -3051,7 +3079,7 @@
     // Desbloqueja la veu amb un toc real (touchend/click; pointerdown no compta a iOS)
     function unlockAudio(e) {
         if (voiceMode === 'off' || speechUnlocked) return;
-        if (e && e.target && e.target.closest && e.target.closest('#voiceToggleBtn')) return; // el botó ja parla ell mateix
+        if (e && e.target && e.target.closest && e.target.closest('#voiceToggleBtn, #sayTimeBtn')) return; // aquests botons ja parlen ells mateixos
         speak('.', 0.01);
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC && !IS_IOS) {
@@ -3095,7 +3123,6 @@
 
         const h = now.getHours();
         if (voiceMode === 'off') return;
-        if (voiceMode === 'day' && (h < 7 || h > 23)) return;
 
         playChime().then(() => speak(friendlyAnnouncement(h)));
         if (!speechUnlocked) showToast(T().tapToEnable);
@@ -3108,73 +3135,129 @@
         btn.title = T().voiceLabels[voiceMode];
     }
 
-    // Botó de l'altaveu: toc curt = canvia el mode; mantenir premut = prova de veu ara mateix.
-    // La prova es dispara en aixecar el dit (no amb un temporitzador) perquè l'iPhone només deixa
-    // parlar com a resposta directa a un toc.
+    // Botó de l'altaveu: cada toc activa o desactiva el so
     const voiceBtn = document.getElementById('voiceToggleBtn');
-    const VOICE_HOLD_MS = 600;
-    let voicePressStart = 0;
-    let voiceHoldTimer = null;
-    let suppressVoiceClick = false;
 
-    function playVoiceTest() {
-        const voice = pickVoice();
-        showToast(T().voiceTest(voice ? voice.name : T().systemVoice));
-        speak(friendlyAnnouncement(new Date().getHours()));
-    }
-
-    function cycleVoiceMode() {
-        voiceMode = VOICE_MODES[(VOICE_MODES.indexOf(voiceMode) + 1) % VOICE_MODES.length];
+    function toggleVoice() {
+        voiceMode = voiceMode === 'off' ? 'always' : 'off';
         writeStorage(VOICE_STORAGE_KEY, voiceMode);
         applyVoiceButton();
         showToast(T().voiceLabels[voiceMode]);
 
         // El toc de l'usuari "desbloqueja" l'àudio a l'iPhone, i de pas se sent la veu triada
-        if (voiceMode === 'always' || voiceMode === 'day') {
+        if (voiceMode === 'always') {
             speak(activationGreeting(new Date().getHours()));
         } else if ('speechSynthesis' in window) {
             speechSynthesis.cancel();
         }
     }
 
-    voiceBtn.addEventListener('pointerdown', () => {
-        voicePressStart = Date.now();
-        clearTimeout(voiceHoldTimer);
-        // Senyal visual: ja pots deixar anar per escoltar la prova
-        voiceHoldTimer = setTimeout(() => voiceBtn.classList.add('holding'), VOICE_HOLD_MS);
-    });
+    voiceBtn.addEventListener('click', toggleVoice);
 
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => {
-        voiceBtn.addEventListener(type, () => {
-            clearTimeout(voiceHoldTimer);
-            voiceBtn.classList.remove('holding');
-        });
-    });
+    // ---------- Botó «digues l'hora» ----------
+    // Diu l'hora exacta en l'idioma triat. En català, amb el sistema tradicional de quarts
+    // (sempre es compta cap a l'hora que ve: «un quart de dues» = 13:15).
+    const CA_NUM = ['', 'un', 'dos', 'tres', 'quatre', 'cinc', 'sis', 'set'];
 
-    voiceBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+    function caPartOfDay(h) {
+        if (h === 0) return 'de la nit';
+        if (h <= 5) return 'de la matinada';
+        if (h <= 11) return 'del matí';
+        if (h === 12) return 'del migdia';
+        if (h <= 18) return 'de la tarda';
+        if (h <= 21) return 'del vespre';
+        return 'de la nit';
+    }
 
-    voiceBtn.addEventListener('touchend', (e) => {
-        if (voicePressStart && Date.now() - voicePressStart >= VOICE_HOLD_MS) {
-            e.preventDefault();
-            suppressVoiceClick = true;
-            voicePressStart = 0;
-            playVoiceTest();
+    // «de dues», «d'una», «d'onze»
+    function caDeHour(h) {
+        const word = CA_HOURS[h % 12];
+        return /^[aeiouàèéíòóú]/i.test(word) ? `d’${word}` : `de ${word}`;
+    }
+
+    function caMinutes(n) {
+        return n === 1 ? 'un minut' : `${CA_NUM[n]} minuts`;
+    }
+
+    function catalanTime(now) {
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const next = (h + 1) % 24;
+        const nextName = `${caDeHour(next)} ${caPartOfDay(next)}`;
+        const isOne = h % 12 === 1;
+
+        if (m === 0) {
+            if (h === 0) return 'És mitjanit en punt.';
+            if (h === 12) return 'És migdia en punt.';
+            return isOne ? `És la una en punt ${caPartOfDay(h)}.` : `Són les ${CA_HOURS[h % 12]} en punt ${caPartOfDay(h)}.`;
         }
+        if (m <= 6) {
+            return isOne ? `És la una i ${caMinutes(m)} ${caPartOfDay(h)}.`
+                : `Són les ${CA_HOURS[h % 12]} i ${caMinutes(m)} ${caPartOfDay(h)}.`;
+        }
+        if (m >= 54) {
+            const left = 60 - m;
+            const nextWord = CA_HOURS[next % 12];
+            const target = next % 12 === 1 ? 'la una' : `les ${nextWord}`;
+            return `${left === 1 ? 'Falta un minut' : `Falten ${CA_NUM[left]} minuts`} per a ${target} ${caPartOfDay(next)}.`;
+        }
+
+        // De 7 a 53 minuts: quarts, mig quart, i «i N» / «menys N»
+        const QUARTS = ['', 'un quart', 'dos quarts', 'tres quarts'];
+        const verb = q => (q <= 1 ? 'És' : 'Són');
+        const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+
+        if (m === 7 || m === 8) return `És mig quart ${nextName}.`;
+        const q = Math.round(m / 15);          // quart més proper (1, 2 o 3)
+        const diff = m - q * 15;               // de -6 a +6 respecte d'aquest quart
+        if (diff === 0) return `${verb(q)} ${QUARTS[q]} ${nextName}.`;
+        if (diff === 7 || diff === 8) return `${verb(q)} ${QUARTS[q]} i mig ${nextName}.`;
+        if (diff > 0) return `${verb(q)} ${QUARTS[q]} i ${CA_NUM[diff]} ${nextName}.`;
+        // Uns minuts abans d'un quart
+        if (-diff === 7 || -diff === 8) return cap(`${verb(q - 1)} ${QUARTS[q - 1]} i mig ${nextName}.`);
+        return `${verb(q)} ${QUARTS[q]} menys ${CA_NUM[-diff]} ${nextName}.`;
+    }
+
+    const TELL_TIME = {
+        ca: catalanTime,
+        fr(now) {
+            const h = now.getHours(), m = now.getMinutes();
+            if (m === 0) return SPEECH.fr.hour(h);
+            if (h === 0) return `Il est minuit ${m}.`;
+            if (h === 12) return `Il est midi ${m}.`;
+            return `Il est ${h} heure${h === 1 ? '' : 's'} ${m}.`;
+        },
+        de(now) {
+            const h = now.getHours(), m = now.getMinutes();
+            if (m === 0) return SPEECH.de.hour(h);
+            return `Es ist ${h} Uhr ${m}.`;
+        },
+        en(now) {
+            const h = now.getHours(), m = now.getMinutes();
+            if (m === 0) return SPEECH.en.hour(h);
+            const h12 = h % 12 === 0 ? 12 : h % 12;
+            return `It's ${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'a.m.' : 'p.m.'}`;
+        }
+    };
+
+    function tellTime(now = new Date()) {
+        return (TELL_TIME[currentLang] || TELL_TIME.ca)(now);
+    }
+
+    const sayTimeBtn = document.getElementById('sayTimeBtn');
+
+    sayTimeBtn.addEventListener('click', () => {
+        const text = tellTime();
+        showToast(text);
+        speak(text); // dins del toc: també sona a l'iPhone, encara que l'anunci horari estigui desactivat
+        sayTimeBtn.classList.add('speaking');
+        setTimeout(() => sayTimeBtn.classList.remove('speaking'), 2500);
     });
 
-    voiceBtn.addEventListener('click', () => {
-        if (suppressVoiceClick) {
-            suppressVoiceClick = false;
-            return;
-        }
-        const longPress = voicePressStart && Date.now() - voicePressStart >= VOICE_HOLD_MS;
-        voicePressStart = 0;
-        if (longPress) {
-            playVoiceTest();
-        } else {
-            cycleVoiceMode();
-        }
-    });
+    function applySayTimeButton() {
+        sayTimeBtn.setAttribute('aria-label', T().sayTime);
+        sayTimeBtn.title = T().sayTime;
+    }
 
     // Si l'anunci ja estava activat d'una sessió anterior, el primer toc real desbloqueja la veu
     ['touchend', 'click'].forEach((t) => document.addEventListener(t, unlockAudio, { capture: true, passive: true }));
@@ -3274,6 +3357,7 @@
         applyAwakeButton();
         renderBackFlag();
         renderInstallBanner();
+        applySayTimeButton();
         applyVoiceButton();
         applyTheme();
         renderCalendar();
