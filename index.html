@@ -472,7 +472,10 @@
             font-size: min(9cqw, 14cqh);
             line-height: 1.1;
             color: var(--text-color);
+            /* Noms llargs: fitPlaceName() redueix la lletra i, si cal, els parteix en dues línies equilibrades */
             white-space: nowrap;
+            text-align: center;
+            text-wrap: balance;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -568,7 +571,10 @@
             font-size: min(11cqw, 15cqh);
             line-height: 1.1;
             color: var(--text-color);
+            /* Noms llargs: fitPlaceName() redueix la lletra i, si cal, els parteix en dues línies equilibrades */
             white-space: nowrap;
+            text-align: center;
+            text-wrap: balance;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -1893,7 +1899,7 @@
             '06-24': 'Sant Joan',
             '08-15': "L'Assumpció",
             '09-11': 'Diada Nacional de Catalunya',
-            '10-12': "Festa Nacional de Ñórdor",
+            '10-12': "Festa Nacional d'Espanya",
             '12-08': 'La Immaculada',
             '12-25': 'Nadal',
             '12-26': 'Sant Esteve'
@@ -1906,7 +1912,7 @@
             '05-01': 'Festa del Treball',
             '06-24': 'Sant Joan',
             '09-11': 'Diada Nacional de Catalunya',
-            '10-12': "Festa Nacional de Ñórdor",
+            '10-12': "Festa Nacional d'Espanya",
             '11-01': 'Tots Sants',
             '12-06': 'Dia de la Constitució',
             '12-08': 'La Immaculada',
@@ -1922,7 +1928,7 @@
         '06-24': 'Sant Joan',
         '08-15': "L'Assumpció",
         '09-11': 'Diada Nacional de Catalunya',
-        '10-12': "Festa Nacional de Ñórdor",
+        '10-12': "Festa Nacional d'Espanya",
         '11-01': 'Tots Sants',
         '12-06': 'Dia de la Constitució',
         '12-08': 'La Immaculada',
@@ -2663,7 +2669,42 @@
 
     // La temperatura i el dia de la setmana s'escalen perquè omplin la finestra,
     // sigui quina sigui la font que tingui el dispositiu (Hiragino al Mac/iPhone, una altra a Windows/Android)
+    // Nom de la població: si no hi cap en una línia, primer s'encongeix una mica;
+    // si encara no hi cap, passa a dues línies equilibrades («Santa Coloma / de Gramenet»)
+    // i només s'encongeix més si fa falta. Un nom d'una sola paraula es queda en una línia.
+    function fitPlaceName(el) {
+        if (!el || !el.parentElement) return;
+        el.style.fontSize = '';
+        el.style.whiteSpace = 'nowrap';
+        const page = el.parentElement;
+        const cs = getComputedStyle(page);
+        const avail = page.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const base = parseFloat(getComputedStyle(el).fontSize);
+        const oneLine = el.scrollWidth;
+        if (!avail || !base || !oneLine || oneLine <= avail) return;
+
+        const ratio = avail / oneLine;
+        const words = el.textContent.trim().split(/\s+/).length;
+        if (ratio >= 0.8 || words < 2) {
+            el.style.fontSize = `${Math.floor(base * ratio * 0.98)}px`;
+            return;
+        }
+
+        el.style.whiteSpace = 'normal';
+        let size = base * 0.9;
+        for (let i = 0; i < 14; i++) {
+            el.style.fontSize = `${Math.floor(size)}px`;
+            const lineH = parseFloat(getComputedStyle(el).lineHeight) || size * 1.1;
+            const lines = Math.round(el.scrollHeight / lineH);
+            if (lines <= 2 && el.scrollWidth <= el.clientWidth + 1) break;
+            size *= 0.92;
+            if (size < base * 0.4) break;
+        }
+    }
+
     function fitAltViews() {
+        fitPlaceName(document.getElementById('pagePlace'));
+        fitPlaceName(document.getElementById('locName'));
         [['.info-page--place', '.alt-temp-row', 0.84, 0.42],
          ['.info-page--date', '.page-weekday', 0.86, 0.3]].forEach(([pageSel, targetSel, wRatio, hRatio]) => {
             const page = infoViewEl.querySelector(pageSel);
@@ -2672,7 +2713,14 @@
             const cs = getComputedStyle(page);
             const innerW = page.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
             const maxW = Math.min(page.clientWidth * wRatio, innerW);
-            const maxH = page.clientHeight * hRatio;
+            let maxH = page.clientHeight * hRatio;
+            const place = targetSel === '.alt-temp-row' && page.querySelector('.page-place');
+            if (place) {
+                // Alçada que queda sota el nom de la població (que pot ocupar dues línies)
+                const innerH = page.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+                const placeH = place.offsetHeight + parseFloat(getComputedStyle(place).marginBottom);
+                maxH = Math.min(maxH, (innerH - placeH) * 0.92);
+            }
             if (!maxW || !maxH) return;
             el.style.fontSize = '100px';
             const w = el.getBoundingClientRect().width;
