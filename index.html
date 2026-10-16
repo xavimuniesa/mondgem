@@ -1271,8 +1271,8 @@
         }
 
         html[data-theme="zz"] .clock-dial { fill: #000000; stroke: #000000; }
-        html[data-theme="zz"] .clock-brand { fill: var(--zz-dim); }
-        html[data-theme="zz"] .clock-badge { fill: var(--zz-dim); }
+        html[data-theme="zz"] .clock-brand { fill: var(--zz); } /* logo i sotalogo: mateixa intensitat que les agulles */
+        html[data-theme="zz"] .clock-badge { fill: var(--zz); }
         html[data-theme="zz"] .clock-badge-cross { fill: #000000; }
         html[data-theme="zz"] .mark-hour { stroke: var(--zz); }
         html[data-theme="zz"] .mark-minute { stroke: var(--zz-dim); }
@@ -1520,7 +1520,7 @@
             <circle class="clock-dial" cx="150" cy="150" r="140" fill="url(#dialGradient)" stroke="url(#bezelGradient)" stroke-width="12"/>
 
             <!-- Text MONDAINE -->
-            <text class="clock-brand" x="150" y="97" font-family bold="'Montserrat', -apple-system, sans-serif" font-size="16" font-weight="300" letter-spacing="1.8" fill="#000000" text-anchor="middle">MONDAINE</text>
+            <text class="clock-brand" x="150" y="97" font-family="'Montserrat', -apple-system, sans-serif" font-size="16" font-weight="300" letter-spacing="1.8" fill="#000000" text-anchor="middle">MONDAINE</text>
 
             <!-- Sub-logo Swiss Watch -->
             <g transform="translate(150, 110)">
