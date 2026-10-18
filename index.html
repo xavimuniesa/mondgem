@@ -49,6 +49,7 @@
             --today-glow: rgba(227, 6, 19, 0.6);
             /* Diumenges i festius en vermell, dissabtes en verd maragda (més clars en fosc, perquè es llegeixin) */
             --holiday-color: #ff3b45;
+            --pill-border: rgba(255, 255, 255, 0.22);
             --saturday-color: #3fd19a;
             --transition-theme: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
@@ -64,6 +65,7 @@
             --nav-active-bg: rgba(0, 0, 0, 0.06);
             --card-shadow: rgba(30, 30, 40, 0.18);
             --holiday-color: #e30613;
+            --pill-border: #cfd3d9;
             --saturday-color: #00845f;
         }
 
@@ -87,6 +89,7 @@
             --today-glow: rgba(var(--zz-rgb), 0.35);
             /* En zz tot és taronja: el festiu en ple i el dissabte com un dia normal */
             --holiday-color: var(--zz);
+            --pill-border: rgba(var(--zz-rgb), 0.35);
             --saturday-color: var(--zz);
         }
 
@@ -135,7 +138,7 @@
             box-shadow: none;
             border: none;
             width: 100%;
-            max-width: 420px;
+            max-width: 480px;
             height: 100%;
             max-height: 100%;
             padding: clamp(12px, 3vh, 24px);
@@ -143,12 +146,11 @@
             display: grid;
             grid-template-areas:
                 "clock"
-                "calendar";
-            /* minmax(0, 1fr): sense això, la franja lliscable d'indicadors eixampla la columna
-               i desplaça el rellotge i el calendari fora de la pantalla */
+                "calendar"
+                "controls";
             grid-template-columns: minmax(0, 1fr);
-            /* La fila del rellotge s'emporta l'espai sobrant (el rellotge es dimensiona per JS) */
-            grid-template-rows: minmax(0, 1fr) auto;
+            /* La fila del rellotge s'emporta tot l'espai que deixen el calendari i els botons */
+            grid-template-rows: minmax(0, 1fr) auto auto;
             align-items: stretch;
             gap: clamp(8px, 2vh, 20px);
             overflow: hidden;
@@ -164,6 +166,9 @@
             grid-area: clock;
             width: 100%;
             min-height: 0;
+            /* La mida de l'esfera surt de l'espai real d'aquesta zona (vertical i horitzontal):
+               no depèn de cap càlcul en obrir l'app, així que sempre és la mateixa */
+            container-type: size;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -172,6 +177,7 @@
 
         .clock-svg {
             width: min(62vw, 38vh, 300px);
+            width: min(100cqw, 100cqh);
             height: auto;
             max-width: 100%;
             aspect-ratio: 1 / 1;
@@ -190,7 +196,6 @@
             position: relative;
             display: flex;
             flex-shrink: 0;
-            margin-bottom: clamp(6px, 1.5vh, 16px);
             transform-style: preserve-3d;
         }
 
@@ -843,14 +848,15 @@
         .calendar-header-row {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             gap: clamp(6px, 1.5vw, 14px);
             margin-bottom: clamp(4px, 1vh, 16px);
             flex-shrink: 0;
         }
 
         .calendar-header {
-            text-align: center;
+            text-align: left;
+            flex: 1;
             font-weight: 800;
             font-size: calc(clamp(1rem, 4.6vw, 1.4rem) * var(--cal-scale, 1));
             text-transform: capitalize;
@@ -967,24 +973,125 @@
             visibility: hidden;
         }
 
-        /* Botons de la cantonada: anunci horari i tema */
-        /* En vertical, un botó a cada cantonada superior: un rellotge rodó mai no arriba a les
-           cantonades del seu quadrat, així que els botons no el poden tapar sigui quina sigui la mida */
-        .corner-controls {
-            position: absolute;
-            top: clamp(8px, 2vh, 14px);
-            left: clamp(8px, 2vh, 14px);
-            right: clamp(8px, 2vh, 14px);
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            z-index: 10;
-            pointer-events: none;
+        .day.other-month .day-number {
+            color: var(--widget-text);
+            opacity: 0.45;
+            font-weight: 700;
         }
 
-        .corner-controls .ctrl-btn {
-            pointer-events: auto;
+        /* ---------- Pastilles (botons arrodonits, com al model) ---------- */
+        .header-pills {
+            display: flex;
+            gap: clamp(4px, 1.4vw, 8px);
+            flex-shrink: 0;
         }
+
+        .pill {
+            height: calc(clamp(28px, 4vh, 36px) * var(--cal-scale, 1));
+            min-width: 2.6em;
+            padding: 0 0.85em;
+            border-radius: 999px;
+            border: 1.5px solid var(--pill-border);
+            background: transparent;
+            color: var(--text-color);
+            font-size: clamp(0.72rem, 3.2vw, 0.85rem);
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35em;
+            cursor: pointer;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            transition: var(--transition-theme);
+        }
+
+        .pill:active {
+            background-color: var(--nav-active-bg);
+        }
+
+        .pill svg {
+            width: 1.25em;
+            height: 1.25em;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: none;
+        }
+
+        .theme-toggle-btn.light .icon-sun,
+        .theme-toggle-btn.dark .icon-moon,
+        .theme-toggle-btn.zz .icon-zz {
+            display: block;
+        }
+
+        .theme-toggle-btn.manual .theme-auto-label {
+            display: none;
+        }
+
+        .theme-toggle-btn.manual {
+            padding: 0 0.7em;
+        }
+
+        .today-btn {
+            color: var(--mondaine-red);
+        }
+
+        /* Fila de botons sota el calendari: s'ajusta a l'amplada (7 elements sempre en una línia) */
+        .controls-row {
+            grid-area: controls;
+            container-type: inline-size;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .controls-row > *,
+        .lang-pills > * {
+            --u: min(40px, calc((100cqw - 36px) / 8.2));
+        }
+
+        .lang-pills {
+            display: flex;
+            gap: 6px;
+        }
+
+        .controls-row .pill.lang-option {
+            height: var(--u);
+            min-width: calc(var(--u) * 1.3);
+            padding: 0 0.5em;
+            font-size: calc(var(--u) * 0.36);
+            color: var(--widget-text);
+        }
+
+        .controls-row .pill.lang-option[aria-checked="true"] {
+            background-color: var(--mondaine-red);
+            border-color: var(--mondaine-red);
+            color: #ffffff;
+        }
+
+        html[data-theme="zz"] .controls-row .pill.lang-option[aria-checked="true"] {
+            color: #000000;
+        }
+
+        .controls-row .ctrl-btn {
+            width: var(--u);
+            height: var(--u);
+            flex-shrink: 0;
+        }
+
+        .controls-row .ctrl-btn svg {
+            width: 48%;
+            height: 48%;
+        }
+
+
 
         .ctrl-btn {
             position: relative;
@@ -1077,69 +1184,13 @@
             stroke-width: 2.4;
         }
 
-        /* Selector d'idioma: a la cantonada inferior dreta de la zona del rellotge,
-           on l'esfera rodona tampoc no hi arriba */
-        .ctrl-group {
-            display: flex;
-            gap: 8px;
-        }
 
-        .lang-control {
-            position: relative;
-        }
 
-        .lang-btn {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            color: var(--text-color);
-        }
 
-        .lang-menu {
-            position: absolute;
-            right: 0;
-            top: calc(100% + 6px);
-            display: flex;
-            gap: 4px;
-            padding: 4px;
-            border-radius: 999px;
-            background-color: var(--widget-bg);
-            border: 1px solid var(--border-color-soft);
-            box-shadow: 0 6px 18px var(--card-shadow);
-            opacity: 0;
-            transform: translateY(-6px);
-            pointer-events: none;
-            transition: opacity 0.15s ease, transform 0.15s ease;
-        }
 
-        .lang-control.open .lang-menu {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
 
-        .lang-option {
-            min-width: 34px;
-            height: 30px;
-            padding: 0 8px;
-            border-radius: 999px;
-            border: none;
-            background: none;
-            color: var(--widget-text);
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            cursor: pointer;
-        }
 
-        .lang-option[aria-checked="true"] {
-            background-color: var(--mondaine-red);
-            color: #ffffff;
-        }
 
-        html[data-theme="zz"] .lang-option[aria-checked="true"] {
-            color: #000000;
-        }
 
         /* Avís d'instal·lació de l'app */
         .install-banner {
@@ -1243,8 +1294,8 @@
         .toast {
             position: fixed;
             left: 50%;
-            bottom: max(24px, env(safe-area-inset-bottom));
-            transform: translate(-50%, 12px);
+            top: max(18px, env(safe-area-inset-top));
+            transform: translate(-50%, -12px);
             background-color: rgba(0, 0, 0, 0.85);
             color: #ffffff;
             font-size: 0.85rem;
@@ -1303,28 +1354,20 @@
                    La columna dreta té un màxim (calendari compacte) i el rellotge s'emporta la resta */
                 grid-template-areas:
                     "clock ."
-                    "clock controls"
                     "clock calendar"
+                    "clock controls"
                     "clock .";
-                grid-template-columns: minmax(0, 1fr) minmax(0, clamp(240px, 36vw, 340px));
+                grid-template-columns: minmax(0, 1fr) minmax(0, clamp(260px, 38vw, 360px));
                 grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
                 align-items: stretch;
                 column-gap: clamp(12px, 3vw, 40px);
                 row-gap: clamp(6px, 1.6vh, 14px);
             }
 
-            /* Els botons passen a la columna dreta, damunt del calendari: mai no tapen res */
-            .corner-controls {
-                position: static;
-                grid-area: controls;
-                justify-self: end;
-                justify-content: flex-end;
-            }
 
             /* El rellotge es dimensiona segons la seva pròpia columna (abans ho feia segons
                l'amplada de la pantalla i, en pantalles estretes, quedava sota el calendari) */
             .clock-section {
-                container-type: size;
                 justify-self: stretch;
                 align-self: stretch;
             }
@@ -1406,6 +1449,16 @@
 
         /* Escriptori: el calendari creix i els números es llegeixen de lluny */
         @media (orientation: landscape) and (min-width: 1100px) and (min-height: 700px) {
+            .controls-row > *,
+            .lang-pills > * {
+                --u: min(52px, calc((100cqw - 36px) / 8.2));
+            }
+
+            .pill {
+                height: calc(44px * var(--cal-scale, 1));
+                font-size: 1rem;
+            }
+
             .app-card {
                 grid-template-columns: minmax(0, 1fr) minmax(0, clamp(340px, 31vw, 500px));
             }
@@ -1431,71 +1484,6 @@
 <body>
 
 <div class="app-card">
-    <div class="corner-controls">
-        <div class="ctrl-group">
-        <button class="ctrl-btn voice-toggle-btn off" id="voiceToggleBtn" type="button" aria-label="Anunci horari: silenciat">
-            <svg class="icon-voice-off" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 9h3l5-4v14l-5-4H4z"/>
-                <path d="M16 9.5l5 5M21 9.5l-5 5"/>
-            </svg>
-            <svg class="icon-voice-on" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 9h3l5-4v14l-5-4H4z"/>
-                <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>
-            </svg>
-            <span class="voice-day-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="4"/>
-                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>
-                </svg>
-            </span>
-        </button>
-
-        <button class="ctrl-btn say-time-btn" id="sayTimeBtn" type="button" aria-label="Digues l'hora">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4.5 18.5l.9-3.1A8.5 8.5 0 1 1 8.6 19z"/>
-                <path d="M12 7.2V12l3 1.8"/>
-            </svg>
-        </button>
-
-        <button class="ctrl-btn awake-btn" id="awakeBtn" type="button" aria-pressed="false" aria-label="Pantalla sempre encesa">
-            <svg class="icon-awake-off" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
-                <path d="M4 4l16 16"/>
-            </svg>
-            <svg class="icon-awake-on" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
-                <circle cx="12" cy="12" r="2.6"/>
-            </svg>
-        </button>
-        </div>
-
-        <div class="ctrl-group">
-            <div class="lang-control" id="langControl">
-                <div class="lang-menu" id="langMenu" role="radiogroup" aria-label="Idioma">
-                    <button class="lang-option" type="button" role="radio" data-lang="ca" lang="ca">CA</button>
-                    <button class="lang-option" type="button" role="radio" data-lang="fr" lang="fr">FR</button>
-                    <button class="lang-option" type="button" role="radio" data-lang="de" lang="de">DE</button>
-                    <button class="lang-option" type="button" role="radio" data-lang="en" lang="en">EN</button>
-                </div>
-                <button class="ctrl-btn lang-btn" id="langBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Idioma">CA</button>
-            </div>
-
-            <button class="ctrl-btn theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
-                <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="4.5"/>
-                    <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
-                </svg>
-                <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
-                </svg>
-                <svg class="icon-zz" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 10h7l-7 9h7M14 4h6l-6 7h6"/>
-                </svg>
-                <span class="auto-dot"></span>
-            </button>
-        </div>
-    </div>
-
     <div class="clock-section">
       <div class="clock-flip" id="clockFlip">
         <svg class="clock-svg clock-face-front" viewBox="0 0 300 300">
@@ -1563,9 +1551,23 @@
 
     <div class="calendar-section" data-view="calendar">
         <div class="calendar-header-row">
-            <button class="cal-nav-btn" id="prevMonthBtn" type="button" data-i18n-label="prevMonth">‹</button>
             <div class="calendar-header" id="calendarHeader"></div>
-            <button class="cal-nav-btn" id="nextMonthBtn" type="button" data-i18n-label="nextMonth">›</button>
+            <div class="header-pills">
+                <button class="pill theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
+                    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4.5"/>
+                        <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
+                    </svg>
+                    <svg class="icon-zz" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 10h7l-7 9h7M14 4h6l-6 7h6"/>
+                    </svg>
+                    <span class="theme-auto-label" aria-hidden="true">A</span>
+                </button>
+                <button class="pill today-btn" id="todayBtn" type="button"></button>
+            </div>
         </div>
         <div class="calendar-grid" id="calendarGrid">
             <div class="day-name">Dl</div>
@@ -1648,6 +1650,42 @@
         </div>
         <div class="view-dots" aria-hidden="true"><span></span><span></span></div>
     </div>
+
+    <!-- Fila de botons, fora de l'esfera (com al model): idiomes, so, dir l'hora i pantalla encesa -->
+    <div class="controls-row" id="controlsRow">
+        <div class="lang-pills" role="radiogroup" id="langPills" aria-label="Idioma">
+            <button class="pill lang-option" type="button" role="radio" data-lang="ca" lang="ca">CA</button>
+            <button class="pill lang-option" type="button" role="radio" data-lang="fr" lang="fr">FR</button>
+            <button class="pill lang-option" type="button" role="radio" data-lang="de" lang="de">DE</button>
+            <button class="pill lang-option" type="button" role="radio" data-lang="en" lang="en">EN</button>
+        </div>
+        <button class="ctrl-btn voice-toggle-btn off" id="voiceToggleBtn" type="button" aria-label="Anunci horari: silenciat">
+            <svg class="icon-voice-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9h3l5-4v14l-5-4H4z"/>
+                <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+            </svg>
+            <svg class="icon-voice-on" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9h3l5-4v14l-5-4H4z"/>
+                <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>
+            </svg>
+        </button>
+        <button class="ctrl-btn say-time-btn" id="sayTimeBtn" type="button" aria-label="Digues l'hora">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 18.5l.9-3.1A8.5 8.5 0 1 1 8.6 19z"/>
+                <path d="M12 7.2V12l3 1.8"/>
+            </svg>
+        </button>
+        <button class="ctrl-btn awake-btn" id="awakeBtn" type="button" aria-pressed="false" aria-label="Pantalla sempre encesa">
+            <svg class="icon-awake-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                <path d="M4 4l16 16"/>
+            </svg>
+            <svg class="icon-awake-on" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                <circle cx="12" cy="12" r="2.6"/>
+            </svg>
+        </button>
+    </div>
 </div>
 
 <div class="holiday-tooltip" id="holidayTooltip"></div>
@@ -1700,6 +1738,7 @@
             installTitle: 'Instal·la el rellotge', installButton: 'Instal·la',
             installHintAndroid: 'Tindràs l’app a la pantalla d’inici, a pantalla completa.',
             installHintIos: 'Toca {share} i després «Afegeix a la pantalla d’inici».',
+            today: 'Avui',
             sayTime: 'Digues l’hora',
             langToast: 'Idioma: català'
         },
@@ -1731,6 +1770,7 @@
             installTitle: 'Installer l’horloge', installButton: 'Installer',
             installHintAndroid: 'L’app sera sur l’écran d’accueil, en plein écran.',
             installHintIos: 'Touchez {share} puis « Sur l’écran d’accueil ».',
+            today: 'Auj.',
             sayTime: 'Dire l’heure',
             langToast: 'Langue : français'
         },
@@ -1762,6 +1802,7 @@
             installTitle: 'Uhr installieren', installButton: 'Installieren',
             installHintAndroid: 'Die App liegt dann im Vollbild auf dem Startbildschirm.',
             installHintIos: 'Tippe auf {share} und dann „Zum Home-Bildschirm“.',
+            today: 'Heute',
             sayTime: 'Uhrzeit ansagen',
             langToast: 'Sprache: Deutsch'
         },
@@ -1793,6 +1834,7 @@
             installTitle: 'Install the clock', installButton: 'Install',
             installHintAndroid: 'Get the app on your home screen, full screen.',
             installHintIos: 'Tap {share}, then “Add to Home Screen”.',
+            today: 'Today',
             sayTime: 'Say the time',
             langToast: 'Language: English'
         }
@@ -2094,8 +2136,21 @@
             return emptyCell;
         };
 
+        // Dies dels mesos veïns, en gris (com al model): omplen les 6 setmanes
+        const makeOtherMonthCell = (n) => {
+            const cell = document.createElement('div');
+            cell.className = 'day other-month';
+            cell.setAttribute('aria-hidden', 'true');
+            const num = document.createElement('span');
+            num.className = 'day-number';
+            num.textContent = n;
+            cell.appendChild(num);
+            return cell;
+        };
+        const prevMonthDays = new Date(year, month, 0).getDate();
+
         for (let i = 0; i < firstDayIndex; i++) {
-            fragment.appendChild(makeEmptyCell());
+            fragment.appendChild(makeOtherMonthCell(prevMonthDays - firstDayIndex + 1 + i));
         }
 
         for (let day = 1; day <= totalDays; day++) {
@@ -2126,7 +2181,7 @@
         // Sempre 6 setmanes (42 caselles): el calendari té la mateixa mida tots els mesos
         const trailingEmpty = 42 - (firstDayIndex + totalDays);
         for (let i = 0; i < trailingEmpty; i++) {
-            fragment.appendChild(makeEmptyCell());
+            fragment.appendChild(makeOtherMonthCell(i + 1));
         }
 
         grid.appendChild(fragment);
@@ -2361,79 +2416,14 @@
     });
 
     // ---------- Mida del rellotge en vertical ----------
+    // L'esfera es dimensiona només amb el CSS (container queries): sempre omple l'espai que hi ha.
+    // Abans es calculava amb JS en obrir l'app i, a l'iPhone, a vegades es mesurava abans que la
+    // pantalla s'hagués ajustat del tot: l'esfera sortia petita fins que giraves el mòbil.
     function sizeClockForPortrait() {
-        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
         const svg = document.querySelector('.clock-svg');
-        const appCard = document.querySelector('.app-card');
-        const calendarSection = document.querySelector('.calendar-section');
         const clockSection = document.querySelector('.clock-section');
-
-        // En horitzontal la mida la posa el CSS
-        if (!isPortrait) {
-            svg.style.width = '';
-            svg.style.height = '';
-            clockSection.style.paddingTop = '';
-            return;
-        }
-
-        // Durant el gir 3D les mides de l'esfera no són les reals: no es toca res
-        if (svg.parentElement.classList.contains('girant')) return;
-
-        // En vertical es calcula sense buidar la mida actual (així no hi ha cap fotograma intermedi).
-        // Tot passa dins del mateix moment: el navegador no arriba a pintar cap mida provisional.
-        const cardStyles = getComputedStyle(appCard);
-        const gap = parseFloat(cardStyles.rowGap) || 0;
-        const totalHeight = appCard.clientHeight
-            - parseFloat(cardStyles.paddingTop)
-            - parseFloat(cardStyles.paddingBottom);
-        const svgMargin = parseFloat(getComputedStyle(svg.parentElement).marginBottom) || 0;
-        const available = totalHeight - (calendarSection.offsetHeight + gap + svgMargin);
-        const maxByWidth = clockSection.clientWidth;
-
-        const setSize = (size) => {
-            const px = `${Math.round(size)}px`;
-            if (svg.style.width !== px) {
-                svg.style.width = px;
-                svg.style.height = px;
-            }
-        };
-
-        // Opció A: esfera centrada a tota la zona; si toca els botons de les cantonades, s'encongeix
-        clockSection.style.paddingTop = '';
-        let sizeA = Math.max(120, Math.min(available, maxByWidth, 420));
-        setSize(sizeA);
-        for (let i = 0; i < 4; i++) {
-            const gapToButtons = minButtonClearance(svg);
-            if (gapToButtons >= 6 || sizeA <= 120) break;
-            sizeA = Math.max(120, sizeA - (6 - gapToButtons) * 2.2);
-            setSize(sizeA);
-        }
-
-        // Opció B: l'esfera comença just sota la fila de botons i pot créixer fins a l'amplada
-        const controls = document.querySelector('.corner-controls').getBoundingClientRect();
-        const buttonsBand = Math.max(0, controls.bottom - clockSection.getBoundingClientRect().top + 6);
-        const sizeB = Math.min(available - buttonsBand, maxByWidth, 420);
-
-        // Es queda la que dona l'esfera més gran
-        if (sizeB > sizeA + 4) {
-            clockSection.style.paddingTop = `${Math.round(buttonsBand)}px`;
-            setSize(sizeB);
-        }
-    }
-
-    function minButtonClearance(svg) {
-        const r = svg.getBoundingClientRect();
-        const cx = r.left + r.width / 2;
-        const cy = r.top + r.height / 2;
-        const radius = r.width * 146 / 300;
-        let min = Infinity;
-        document.querySelectorAll('.corner-controls .ctrl-btn').forEach((btn) => {
-            const b = btn.getBoundingClientRect();
-            const nx = Math.max(b.left, Math.min(cx, b.right));
-            const ny = Math.max(b.top, Math.min(cy, b.bottom));
-            min = Math.min(min, Math.hypot(nx - cx, ny - cy) - radius);
-        });
-        return min;
+        if (svg) { svg.style.width = ''; svg.style.height = ''; }
+        if (clockSection) clockSection.style.paddingTop = '';
     }
 
     // Si el calendari no hi cap (p. ex. iPhone en horitzontal, on la pantalla visible és més baixa que
@@ -2459,6 +2449,10 @@
     }
 
     window.addEventListener('resize', () => requestAnimationFrame(fitCalendar));
+    if ('ResizeObserver' in window) {
+        new ResizeObserver(() => requestAnimationFrame(() => { fitCalendar(); fitAltViews(); }))
+            .observe(document.querySelector('.app-card'));
+    }
     window.addEventListener('orientationchange', () => setTimeout(fitCalendar, 300));
     window.addEventListener('resize', sizeClockForPortrait);
     window.addEventListener('orientationchange', () => setTimeout(sizeClockForPortrait, 250));
@@ -2501,8 +2495,8 @@
         });
     }
 
-    setupNavButton(document.getElementById('prevMonthBtn'), -1);
-    setupNavButton(document.getElementById('nextMonthBtn'), +1);
+    // Botó AVUI: torna al mes actual (lliscar a dreta/esquerra continua canviant de mes)
+    document.getElementById('todayBtn').addEventListener('click', goToCurrentMonth);
 
     // Doble toc/clic al nom del mes torna al mes actual
     const calendarHeaderEl = document.getElementById('calendarHeader');
@@ -3370,14 +3364,6 @@
     setTimeout(spinClock, 5000);
 
     // ---------- Selector d'idioma ----------
-    const langControl = document.getElementById('langControl');
-    const langBtn = document.getElementById('langBtn');
-
-    function setLangMenuOpen(open) {
-        langControl.classList.toggle('open', open);
-        langBtn.setAttribute('aria-expanded', String(open));
-    }
-
     function applyLanguage() {
         const t = T();
         document.documentElement.setAttribute('lang', currentLang);
@@ -3389,10 +3375,10 @@
         });
         document.querySelectorAll('#calendarGrid .day-name').forEach((el, i) => { el.textContent = t.days[i]; });
 
-        langBtn.textContent = currentLang.toUpperCase();
-        langBtn.setAttribute('aria-label', `${t.language}: ${t.langName}`);
-        langBtn.title = `${t.language}: ${t.langName}`;
-        document.getElementById('langMenu').setAttribute('aria-label', t.language);
+        document.getElementById('langPills').setAttribute('aria-label', t.language);
+        const todayBtn = document.getElementById('todayBtn');
+        todayBtn.textContent = t.today;
+        todayBtn.title = t.today;
         document.querySelectorAll('.lang-option').forEach((el) => {
             el.setAttribute('aria-checked', String(el.dataset.lang === currentLang));
             el.setAttribute('aria-label', I18N[el.dataset.lang].langName);
@@ -3427,25 +3413,8 @@
         if (voiceMode !== 'off') speak(activationGreeting(new Date().getHours()));
     }
 
-    langBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setLangMenuOpen(!langControl.classList.contains('open'));
-    });
-
     document.querySelectorAll('.lang-option').forEach((el) => {
-        el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setLanguage(el.dataset.lang);
-            setLangMenuOpen(false);
-        });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!langControl.contains(e.target)) setLangMenuOpen(false);
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setLangMenuOpen(false);
+        el.addEventListener('click', () => setLanguage(el.dataset.lang));
     });
 
     // ---------- Avís d'instal·lació ----------
