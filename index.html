@@ -24,7 +24,7 @@
             document.documentElement.setAttribute('data-theme', override || ((h >= 7 && h < 20) ? 'light' : 'dark'));
             var lang = null;
             try { lang = localStorage.getItem('rellotgeLang'); } catch (e) {}
-            if (['ca', 'fr', 'de', 'en'].indexOf(lang) >= 0) document.documentElement.setAttribute('lang', lang);
+            if (['ca', 'fr', 'de', 'it', 'en'].indexOf(lang) >= 0) document.documentElement.setAttribute('lang', lang);
         })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -418,26 +418,7 @@
             transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
         }
 
-        .calendar-section:not([data-view="calendar"]) .calendar-header-row,
-        .calendar-section:not([data-view="calendar"]) .calendar-grid {
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(14px);
-        }
 
-        .alt-view {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-14px);
-            transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
-            pointer-events: none;
-        }
 
         .info-section[hidden] {
             display: none !important;
@@ -451,19 +432,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6% 8% 13%;
-            /* Les mides del text es calculen sobre el requadre sencer: així omplen l'espai del calendari */
+            padding: 4% 9% 5%;
+            /* Les mides del text es calculen sobre la finestra sencera: així omplen l'espai del calendari */
             container-type: size;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateX(var(--page-from, 22px));
-            transition: opacity 0.26s ease, transform 0.26s ease, visibility 0.26s;
-        }
-
-        .info-page.active {
-            opacity: 1;
-            visibility: visible;
-            transform: none;
         }
 
         /* Pàgina 1: població (gran) i, a sota, el temps */
@@ -660,31 +631,6 @@
             text-overflow: ellipsis;
         }
 
-        /* Puntets de les pàgines, a baix */
-        .page-dots {
-            position: absolute;
-            left: 50%;
-            bottom: 5%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 7px;
-            pointer-events: none;
-        }
-
-        .page-dots span {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: var(--widget-text);
-            opacity: 0.35;
-            transition: opacity 0.2s ease, background-color 0.2s ease;
-        }
-
-        .page-dots span.active {
-            opacity: 1;
-            background-color: var(--mondaine-red);
-        }
-
         /* Botó «digues l'hora»: la icona sempre visible; s'il·lumina mentre parla */
         .ctrl-btn.say-time-btn svg {
             display: block;
@@ -715,11 +661,6 @@
             box-shadow: inset 0 0 0 1.5px var(--mondaine-red);
         }
 
-        .calendar-section[data-view="info"] .alt-view--info {
-            opacity: 1;
-            visibility: visible;
-            transform: none;
-        }
 
         .alt-big {
             /* Hiragino Kaku Gothic Std W8 (Mac); a l'iPhone, la Hiragino Sans més gruixuda que hi hagi */
@@ -786,31 +727,74 @@
             -webkit-user-select: none;
         }
 
-        /* Tres puntets a la dreta indiquen quina vista es veu */
+        /* ---------- Finestres apilades (calendari, temperatura, data, el temps, ubicació…) ---------- */
+        .cal-views {
+            position: relative;
+            overflow: hidden;
+            /* l'animació de pas d'una finestra a l'altra no surt del requadre */
+            margin: 0 -4px;
+            padding: 0 4px;
+        }
+
+        .fulls {
+            position: relative;
+        }
+
+        .full {
+            will-change: transform;
+        }
+
+        .full:not(.full-cal) {
+            position: absolute;
+            inset: 0;
+        }
+
+        .full[hidden] {
+            display: none;
+        }
+
+        .fin-pag {
+            overflow: hidden;
+        }
+
+        /* Puntets de la dreta: un per finestra; tocar-ne un hi salta */
         .view-dots {
             position: absolute;
-            right: 4px;
+            right: 3px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            pointer-events: none;
+            gap: 2px;
+            z-index: 3;
         }
 
-        .view-dots span {
+        .view-dots button {
+            width: 12px;
+            height: 10px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-dots button::before {
+            content: '';
             width: 5px;
             height: 5px;
             border-radius: 50%;
             background-color: var(--widget-text);
             opacity: 0.35;
-            transition: opacity 0.2s ease, background-color 0.2s ease;
+            transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
         }
 
-        .calendar-section[data-view="calendar"] .view-dots span:nth-child(1),
-        .calendar-section[data-view="info"] .view-dots span:nth-child(2) {
+        .view-dots button.on::before {
             opacity: 1;
             background-color: var(--mondaine-red);
+            transform: scale(1.25);
         }
 
         .holiday-tooltip {
@@ -867,6 +851,11 @@
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
+        }
+
+        /* Fora del calendari, el títol és el nom de la finestra tal com s'escriu («El temps») */
+        .calendar-header.window-title {
+            text-transform: none;
         }
 
         .cal-nav-btn {
@@ -1053,16 +1042,52 @@
         }
 
         .controls-row > *,
-        .lang-pills > * {
+        .lang-tria > *,
+        .lang-menu > *,
+        .placa-slot > * {
             --u: min(40px, calc((100cqw - 36px) / 8.2));
         }
 
-        .lang-pills {
-            display: flex;
-            gap: 6px;
+        /* Botó d'idioma (un de sol) i el seu menú, que s'obre cap amunt */
+        .lang-tria {
+            position: relative;
+            flex-shrink: 0;
         }
 
-        .controls-row .pill.lang-option {
+        .controls-row .pill.lang-actual {
+            height: var(--u);
+            min-width: calc(var(--u) * 1.3);
+            padding: 0 0.5em;
+            font-size: calc(var(--u) * 0.36);
+            background-color: var(--mondaine-red);
+            border-color: var(--mondaine-red);
+            color: #ffffff;
+        }
+
+        html[data-theme="zz"] .controls-row .pill.lang-actual {
+            color: #000000;
+        }
+
+        .lang-menu {
+            position: absolute;
+            left: 0;
+            bottom: calc(100% + 8px);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 6px;
+            border-radius: 22px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--pill-border);
+            box-shadow: 0 10px 28px var(--card-shadow);
+            z-index: 30;
+        }
+
+        .lang-menu[hidden] {
+            display: none;
+        }
+
+        .lang-menu .pill.lang-option {
             height: var(--u);
             min-width: calc(var(--u) * 1.3);
             padding: 0 0.5em;
@@ -1070,15 +1095,409 @@
             color: var(--widget-text);
         }
 
-        .controls-row .pill.lang-option[aria-checked="true"] {
+        .lang-menu .pill.lang-option[aria-checked="true"] {
             background-color: var(--mondaine-red);
             border-color: var(--mondaine-red);
             color: #ffffff;
         }
 
-        html[data-theme="zz"] .controls-row .pill.lang-option[aria-checked="true"] {
+        html[data-theme="zz"] .lang-menu .pill.lang-option[aria-checked="true"] {
             color: #000000;
         }
+
+        /* Placa (població; més endavant també «Ara sona»): ocupa l'espai que queda a la fila */
+        .placa-slot {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+        }
+
+        .placa {
+            flex: 1;
+            min-width: 0;
+            height: var(--u);
+            display: flex;
+            align-items: center;
+            gap: 0.45em;
+            padding: 0 0.85em 0 0.7em;
+            border-radius: 999px;
+            border: 1.5px solid var(--pill-border);
+            color: var(--text-color);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .placa[hidden] {
+            display: none;
+        }
+
+        .placa:active {
+            background-color: var(--nav-active-bg);
+        }
+
+        .placa > svg {
+            width: calc(var(--u) * 0.42);
+            height: calc(var(--u) * 0.42);
+            flex-shrink: 0;
+            fill: none;
+            stroke: var(--widget-text);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .placa .txt {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.05;
+        }
+
+        .placa .etq {
+            font-size: calc(var(--u) * 0.22);
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--widget-text);
+        }
+
+        .placa .val {
+            font-size: calc(var(--u) * 0.36);
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Nom llarg: dues línies més petites */
+        .placa .val.dues {
+            font-size: calc(var(--u) * 0.27);
+            white-space: normal;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.05;
+        }
+
+        .placa .val.dues ~ *,
+        .placa .txt:has(.val.dues) .etq {
+            display: none;
+        }
+
+        /* ---------- Ràdio, podcasts i notícies (del PRS 516, amb els colors del Mondaine) ---------- */
+        .fin-media,
+        .placa-slot {
+            --accent: var(--mondaine-red);
+            --accent-text: #ffffff;
+        }
+
+        html[data-theme="zz"] .fin-media,
+        html[data-theme="zz"] .placa-slot {
+            --accent-text: #000000;
+        }
+
+        .fin-media {
+            container-type: inline-size;
+            color: var(--text-color);
+        }
+
+        /* La cinta que es desplaça dins la finestra; a la dreta, lloc per als puntets */
+        .fin-media .desplaca,
+        .fin-media .ll-pane {
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            touch-action: pan-y;
+            display: flex;
+            flex-direction: column;
+            padding: 6px 20px 14px 2px;
+        }
+
+        .fin-media .desplaca {
+            position: absolute;
+            inset: 0;
+        }
+
+        .fin-media .desplaca::-webkit-scrollbar,
+        .fin-media .ll-pane::-webkit-scrollbar {
+            display: none;
+        }
+
+        .fin-media .desplaca > *,
+        .fin-media .ll-pane > * {
+            flex-shrink: 0;
+        }
+
+        /* Finestres amb subpanells laterals */
+        .lliscador {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ll-pista {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            width: 100%;
+        }
+
+        .ll-pane {
+            flex: 0 0 100%;
+            width: 100%;
+            min-width: 0;
+            height: 100%;
+        }
+
+        .ll-punts {
+            flex: none;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            height: 14px;
+            align-items: center;
+        }
+
+        .ll-punts button {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ll-punts button::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: var(--widget-text);
+            opacity: 0.4;
+        }
+
+        .ll-punts button.on::before {
+            background-color: var(--accent);
+            opacity: 1;
+        }
+
+        .visor-titol {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--widget-text);
+            margin-bottom: 8px;
+        }
+
+        /* Ràdio */
+        .radios {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-auto-rows: minmax(2.9rem, 1fr);
+            gap: 7px;
+        }
+
+        @container (min-width: 430px) {
+            .radios { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
+        .radio {
+            position: relative;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 2px;
+            padding: 6px 10px;
+            border-radius: 14px;
+            border: 1.5px solid var(--pill-border);
+            background: transparent;
+            color: var(--text-color);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.12s ease, background-color 0.2s ease;
+        }
+
+        .radio:active { transform: scale(0.97); }
+        .radio .nom { max-width: 100%; font-weight: 800; font-size: 0.92rem; line-height: 1.1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .radio .sub { max-width: 100%; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--widget-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .radio .punt { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0; }
+        .radio.sonant { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+        .radio.sonant .sub { color: inherit; opacity: 0.85; }
+        .radio.sonant .punt { opacity: 1; animation: polsa 1.2s ease-in-out infinite; }
+        .radio.carregant .punt { animation-duration: 0.5s; }
+
+        @keyframes polsa { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+        /* Podcasts */
+        .llista-prog { display: flex; flex-direction: column; gap: 6px; }
+        .prog-fila { display: flex; align-items: stretch; gap: 6px; min-width: 0; }
+
+        .prog {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 5px 9px;
+            border-radius: 14px;
+            border: 1.5px solid var(--pill-border);
+            background: transparent;
+            color: var(--text-color);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .prog:active { transform: scale(0.98); }
+        .prog-dia { flex: none; width: 5.2em; display: flex; flex-direction: column; line-height: 1.15; }
+        .prog-dia b { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
+        .prog-dia small { font-size: 0.64rem; font-weight: 600; color: var(--widget-text); }
+        .prog-titol { flex: 1; min-width: 0; font-size: 0.76rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prog-icona { flex: none; width: 24px; height: 24px; margin-left: auto; border-radius: 50%; display: grid; place-items: center; background: var(--text-color); color: var(--card-bg); }
+        .prog-icona svg { width: 40%; height: 40%; }
+        .prog .ic-pausa, .prog.sonant .ic-play { display: none; }
+        .prog.sonant .ic-pausa { display: block; }
+        .prog-barra { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: currentColor; opacity: 0.55; }
+        .prog.darrer { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+        .prog.darrer .prog-dia small { color: inherit; opacity: 0.8; }
+        .prog.darrer .prog-icona { background: var(--accent-text); color: var(--accent); }
+        .prog.sonant:not(.darrer) { border-color: var(--text-color); }
+        .prog.carregant .prog-icona { animation: polsa 1s ease-in-out infinite; }
+
+        .prog-ext {
+            flex: none;
+            width: 30px;
+            border-radius: 14px;
+            border: 1.5px solid var(--pill-border);
+            color: var(--widget-text);
+            display: grid;
+            place-items: center;
+            text-decoration: none;
+        }
+
+        .prog-ext svg, .noticia .ext svg { width: 13px; height: 13px; display: block; }
+
+        .via-fila { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
+        .via-etiqueta { flex: none; display: flex; flex-direction: column; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--widget-text); line-height: 1.2; }
+        .via-etiqueta small { font-size: 1em; font-weight: 700; }
+        .via-lliure { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .via-lliure .prog-dia { width: auto; flex: 1; }
+
+        @container (max-width: 300px) {
+            .prog-titol { display: none; }
+            .prog-dia { flex: 1; width: auto; flex-direction: row; align-items: baseline; gap: 6px; }
+            .via-fila { flex-direction: column; align-items: stretch; gap: 4px; }
+            .via-etiqueta { flex-direction: row; gap: 5px; }
+        }
+
+        .estat-prog { color: var(--widget-text); font-size: 0.8rem; font-weight: 600; padding: 4px 0; }
+        .estat-prog a { color: inherit; }
+
+        /* Notícies */
+        .noticies { display: flex; flex-direction: column; gap: 6px; }
+
+        .noticia {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            padding: 7px 9px;
+            border-radius: 14px;
+            border: 1.5px solid var(--pill-border);
+            color: var(--text-color);
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        .noticia:active { transform: scale(0.98); }
+        .noticies > .noticia:first-child { border-color: var(--accent); }
+        .noticia .num { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.7rem; font-weight: 800; background: var(--text-color); color: var(--card-bg); }
+        #llistaNoticies > .noticia:first-child .num { background: var(--accent); color: var(--accent-text); }
+        .noticia .txt { flex: 1; min-width: 0; font-size: 0.8rem; font-weight: 650; line-height: 1.28; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .noticia .ext { flex: none; color: var(--widget-text); margin-top: 2px; }
+        .peu-dades { font-size: 0.62rem; color: var(--widget-text); margin-top: 6px; }
+
+        /* Placa «Ara sona»: vermella, com el botó d'idioma */
+        .placa.placa-sona {
+            gap: 0.3em;
+            padding: 0 0.25em;
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-text);
+            cursor: default;
+        }
+
+        .placa.placa-sona:active { background-color: var(--accent); }
+        .placa-sona .etq { color: inherit; opacity: 0.8; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .placa-sona .txt { flex: 1; }
+        .placa-sona .val { font-size: calc(var(--u) * 0.3); }
+
+        .ps-boto, .ps-tanca, .ps-temps {
+            flex: none;
+            appearance: none;
+            padding: 0;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .ps-boto {
+            width: calc(var(--u) * 0.76);
+            height: calc(var(--u) * 0.76);
+            border-radius: 50%;
+            background-color: var(--accent-text);
+            color: var(--accent);
+        }
+
+        .ps-boto svg { width: calc(var(--u) * 0.28); height: calc(var(--u) * 0.28); display: block; }
+
+        .ps-temps {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2em;
+            height: calc(var(--u) * 0.62);
+            min-width: calc(var(--u) * 0.62);
+            justify-content: center;
+            padding: 0 0.4em;
+            border-radius: 999px;
+            border: 1.5px solid currentColor;
+            font-size: calc(var(--u) * 0.27);
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .ps-temps svg { width: calc(var(--u) * 0.3); height: calc(var(--u) * 0.3); fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+        .ps-temps .ts-tx:empty { display: none; }
+        .ps-temps.on { background-color: var(--accent-text); border-color: var(--accent-text); color: var(--accent); }
+        .ps-temps.on svg { fill: currentColor; }
+
+        .ps-tanca { width: calc(var(--u) * 0.56); height: calc(var(--u) * 0.56); }
+        .ps-tanca svg { width: 62%; height: 62%; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 
         .controls-row .ctrl-btn {
             width: var(--u);
@@ -1301,8 +1720,12 @@
             font-size: 0.85rem;
             font-weight: 600;
             padding: 9px 16px;
-            border-radius: 999px;
-            white-space: nowrap;
+            border-radius: 20px;
+            width: max-content;
+            max-width: min(92vw, 460px);
+            white-space: normal;
+            text-align: center;
+            line-height: 1.3;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease, transform 0.2s ease;
@@ -1450,7 +1873,9 @@
         /* Escriptori: el calendari creix i els números es llegeixen de lluny */
         @media (orientation: landscape) and (min-width: 1100px) and (min-height: 700px) {
             .controls-row > *,
-            .lang-pills > * {
+            .lang-tria > *,
+            .lang-menu > *,
+            .placa-slot > * {
                 --u: min(52px, calc((100cqw - 36px) / 8.2));
             }
 
@@ -1549,7 +1974,7 @@
 
     </div>
 
-    <div class="calendar-section" data-view="calendar">
+    <div class="calendar-section" data-view="calendari">
         <div class="calendar-header-row">
             <div class="calendar-header" id="calendarHeader"></div>
             <div class="header-pills">
@@ -1569,95 +1994,162 @@
                 <button class="pill today-btn" id="todayBtn" type="button"></button>
             </div>
         </div>
-        <div class="calendar-grid" id="calendarGrid">
-            <div class="day-name">Dl</div>
-            <div class="day-name">Dt</div>
-            <div class="day-name">Dc</div>
-            <div class="day-name">Dj</div>
-            <div class="day-name">Dv</div>
-            <div class="day-name">Ds</div>
-            <div class="day-name">Dg</div>
-        </div>
+        <!-- Finestres apilades en vertical i en cercle (com al PRS 516): lliscant avall o amunt
+             es passa a la següent o a l'anterior; de costat, el mes (calendari) o el subpanell -->
+        <div class="cal-views" id="calViews">
+            <div class="fulls" id="fulls">
+                <section class="full full-cal" data-key="calendari">
+                <div class="calendar-grid" id="calendarGrid">
+                    <div class="day-name">Dl</div>
+                    <div class="day-name">Dt</div>
+                    <div class="day-name">Dc</div>
+                    <div class="day-name">Dj</div>
+                    <div class="day-name">Dv</div>
+                    <div class="day-name">Ds</div>
+                    <div class="day-name">Dg</div>
+                </div>
+                </section>
 
-        <!-- Finestra d'informació: lliscant amunt/avall s'alterna amb el calendari;
-             lliscant de costat es passa d'una pàgina a l'altra -->
-        <div class="alt-view alt-view--info" aria-hidden="true">
-            <div class="info-page info-page--place active">
-                <div class="page-place" id="pagePlace">…</div>
-                <div class="alt-temp-row">
-                    <span class="alt-emoji" id="altEmoji" aria-hidden="true">🌡️</span>
-                    <span class="alt-big" id="altTemp">--°</span>
-                </div>
+                <section class="full fin-pag" data-key="tgran">
+                    <div class="info-page info-page--place">
+                        <div class="page-place" id="pagePlace">…</div>
+                        <div class="alt-temp-row">
+                            <span class="alt-emoji" id="altEmoji" aria-hidden="true">🌡️</span>
+                            <span class="alt-big" id="altTemp">--°</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="full fin-pag" data-key="data">
+                    <div class="info-page info-page--date">
+                        <div class="page-weekday" id="pageWeekday"></div>
+                        <div class="page-longdate" id="pageLongDate"></div>
+                    </div>
+                </section>
+
+                <section class="full fin-pag" data-key="temps">
+                    <div class="info-page info-page--metrics">
+                        <div class="metrics-grid">
+                            <div class="metric metric--forecast">
+                                <div class="metric-main">
+                                    <svg class="metric-icon" id="mForecastIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/></svg>
+                                    <span class="metric-value" id="mForecast">--</span>
+                                </div>
+                                <div class="metric-label" data-i18n-text="next12h"></div>
+                            </div>
+                            <div class="metric metric--hum">
+                                <div class="metric-main">
+                                    <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/></svg>
+                                    <span class="metric-value" id="mHum">--</span>
+                                </div>
+                                <div class="metric-label" data-i18n-text="humidity"></div>
+                            </div>
+                            <div class="metric metric--feels">
+                                <div class="metric-main">
+                                    <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 14.76V4.5a2.5 2.5 0 0 0-5 0v10.26a4.5 4.5 0 1 0 5 0z"/><path d="M15 8c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0M15 13c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0"/></svg>
+                                    <span class="metric-value" id="mFeels">--</span>
+                                </div>
+                                <div class="metric-label" data-i18n-text="feels"></div>
+                            </div>
+                            <div class="metric metric--wind">
+                                <div class="metric-main">
+                                    <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5a2.5 2.5 0 1 0-2.5-2.5M3 12h15.5a2.5 2.5 0 1 1-2.5 2.5M3 16h8"/></svg>
+                                    <span class="metric-value" id="mWind">--</span>
+                                </div>
+                                <div class="metric-label" data-i18n-text="wind"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="full fin-pag" data-key="ubicacio">
+                    <div class="info-page info-page--location">
+                        <div class="loc-name" id="locName">…</div>
+                        <div class="loc-region" id="locRegion"></div>
+                        <div class="loc-country" id="locCountry"></div>
+                        <div class="loc-facts">
+                            <div class="metric">
+                                <div class="metric-main">
+                                    <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>
+                                    <span class="metric-value" id="mAlt">--</span>
+                                </div>
+                                <div class="metric-label" data-i18n-text="altitude"></div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-main">
+                                    <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/><circle cx="12" cy="12" r="1.6"/></svg>
+                                    <span class="metric-value loc-coords" id="mCoords">--</span>
+                                </div>
+                                <div class="metric-label" data-i18n-text="coordinates"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="full fin-pag fin-media" data-key="radio">
+                    <div class="desplaca">
+                        <div class="visor-titol" id="radioTitol">En directe</div>
+                        <div class="radios" id="llistaRadios"></div>
+                    </div>
+                </section>
+
+                <section class="full fin-pag fin-media" data-key="podcasts">
+                    <div class="desplaca">
+                        <div class="visor-titol">La Competència · RAC1</div>
+                        <div class="llista-prog" id="llistaCompetencia"><div class="estat-prog">Carregant programes…</div></div>
+                        <div class="via-fila">
+                            <div class="via-etiqueta">Via lliure<small id="via7">7 h</small></div>
+                            <div class="via-lliure" id="llistaVia"><div class="estat-prog">Carregant…</div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="full fin-pag fin-media amb-ll" data-key="noticies">
+                    <div class="lliscador"><div class="ll-pista">
+                        <div class="ll-pane">
+                            <div class="visor-titol" id="noticiesTitol">ACN · Al minut</div>
+                            <div class="noticies" id="llistaNoticies"><div class="estat-prog">Carregant titulars…</div></div>
+                        </div>
+                        <div class="ll-pane">
+                            <div class="noticies" id="llistaNoticies2"></div>
+                            <div class="peu-dades" id="noticiesPeu"></div>
+                        </div>
+                    </div><div class="ll-punts"></div></div>
+                </section>
             </div>
-            <div class="info-page info-page--date">
-                <div class="page-weekday" id="pageWeekday"></div>
-                <div class="page-longdate" id="pageLongDate"></div>
-            </div>
-            <div class="info-page info-page--metrics">
-                <div class="metrics-grid">
-                    <div class="metric metric--forecast">
-                        <div class="metric-main">
-                            <svg class="metric-icon" id="mForecastIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16.5a4.5 4.5 0 0 1 .5-8.97A6 6 0 0 1 19 10.5a4 4 0 0 1-1 7.5H8a4 4 0 0 1-1-1.5z"/></svg>
-                            <span class="metric-value" id="mForecast">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="next12h"></div>
-                    </div>
-                    <div class="metric metric--hum">
-                        <div class="metric-main">
-                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-4 6-7 9.5-7 13a7 7 0 0 0 14 0c0-3.5-3-7-7-13z"/></svg>
-                            <span class="metric-value" id="mHum">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="humidity"></div>
-                    </div>
-                    <div class="metric metric--feels">
-                        <div class="metric-main">
-                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 14.76V4.5a2.5 2.5 0 0 0-5 0v10.26a4.5 4.5 0 1 0 5 0z"/><path d="M15 8c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0M15 13c1.2-1.2 2.3 1.2 3.5 0s2.3 1.2 3.5 0"/></svg>
-                            <span class="metric-value" id="mFeels">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="feels"></div>
-                    </div>
-                    <div class="metric metric--wind">
-                        <div class="metric-main">
-                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5a2.5 2.5 0 1 0-2.5-2.5M3 12h15.5a2.5 2.5 0 1 1-2.5 2.5M3 16h8"/></svg>
-                            <span class="metric-value" id="mWind">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="wind"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="info-page info-page--location">
-                <div class="loc-name" id="locName">…</div>
-                <div class="loc-region" id="locRegion"></div>
-                <div class="loc-country" id="locCountry"></div>
-                <div class="loc-facts">
-                    <div class="metric">
-                        <div class="metric-main">
-                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>
-                            <span class="metric-value" id="mAlt">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="altitude"></div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-main">
-                            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/><circle cx="12" cy="12" r="1.6"/></svg>
-                            <span class="metric-value loc-coords" id="mCoords">--</span>
-                        </div>
-                        <div class="metric-label" data-i18n-text="coordinates"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="page-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
         </div>
-        <div class="view-dots" aria-hidden="true"><span></span><span></span></div>
+        <div class="view-dots" id="viewDots"></div>
     </div>
 
     <!-- Fila de botons, fora de l'esfera (com al model): idiomes, so, dir l'hora i pantalla encesa -->
     <div class="controls-row" id="controlsRow">
-        <div class="lang-pills" role="radiogroup" id="langPills" aria-label="Idioma">
-            <button class="pill lang-option" type="button" role="radio" data-lang="ca" lang="ca">CA</button>
-            <button class="pill lang-option" type="button" role="radio" data-lang="fr" lang="fr">FR</button>
-            <button class="pill lang-option" type="button" role="radio" data-lang="de" lang="de">DE</button>
-            <button class="pill lang-option" type="button" role="radio" data-lang="en" lang="en">EN</button>
+        <!-- Idioma: un sol botó que obre el menú (com al PRS 516) -->
+        <div class="lang-tria" id="langTria">
+            <button class="pill lang-actual" id="langActual" type="button" aria-haspopup="true" aria-expanded="false">CA</button>
+            <div class="lang-menu" id="langMenu" role="menu" aria-label="Idioma" hidden>
+                <button class="pill lang-option" type="button" role="menuitemradio" data-lang="ca" lang="ca">CA</button>
+                <button class="pill lang-option" type="button" role="menuitemradio" data-lang="fr" lang="fr">FR</button>
+                <button class="pill lang-option" type="button" role="menuitemradio" data-lang="de" lang="de">DE</button>
+                <button class="pill lang-option" type="button" role="menuitemradio" data-lang="it" lang="it">IT</button>
+                <button class="pill lang-option" type="button" role="menuitemradio" data-lang="en" lang="en">EN</button>
+            </div>
+        </div>
+
+        <!-- Placa: la població (un toc porta a la finestra d'ubicació) -->
+        <div class="placa-slot" id="placaSlot">
+            <div class="placa placa-lloc" id="placaLloc" role="button" tabindex="0">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11A6.5 6.5 0 0 1 18.5 10c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+                <div class="txt"><span class="etq" id="plLlocEtq">Població</span><span class="val" id="plLloc">—</span></div>
+            </div>
+            <!-- Ara sona: reproduir/aturar, temporitzador (15, 30, 45, 60, 90 min, desactivat) i tancar -->
+            <div class="placa placa-sona" id="placaSona" hidden>
+                <button type="button" class="ps-boto" id="araSona" aria-label="Pausa"><span id="araSonaIc"></span></button>
+                <div class="txt"><span class="etq" id="araSonaEtq">Ara sona</span><span class="val" id="araSonaTx">—</span></div>
+                <button type="button" class="ps-temps" id="araSonaTemps">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z"/></svg><span class="ts-tx" id="araSonaTempsTx"></span>
+                </button>
+                <button type="button" class="ps-tanca" id="araSonaTanca" aria-label="Tanca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+            </div>
         </div>
         <button class="ctrl-btn voice-toggle-btn off" id="voiceToggleBtn" type="button" aria-label="Anunci horari: silenciat">
             <svg class="icon-voice-off" viewBox="0 0 24 24" aria-hidden="true">
@@ -1707,7 +2199,7 @@
     // L'idioma tria els textos de l'app i la llengua de l'anunci de les hores en punt.
     // Les festes només es mostren en català (són el calendari laboral de Catalunya).
     const LANG_STORAGE_KEY = 'rellotgeLang';
-    const LANGS = ['ca', 'fr', 'de', 'en'];
+    const LANGS = ['ca', 'fr', 'de', 'it', 'en'];
 
     const I18N = {
         ca: {
@@ -1806,6 +2298,38 @@
             sayTime: 'Uhrzeit ansagen',
             langToast: 'Sprache: Deutsch'
         },
+        it: {
+            locale: 'it-IT', speech: 'it-IT',
+            langName: 'Italiano',
+            days: ['Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa', 'Do'],
+            wind: 'Vento', next12h: 'Prossime 12 h',
+            coordinates: 'Coordinate', hemi: ['N', 'S', 'E', 'O'],
+            compass: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
+            awakeLabel: 'Schermo sempre acceso',
+            awakeOn: 'Schermo sempre acceso', awakeOff: 'Lo schermo si spegne come sempre',
+            awakeUnsupported: 'Questo browser non può tenere acceso lo schermo',
+            location: 'Località', altitude: 'Altitudine', temperature: 'Temperatura', humidity: 'Umidità',
+            feels: 'Percepita', forecast: 'Previsioni per le prossime 12 ore',
+            prevMonth: 'Mese precedente', nextMonth: 'Mese successivo', language: 'Lingua',
+            weather: { snow: 'Neve', rain: 'Pioggia', fog: 'Nebbia', clear: 'Sereno', clearNight: 'Sereno', cloud: 'Nuvoloso' },
+            themeNames: { light: 'giorno', dark: 'notte', zz: 'zz (comodino)' },
+            themeForced: n => `Tema fisso: ${n}. Tocca per cambiare.`,
+            themeAutoNow: n => `Tema automatico (ora ${n}). Tocca per cambiare.`,
+            themeToast: n => `Tema ${n}`,
+            themeAutoToast: 'Tema automatico (giorno dalle 7 alle 20)',
+            voiceLabels: { off: 'Audio spento', always: 'Audio attivo: annuncio delle ore in punto' },
+            voiceTest: n => `Prova voce: ${n}`,
+            systemVoice: 'voce di sistema',
+            voiceBlocked: 'La voce è bloccata: tocca lo schermo',
+            tapToEnable: 'Tocca lo schermo una volta per attivare la voce',
+            holidaysUpdated: 'Calendario delle festività aggiornato',
+            installTitle: 'Installa l’orologio', installButton: 'Installa',
+            installHintAndroid: 'Avrai l’app nella schermata Home, a schermo intero.',
+            installHintIos: 'Tocca {share} e poi «Aggiungi alla schermata Home».',
+            today: 'Oggi',
+            sayTime: 'Dimmi l’ora',
+            langToast: 'Lingua: italiano'
+        },
         en: {
             locale: 'en-GB', speech: 'en-GB',
             langName: 'English',
@@ -1839,6 +2363,323 @@
             langToast: 'Language: English'
         }
     };
+
+    // Textos de les finestres, compartits amb el PRS 516 (així una millora es pot passar d'un projecte a l'altre).
+    // tx('clau', ...) dona el text de l'idioma triat; si és una funció, s'hi passen els paràmetres.
+    const PRS_I18N = {
+      ca: {
+        locale: 'ca-ES', name: 'Català', decimal: ',',
+        months: ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'],
+        weekShort: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
+        watchDays: ['DG', 'DL', 'DT', 'DC', 'DJ', 'DV', 'DS'],
+        longDays: ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'],
+        wmo: ['Cel serè', 'Gairebé serè', 'Parcialment ennuvolat', 'Cobert', 'Boira', 'Boira gebradora',
+              'Plugim feble', 'Plugim', 'Plugim intens', 'Plugim gelat', 'Plugim gelat intens',
+              'Pluja feble', 'Pluja', 'Pluja intensa', 'Pluja gelant', 'Pluja gelant intensa',
+              'Neu feble', 'Neu', 'Neu intensa', 'Grans de neu', 'Ruixats febles', 'Ruixats', 'Ruixats molt intensos',
+              'Ruixats de neu', 'Ruixats de neu intensos', 'Tempesta', 'Tempesta amb calamarsa', 'Tempesta amb calamarsa forta'],
+        windDirs: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'], west: 'O',
+        aqBands: ['Bona', 'Acceptable', 'Moderada', 'Dolenta', 'Molt dolenta', 'Extremadament dolenta'],
+        themeNames: { day: 'diürn', night: 'nocturn', zz: 'Zz nocturn' },
+        today: 'Avui', titleDbl: 'Toca 2 cops per tornar al mes actual', install: 'Instal·la com a app',
+        themeAria: 'Tema diürn o nocturn',
+        themeFixed: n => `Tema ${n} fix (toca per canviar)`,
+        themeAuto: 'Tema automàtic: dia o nit segons el sol, i Zz quan es carrega de nit (toca per canviar)',
+        viewDots: 'Llisca avall per veure les finestres', pausePlay: 'Pausar o reprendre',
+        pages: { calendari: 'Calendari', data: 'Data', tgran: 'Temperatura', avui: 'Avui', festes: 'Properament', avisos: 'Avisos', ubicacio: 'Ubicació', temps: 'El temps', aire: "Qualitat de l'aire", alarmes: 'Alarmes', radio: 'Ràdio', podcasts: 'Podcasts', noticies: 'Notícies' },
+        next12: 'Properes 12 hores', locating: 'Localitzant…', unknownLoc: 'Ubicació desconeguda',
+        altitude: 'Altitud', coords: 'Coordenades', loadingWx: 'Carregant el temps…', loading: 'Carregant…',
+        feels: 'Sensació', humidity: 'Humitat', wind: 'Vent', precip6: 'Pluja 6 h', rain: 'pluja', snow: 'neu', gusts: 'ratxes',
+        noAlerts: h => `Sense avisos les properes ${h} h`, alertWord: 'Avís', now: 'ara',
+        atHour: h => (h === 1 ? 'a la 1 h' : `a les ${h} h`),
+        alerts: { storm: 'Tempesta', rain: 'Pluja intensa', snow: 'Neu', ice: 'Glaç', wind: 'Vent fort', fog: 'Boira intensa' },
+        gustsText: n => `Ratxes de ${n} km/h`,
+        aqSub: "Índex europeu de qualitat de l'aire", pm25: 'PM2,5', no2: 'Diòxid de nitrogen', o3: 'Ozó',
+        aqFoot: 'µg/m³ · ara · font: Copernicus (Open-Meteo)', noData: 'Sense dades',
+        alarmWord: 'Alarma', alarmOnce: 'Un sol cop', alarmDaily: 'Cada dia', alarmWeekdays: 'De dilluns a divendres', alarmWeekend: 'Cap de setmana', alarmNone: 'Cap alarma activada', alarmToday: 'avui', alarmTomorrow: 'demà', alarmNext: (w, h) => `Propera alarma: ${w} a les ${h}`, alarmStop: 'Atura', alarmSnooze: n => `+${n} min`, alarmNote: "Sonen amb l'app oberta (la pantalla no s'apaga). Toca l'hora per canviar-la.",
+        live: 'En directe', liveLower: 'en directe', newsWord: 'notícies', classical: 'clàssica', worldEnglish: 'Europa · anglès',
+        loadingPrograms: 'Carregant programes…', via7: '7 h',
+        programsError: 'No s\'han pogut carregar.', openSite: 'Obre la web', openWeb: 'Obrir a la web',
+        loadingNews: 'Carregant titulars…',
+        newsFoot: t => `actualitzat a les ${t}`,
+        newsError: 'No s\'han pogut carregar els titulars.',
+        toastRadio: n => `No es pot reproduir aquí: torna a tocar ${n} per obrir la seva web`,
+        toastPodcast: 'No s\'ha pogut reproduir. Fes servir la fletxa ↗ per obrir-lo a la web',
+        voiceOn: 'Toca per sentir l\'hora · dos tocs seguits apaguen el so',
+        voiceOff: 'So apagat · toca per sentir l\'hora i tornar-lo a activar',
+        voiceMuted: 'So apagat',
+        sleepOff: 'Temporitzador desactivat (toca per apagar la ràdio d\'aquí a 15, 30, 45, 60 o 90 minuts)',
+        sleepOn: n => `La ràdio s'apagarà d'aquí a ${n} min (toca per canviar-ho)`,
+        langGroup: 'Idioma',
+        fullDate: (d, m, y) => `${d} ${PRS_I18N.ca.ofMonth(m)} de ${y}`,
+        araSona: 'Ara sona', plPoblacio: 'Població', plTemp: 'Temperatura', close: 'Tanca',
+        t12: 'Properes 12 hores', t5: 'Propers 5 dies', maxMin: (a, b) => `Màx ${a}° · Mín ${b}°`,
+        sant: 'Sant del dia', efem: 'Efemèride', curio: 'Curiositat', solT: 'Sol', llunaT: 'Lluna', surt: 'Surt', pon: 'Es pon',
+        daylight: (h, m) => `${h} h ${m} min de llum`, daylightDiff: m => (m === 0 ? 'Igual que ahir' : m > 0 ? `${m} min més que ahir` : `${-m} min menys que ahir`),
+        fullIn: n => (n === 0 ? 'Lluna plena avui' : n === 1 ? 'Plena demà' : `Plena d'aquí a ${n} dies`), newIn: n => (n === 0 ? 'Lluna nova avui' : n === 1 ? 'Nova demà' : `Nova d'aquí a ${n} dies`),
+        illuminated: p => `${p}% il·luminada`, todayWord: 'Avui', tomorrowWord: 'Demà', daysWord: 'dies',
+        dayOfYear: (n, w) => `Dia ${n} de l'any · Setmana ${w}`,
+        phases: ['Lluna nova', 'Lluna creixent', 'Quart creixent', 'Gibosa creixent', 'Lluna plena', 'Gibosa minvant', 'Quart minvant', 'Lluna minvant'],
+        ofMonth: m => { const n = PRS_I18N.ca.months[m].toLowerCase(); return (/^[aeiou]/.test(n) ? "d'" : 'de ') + n; },
+        holidayToday: n => `Avui és festiu: ${n}`, holidayTomorrow: n => `Demà és festiu: ${n}`,
+        aniv: 'Aniversari', anivSub: 'Opcional · només es desa en aquest aparell', anivNom: 'Nom', anivNaix: 'Data de naixement', anivDesa: 'Desa', anivEsborra: 'Esborra',
+        pma: 'Per molts anys', years: 'anys', birthdaySpeech: n => (n ? `Per molts anys, ${n}!` : 'Per molts anys!'),
+        alMobile: 'Posa-la al rellotge del mòbil', drTitle: "Alarmes al rellotge de l'iPhone",
+        drSteps: s => ["Obre l'app Dreceres i crea una drecera nova (+).", "Afegeix-hi l'acció «Crear alarma» i, a «Hora», tria «Entrada de la drecera».", `Posa-li el nom exacte «${s}» i desa-la.`],
+        drOpen: 'Obre Dreceres', drDone: "Ja la tinc: crea l'alarma", drNote: 'Només cal fer-ho un cop. La repetició (feiners, cap de setmana…) es tria al rellotge del mòbil.',
+        hello: 'Hola! Diré les hores en punt en català.'
+      },
+      fr: {
+        locale: 'fr-FR', name: 'Français', decimal: ',',
+        months: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+        weekShort: ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'],
+        watchDays: ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'],
+        longDays: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+        wmo: ['Ciel dégagé', 'Presque dégagé', 'Partiellement nuageux', 'Couvert', 'Brouillard', 'Brouillard givrant',
+              'Bruine légère', 'Bruine', 'Bruine forte', 'Bruine verglaçante', 'Bruine verglaçante forte',
+              'Pluie faible', 'Pluie', 'Pluie forte', 'Pluie verglaçante', 'Pluie verglaçante forte',
+              'Neige faible', 'Neige', 'Neige forte', 'Grains de neige', 'Averses faibles', 'Averses', 'Averses violentes',
+              'Averses de neige', 'Fortes averses de neige', 'Orage', 'Orage avec grêle', 'Orage avec forte grêle'],
+        windDirs: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'], west: 'O',
+        aqBands: ['Bonne', 'Correcte', 'Moyenne', 'Mauvaise', 'Très mauvaise', 'Extrêmement mauvaise'],
+        themeNames: { day: 'jour', night: 'nuit', zz: 'Zz nuit' },
+        today: 'Auj.', titleDbl: 'Touchez 2 fois pour revenir au mois actuel', install: 'Installer comme app',
+        themeAria: 'Thème jour ou nuit',
+        themeFixed: n => `Thème ${n} fixe (touchez pour changer)`,
+        themeAuto: 'Thème automatique : jour ou nuit selon le soleil, et Zz en charge la nuit (touchez pour changer)',
+        viewDots: 'Glissez vers le bas pour voir les fenêtres', pausePlay: 'Pause ou reprise',
+        pages: { calendari: 'Calendrier', data: 'Date', tgran: 'Température', avui: "Aujourd'hui", festes: 'Prochainement', avisos: 'Alertes', ubicacio: 'Lieu', temps: 'Météo', aire: "Qualité de l'air", alarmes: 'Réveils', radio: 'Radio', podcasts: 'Podcasts', noticies: 'Actualités' },
+        next12: '12 prochaines heures', locating: 'Localisation…', unknownLoc: 'Lieu inconnu',
+        altitude: 'Altitude', coords: 'Coordonnées', loadingWx: 'Chargement de la météo…', loading: 'Chargement…',
+        feels: 'Ressenti', humidity: 'Humidité', wind: 'Vent', precip6: 'Pluie 6 h', rain: 'pluie', snow: 'neige', gusts: 'rafales',
+        noAlerts: h => `Aucune alerte dans les ${h} prochaines heures`, alertWord: 'Alerte', now: 'maintenant',
+        atHour: h => `à ${h} h`,
+        alerts: { storm: 'Orage', rain: 'Fortes pluies', snow: 'Neige', ice: 'Verglas', wind: 'Vent fort', fog: 'Brouillard dense' },
+        gustsText: n => `Rafales à ${n} km/h`,
+        aqSub: "Indice européen de la qualité de l'air", pm25: 'PM2,5', no2: "Dioxyde d'azote", o3: 'Ozone',
+        aqFoot: 'µg/m³ · maintenant · source : Copernicus (Open-Meteo)', noData: 'Pas de données',
+        alarmWord: 'Réveil', alarmOnce: 'Une seule fois', alarmDaily: 'Tous les jours', alarmWeekdays: 'Du lundi au vendredi', alarmWeekend: 'Week-end', alarmNone: 'Aucun réveil activé', alarmToday: "aujourd'hui", alarmTomorrow: 'demain', alarmNext: (w, h) => `Prochain réveil : ${w} à ${h}`, alarmStop: 'Arrêter', alarmSnooze: n => `+${n} min`, alarmNote: "Ils sonnent avec l'app ouverte (l'écran reste allumé). Touchez l'heure pour la changer.",
+        live: 'En direct', liveLower: 'en direct', newsWord: 'infos', classical: 'classique', worldEnglish: 'Europe · anglais',
+        loadingPrograms: 'Chargement des émissions…', via7: '7 h',
+        programsError: 'Impossible de charger.', openSite: 'Ouvrir le site', openWeb: 'Ouvrir sur le web',
+        loadingNews: 'Chargement des titres…',
+        newsFoot: t => `mis à jour à ${t}`,
+        newsError: 'Impossible de charger les titres.',
+        toastRadio: n => `Lecture impossible ici : touchez à nouveau ${n} pour ouvrir son site`,
+        toastPodcast: 'Lecture impossible. Utilisez la flèche ↗ pour l\'ouvrir sur le web',
+        voiceOn: 'Touchez pour entendre l\'heure · deux touches rapides coupent le son',
+        voiceOff: 'Son coupé · touchez pour entendre l\'heure et le réactiver',
+        voiceMuted: 'Son coupé',
+        sleepOff: 'Minuterie désactivée (touchez pour couper la radio dans 15, 30, 45, 60 ou 90 minutes)',
+        sleepOn: n => `La radio s'arrêtera dans ${n} min (touchez pour changer)`,
+        langGroup: 'Langue',
+        fullDate: (d, m, y) => `${d === 1 ? '1er' : d} ${PRS_I18N.fr.months[m].toLowerCase()} ${y}`,
+        araSona: 'En écoute', plPoblacio: 'Localité', plTemp: 'Température', close: 'Fermer',
+        t12: 'Les 12 prochaines heures', t5: 'Les 5 prochains jours', maxMin: (a, b) => `Max ${a}° · Min ${b}°`,
+        sant: 'Saint du jour', efem: 'Éphéméride', curio: 'Curiosité', solT: 'Soleil', llunaT: 'Lune', surt: 'Lever', pon: 'Coucher',
+        daylight: (h, m) => `${h} h ${m} min de jour`, daylightDiff: m => (m === 0 ? 'Comme hier' : m > 0 ? `${m} min de plus qu'hier` : `${-m} min de moins qu'hier`),
+        fullIn: n => (n === 0 ? "Pleine lune aujourd'hui" : n === 1 ? 'Pleine lune demain' : `Pleine lune dans ${n} jours`), newIn: n => (n === 0 ? "Nouvelle lune aujourd'hui" : n === 1 ? 'Nouvelle lune demain' : `Nouvelle lune dans ${n} jours`),
+        illuminated: p => `${p} % éclairée`, todayWord: "Aujourd'hui", tomorrowWord: 'Demain', daysWord: 'jours',
+        dayOfYear: (n, w) => `${n}e jour de l'année · Semaine ${w}`,
+        phases: ['Nouvelle lune', 'Premier croissant', 'Premier quartier', 'Gibbeuse croissante', 'Pleine lune', 'Gibbeuse décroissante', 'Dernier quartier', 'Dernier croissant'],
+        ofMonth: m => PRS_I18N.fr.months[m].toLowerCase(),
+        aniv: 'Anniversaire', anivSub: 'Facultatif · enregistré uniquement sur cet appareil', anivNom: 'Prénom', anivNaix: 'Date de naissance', anivDesa: 'Enregistrer', anivEsborra: 'Effacer',
+        pma: 'Joyeux anniversaire', years: 'ans', birthdaySpeech: n => (n ? `Joyeux anniversaire, ${n} !` : 'Joyeux anniversaire !'),
+        alMobile: "L'ajouter à l'horloge du téléphone", drTitle: "Alarmes dans l'horloge de l'iPhone",
+        drSteps: s => ["Ouvrez l'app Raccourcis et créez un nouveau raccourci (+).", "Ajoutez l'action « Créer une alarme » et, pour « Heure », choisissez « Entrée du raccourci ».", `Nommez-le exactement « ${s} » et enregistrez-le.`],
+        drOpen: 'Ouvrir Raccourcis', drDone: "C'est fait : créer l'alarme", drNote: "À faire une seule fois. La répétition se règle dans l'horloge du téléphone.",
+        hello: 'Bonjour ! J\'annoncerai les heures pile en français.'
+      },
+      de: {
+        locale: 'de-DE', name: 'Deutsch', decimal: ',',
+        months: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'],
+        weekShort: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+        watchDays: ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'],
+        longDays: ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'],
+        wmo: ['Klar', 'Überwiegend klar', 'Teilweise bewölkt', 'Bedeckt', 'Nebel', 'Reifnebel',
+              'Leichter Nieselregen', 'Nieselregen', 'Starker Nieselregen', 'Gefrierender Nieselregen', 'Starker gefrierender Nieselregen',
+              'Leichter Regen', 'Regen', 'Starker Regen', 'Gefrierender Regen', 'Starker gefrierender Regen',
+              'Leichter Schneefall', 'Schneefall', 'Starker Schneefall', 'Schneegriesel', 'Leichte Schauer', 'Schauer', 'Heftige Schauer',
+              'Schneeschauer', 'Starke Schneeschauer', 'Gewitter', 'Gewitter mit Hagel', 'Gewitter mit starkem Hagel'],
+        windDirs: ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'], west: 'W', east: 'O',
+        aqBands: ['Gut', 'Akzeptabel', 'Mäßig', 'Schlecht', 'Sehr schlecht', 'Extrem schlecht'],
+        themeNames: { day: 'Tag', night: 'Nacht', zz: 'Zz-Nacht' },
+        today: 'Heute', titleDbl: 'Zweimal tippen, um zum aktuellen Monat zurückzukehren', install: 'Als App installieren',
+        themeAria: 'Tag- oder Nachtmodus',
+        themeFixed: n => `Modus ${n} fest (tippen zum Ändern)`,
+        themeAuto: 'Automatischer Modus: Tag oder Nacht je nach Sonnenstand, Zz beim nächtlichen Laden (tippen zum Ändern)',
+        viewDots: 'Nach unten wischen, um die Fenster zu sehen', pausePlay: 'Pause oder fortsetzen',
+        pages: { calendari: 'Kalender', data: 'Datum', tgran: 'Temperatur', avui: 'Heute', festes: 'Demnächst', avisos: 'Warnungen', ubicacio: 'Standort', temps: 'Wetter', aire: 'Luftqualität', alarmes: 'Wecker', radio: 'Radio', podcasts: 'Podcasts', noticies: 'Nachrichten' },
+        next12: 'Nächste 12 Stunden', locating: 'Standort wird ermittelt…', unknownLoc: 'Unbekannter Standort',
+        altitude: 'Höhe', coords: 'Koordinaten', loadingWx: 'Wetter wird geladen…', loading: 'Wird geladen…',
+        feels: 'Gefühlt', humidity: 'Feuchte', wind: 'Wind', precip6: 'Regen 6 h', rain: 'Regen', snow: 'Schnee', gusts: 'Böen',
+        noAlerts: h => `Keine Warnungen in den nächsten ${h} Stunden`, alertWord: 'Warnung', now: 'jetzt',
+        atHour: h => `um ${h} Uhr`,
+        alerts: { storm: 'Gewitter', rain: 'Starkregen', snow: 'Schnee', ice: 'Glätte', wind: 'Starker Wind', fog: 'Dichter Nebel' },
+        gustsText: n => `Böen bis ${n} km/h`,
+        aqSub: 'Europäischer Luftqualitätsindex', pm25: 'PM2,5', no2: 'Stickstoffdioxid', o3: 'Ozon',
+        aqFoot: 'µg/m³ · jetzt · Quelle: Copernicus (Open-Meteo)', noData: 'Keine Daten',
+        alarmWord: 'Wecker', alarmOnce: 'Einmalig', alarmDaily: 'Täglich', alarmWeekdays: 'Montag bis Freitag', alarmWeekend: 'Wochenende', alarmNone: 'Kein Wecker aktiv', alarmToday: 'heute', alarmTomorrow: 'morgen', alarmNext: (w, h) => `Nächster Wecker: ${w} um ${h}`, alarmStop: 'Stopp', alarmSnooze: n => `+${n} Min.`, alarmNote: 'Klingelt bei geöffneter App (der Bildschirm bleibt an). Zum Ändern auf die Uhrzeit tippen.',
+        live: 'Live', liveLower: 'live', newsWord: 'Nachrichten', classical: 'Klassik', worldEnglish: 'Europa · Englisch',
+        loadingPrograms: 'Sendungen werden geladen…', via7: '7 Uhr',
+        programsError: 'Konnte nicht geladen werden.', openSite: 'Website öffnen', openWeb: 'Im Web öffnen',
+        loadingNews: 'Schlagzeilen werden geladen…',
+        newsFoot: t => `aktualisiert um ${t}`,
+        newsError: 'Die Schlagzeilen konnten nicht geladen werden.',
+        toastRadio: n => `Hier nicht abspielbar: ${n} erneut antippen, um die Website zu öffnen`,
+        toastPodcast: 'Wiedergabe nicht möglich. Mit dem Pfeil ↗ im Web öffnen',
+        voiceOn: 'Tippen für die Uhrzeit · zweimal schnell tippen schaltet den Ton aus',
+        voiceOff: 'Ton aus · tippen für die Uhrzeit und Ton wieder an',
+        voiceMuted: 'Ton aus',
+        sleepOff: 'Sleep-Timer aus (tippen, um das Radio in 15, 30, 45, 60 oder 90 Minuten auszuschalten)',
+        sleepOn: n => `Das Radio geht in ${n} Min. aus (tippen zum Ändern)`,
+        langGroup: 'Sprache',
+        fullDate: (d, m, y) => `${d}. ${PRS_I18N.de.months[m]} ${y}`,
+        araSona: 'Läuft gerade', plPoblacio: 'Ort', plTemp: 'Temperatur', close: 'Schließen',
+        t12: 'Nächste 12 Stunden', t5: 'Nächste 5 Tage', maxMin: (a, b) => `Max ${a}° · Min ${b}°`,
+        sant: 'Tagesheilige', efem: 'An diesem Tag', curio: 'Wussten Sie?', solT: 'Sonne', llunaT: 'Mond', surt: 'Aufgang', pon: 'Untergang',
+        daylight: (h, m) => `${h} Std. ${m} Min. Tageslicht`, daylightDiff: m => (m === 0 ? 'Wie gestern' : m > 0 ? `${m} Min. länger als gestern` : `${-m} Min. kürzer als gestern`),
+        fullIn: n => (n === 0 ? 'Heute Vollmond' : n === 1 ? 'Morgen Vollmond' : `Vollmond in ${n} Tagen`), newIn: n => (n === 0 ? 'Heute Neumond' : n === 1 ? 'Morgen Neumond' : `Neumond in ${n} Tagen`),
+        illuminated: p => `${p} % beleuchtet`, todayWord: 'Heute', tomorrowWord: 'Morgen', daysWord: 'Tage',
+        dayOfYear: (n, w) => `${n}. Tag des Jahres · Woche ${w}`,
+        phases: ['Neumond', 'Zunehmende Sichel', 'Erstes Viertel', 'Zunehmender Mond', 'Vollmond', 'Abnehmender Mond', 'Letztes Viertel', 'Abnehmende Sichel'],
+        ofMonth: m => PRS_I18N.de.months[m],
+        aniv: 'Geburtstag', anivSub: 'Optional · nur auf diesem Gerät gespeichert', anivNom: 'Name', anivNaix: 'Geburtsdatum', anivDesa: 'Speichern', anivEsborra: 'Löschen',
+        pma: 'Alles Gute zum Geburtstag', years: 'Jahre', birthdaySpeech: n => (n ? `Alles Gute zum Geburtstag, ${n}!` : 'Alles Gute zum Geburtstag!'),
+        alMobile: 'In die Uhr des Handys übernehmen', drTitle: 'Wecker in der iPhone-Uhr',
+        drSteps: s => ['Öffne die App Kurzbefehle und erstelle einen neuen Kurzbefehl (+).', 'Füge die Aktion „Wecker erstellen“ hinzu und wähle bei „Uhrzeit“ die „Kurzbefehleingabe“.', `Nenne ihn genau „${s}“ und sichere ihn.`],
+        drOpen: 'Kurzbefehle öffnen', drDone: 'Erledigt: Wecker erstellen', drNote: 'Nur einmal nötig. Wiederholungen stellst du in der Uhr des Handys ein.',
+        hello: 'Hallo! Ich sage die vollen Stunden auf Deutsch an.'
+      },
+      it: {
+        locale: 'it-IT', name: 'Italiano', decimal: ',',
+        months: ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'],
+        weekShort: ['Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa', 'Do'],
+        watchDays: ['DOM', 'LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB'],
+        longDays: ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'],
+        wmo: ['Sereno', 'Quasi sereno', 'Parzialmente nuvoloso', 'Coperto', 'Nebbia', 'Nebbia con brina',
+              'Pioviggine debole', 'Pioviggine', 'Pioviggine intensa', 'Pioviggine gelata', 'Pioviggine gelata intensa',
+              'Pioggia debole', 'Pioggia', 'Pioggia intensa', 'Pioggia gelata', 'Pioggia gelata intensa',
+              'Neve debole', 'Neve', 'Neve intensa', 'Granuli di neve', 'Rovesci deboli', 'Rovesci', 'Rovesci violenti',
+              'Rovesci di neve', 'Forti rovesci di neve', 'Temporale', 'Temporale con grandine', 'Temporale con forte grandine'],
+        windDirs: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'], west: 'O',
+        aqBands: ['Buona', 'Discreta', 'Moderata', 'Scadente', 'Molto scadente', 'Estremamente scadente'],
+        themeNames: { day: 'diurno', night: 'notturno', zz: 'Zz notturno' },
+        today: 'Oggi', titleDbl: 'Tocca 2 volte per tornare al mese corrente', install: 'Installa come app',
+        themeAria: 'Tema giorno o notte',
+        themeFixed: n => `Tema ${n} fisso (tocca per cambiare)`,
+        themeAuto: 'Tema automatico: giorno o notte secondo il sole, e Zz quando si ricarica di notte (tocca per cambiare)',
+        viewDots: 'Scorri verso il basso per vedere le finestre', pausePlay: 'Pausa o riprendi',
+        pages: { calendari: 'Calendario', data: 'Data', tgran: 'Temperatura', avui: 'Oggi', festes: 'Prossimamente', avisos: 'Allerte', ubicacio: 'Posizione', temps: 'Meteo', aire: "Qualità dell'aria", alarmes: 'Sveglie', radio: 'Radio', podcasts: 'Podcast', noticies: 'Notizie' },
+        next12: 'Prossime 12 ore', locating: 'Localizzazione…', unknownLoc: 'Posizione sconosciuta',
+        altitude: 'Altitudine', coords: 'Coordinate', loadingWx: 'Caricamento meteo…', loading: 'Caricamento…',
+        feels: 'Percepita', humidity: 'Umidità', wind: 'Vento', precip6: 'Pioggia 6 h', rain: 'pioggia', snow: 'neve', gusts: 'raffiche',
+        noAlerts: h => `Nessuna allerta nelle prossime ${h} ore`, alertWord: 'Allerta', now: 'ora',
+        atHour: h => (h === 1 ? "all'una" : (h === 8 || h === 11) ? `all'${h}` : `alle ${h}`),
+        alerts: { storm: 'Temporale', rain: 'Pioggia intensa', snow: 'Neve', ice: 'Ghiaccio', wind: 'Vento forte', fog: 'Nebbia fitta' },
+        gustsText: n => `Raffiche di ${n} km/h`,
+        aqSub: "Indice europeo della qualità dell'aria", pm25: 'PM2,5', no2: 'Biossido di azoto', o3: 'Ozono',
+        aqFoot: 'µg/m³ · ora · fonte: Copernicus (Open-Meteo)', noData: 'Nessun dato',
+        alarmWord: 'Sveglia', alarmOnce: 'Una sola volta', alarmDaily: 'Ogni giorno', alarmWeekdays: 'Dal lunedì al venerdì', alarmWeekend: 'Fine settimana', alarmNone: 'Nessuna sveglia attiva', alarmToday: 'oggi', alarmTomorrow: 'domani', alarmNext: (w, h) => `Prossima sveglia: ${w} alle ${h}`, alarmStop: 'Ferma', alarmSnooze: n => `+${n} min`, alarmNote: "Suonano con l'app aperta (lo schermo resta acceso). Tocca l'ora per cambiarla.",
+        live: 'In diretta', liveLower: 'in diretta', newsWord: 'notizie', classical: 'classica', worldEnglish: 'Europa · inglese',
+        loadingPrograms: 'Caricamento programmi…', via7: 'ore 7',
+        programsError: 'Impossibile caricare.', openSite: 'Apri il sito', openWeb: 'Apri sul web',
+        loadingNews: 'Caricamento titoli…',
+        newsFoot: t => `aggiornato alle ${t}`,
+        newsError: 'Impossibile caricare i titoli.',
+        toastRadio: n => `Impossibile riprodurre qui: tocca di nuovo ${n} per aprire il sito`,
+        toastPodcast: 'Impossibile riprodurre. Usa la freccia ↗ per aprirlo sul web',
+        voiceOn: 'Tocca per sentire l\'ora · due tocchi rapidi spengono l\'audio',
+        voiceOff: 'Audio spento · tocca per sentire l\'ora e riattivarlo',
+        voiceMuted: 'Audio spento',
+        sleepOff: 'Timer disattivato (tocca per spegnere la radio tra 15, 30, 45, 60 o 90 minuti)',
+        sleepOn: n => `La radio si spegnerà tra ${n} min (tocca per cambiare)`,
+        langGroup: 'Lingua',
+        fullDate: (d, m, y) => `${d === 1 ? '1º' : d} ${PRS_I18N.it.months[m].toLowerCase()} ${y}`,
+        araSona: 'In ascolto', plPoblacio: 'Località', plTemp: 'Temperatura', close: 'Chiudi',
+        t12: 'Prossime 12 ore', t5: 'Prossimi 5 giorni', maxMin: (a, b) => `Max ${a}° · Min ${b}°`,
+        sant: 'Santo del giorno', efem: 'Ricorrenza', curio: 'Curiosità', solT: 'Sole', llunaT: 'Luna', surt: 'Sorge', pon: 'Tramonta',
+        daylight: (h, m) => `${h} h ${m} min di luce`, daylightDiff: m => (m === 0 ? 'Come ieri' : m > 0 ? `${m} min in più di ieri` : `${-m} min in meno di ieri`),
+        fullIn: n => (n === 0 ? 'Luna piena oggi' : n === 1 ? 'Luna piena domani' : `Luna piena tra ${n} giorni`), newIn: n => (n === 0 ? 'Luna nuova oggi' : n === 1 ? 'Luna nuova domani' : `Luna nuova tra ${n} giorni`),
+        illuminated: p => `${p}% illuminata`, todayWord: 'Oggi', tomorrowWord: 'Domani', daysWord: 'giorni',
+        dayOfYear: (n, w) => `Giorno ${n} dell'anno · Settimana ${w}`,
+        phases: ['Luna nuova', 'Luna crescente', 'Primo quarto', 'Gibbosa crescente', 'Luna piena', 'Gibbosa calante', 'Ultimo quarto', 'Luna calante'],
+        ofMonth: m => PRS_I18N.it.months[m].toLowerCase(),
+        aniv: 'Compleanno', anivSub: 'Facoltativo · salvato solo su questo dispositivo', anivNom: 'Nome', anivNaix: 'Data di nascita', anivDesa: 'Salva', anivEsborra: 'Cancella',
+        pma: 'Buon compleanno', years: 'anni', birthdaySpeech: n => (n ? `Buon compleanno, ${n}!` : 'Buon compleanno!'),
+        alMobile: "Aggiungila all'orologio del telefono", drTitle: "Sveglie nell'Orologio dell'iPhone",
+        drSteps: s => ["Apri l'app Comandi e crea un nuovo comando (+).", "Aggiungi l'azione «Crea sveglia» e, in «Ora», scegli «Input comando».", `Chiamalo esattamente «${s}» e salvalo.`],
+        drOpen: 'Apri Comandi', drDone: 'Fatto: crea la sveglia', drNote: "Basta farlo una volta. La ripetizione si sceglie nell'orologio del telefono.",
+        hello: 'Ciao! Annuncerò le ore in punto in italiano.'
+      },
+      en: {
+        locale: 'en-GB', name: 'English', decimal: '.',
+        months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        weekShort: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+        watchDays: ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'],
+        longDays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        wmo: ['Clear sky', 'Mainly clear', 'Partly cloudy', 'Overcast', 'Fog', 'Freezing fog',
+              'Light drizzle', 'Drizzle', 'Heavy drizzle', 'Freezing drizzle', 'Heavy freezing drizzle',
+              'Light rain', 'Rain', 'Heavy rain', 'Freezing rain', 'Heavy freezing rain',
+              'Light snow', 'Snow', 'Heavy snow', 'Snow grains', 'Light showers', 'Showers', 'Violent showers',
+              'Snow showers', 'Heavy snow showers', 'Thunderstorm', 'Thunderstorm with hail', 'Thunderstorm with heavy hail'],
+        windDirs: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'], west: 'W',
+        aqBands: ['Good', 'Fair', 'Moderate', 'Poor', 'Very poor', 'Extremely poor'],
+        themeNames: { day: 'day', night: 'night', zz: 'Zz night' },
+        today: 'Today', titleDbl: 'Tap twice to return to the current month', install: 'Install as app',
+        themeAria: 'Day or night theme',
+        themeFixed: n => `Fixed ${n} theme (tap to change)`,
+        themeAuto: 'Automatic theme: day or night by the sun, and Zz when charging at night (tap to change)',
+        viewDots: 'Swipe down to see the panels', pausePlay: 'Pause or resume',
+        pages: { calendari: 'Calendar', data: 'Date', tgran: 'Temperature', avui: 'Today', festes: 'Coming up', avisos: 'Alerts', ubicacio: 'Location', temps: 'Weather', aire: 'Air quality', alarmes: 'Alarms', radio: 'Radio', podcasts: 'Podcasts', noticies: 'News' },
+        next12: 'Next 12 hours', locating: 'Locating…', unknownLoc: 'Unknown location',
+        altitude: 'Altitude', coords: 'Coordinates', loadingWx: 'Loading weather…', loading: 'Loading…',
+        feels: 'Feels like', humidity: 'Humidity', wind: 'Wind', precip6: 'Rain 6 h', rain: 'rain', snow: 'snow', gusts: 'gusts',
+        noAlerts: h => `No alerts in the next ${h} hours`, alertWord: 'Alert', now: 'now',
+        atHour: h => `at ${h}:00`,
+        alerts: { storm: 'Thunderstorm', rain: 'Heavy rain', snow: 'Snow', ice: 'Ice', wind: 'Strong wind', fog: 'Dense fog' },
+        gustsText: n => `Gusts of ${n} km/h`,
+        aqSub: 'European Air Quality Index', pm25: 'PM2.5', no2: 'Nitrogen dioxide', o3: 'Ozone',
+        aqFoot: 'µg/m³ · now · source: Copernicus (Open-Meteo)', noData: 'No data',
+        alarmWord: 'Alarm', alarmOnce: 'Once', alarmDaily: 'Every day', alarmWeekdays: 'Weekdays', alarmWeekend: 'Weekends', alarmNone: 'No alarm set', alarmToday: 'today', alarmTomorrow: 'tomorrow', alarmNext: (w, h) => `Next alarm: ${w} at ${h}`, alarmStop: 'Stop', alarmSnooze: n => `Snooze ${n} min`, alarmNote: 'Alarms ring while the app is open (the screen stays on). Tap the time to change it.',
+        live: 'Live', liveLower: 'live', newsWord: 'news', classical: 'classical', worldEnglish: 'Europe · English',
+        loadingPrograms: 'Loading shows…', via7: '7 am',
+        programsError: 'Couldn\'t load.', openSite: 'Open the website', openWeb: 'Open on the web',
+        loadingNews: 'Loading headlines…',
+        newsFoot: t => `updated at ${t}`,
+        newsError: 'Couldn\'t load the headlines.',
+        toastRadio: n => `Can't play here: tap ${n} again to open its website`,
+        toastPodcast: 'Couldn\'t play. Use the ↗ arrow to open it on the web',
+        voiceOn: 'Tap to hear the time · double-tap to mute',
+        voiceOff: 'Sound off · tap to hear the time and turn it back on',
+        voiceMuted: 'Sound off',
+        sleepOff: 'Sleep timer off (tap to turn the radio off in 15, 30, 45, 60 or 90 minutes)',
+        sleepOn: n => `The radio will turn off in ${n} min (tap to change)`,
+        langGroup: 'Language',
+        fullDate: (d, m, y) => `${d} ${PRS_I18N.en.months[m]} ${y}`,
+        araSona: 'Now playing', plPoblacio: 'Town', plTemp: 'Temperature', close: 'Close',
+        t12: 'Next 12 hours', t5: 'Next 5 days', maxMin: (a, b) => `High ${a}° · Low ${b}°`,
+        sant: 'Saint of the day', efem: 'On this day', curio: 'Did you know?', solT: 'Sun', llunaT: 'Moon', surt: 'Rise', pon: 'Set',
+        daylight: (h, m) => `${h} h ${m} min of daylight`, daylightDiff: m => (m === 0 ? 'Same as yesterday' : m > 0 ? `${m} min more than yesterday` : `${-m} min less than yesterday`),
+        fullIn: n => (n === 0 ? 'Full moon today' : n === 1 ? 'Full moon tomorrow' : `Full moon in ${n} days`), newIn: n => (n === 0 ? 'New moon today' : n === 1 ? 'New moon tomorrow' : `New moon in ${n} days`),
+        illuminated: p => `${p}% illuminated`, todayWord: 'Today', tomorrowWord: 'Tomorrow', daysWord: 'days',
+        dayOfYear: (n, w) => `Day ${n} of the year · Week ${w}`,
+        phases: ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'],
+        ofMonth: m => PRS_I18N.en.months[m],
+        aniv: 'Birthday', anivSub: 'Optional · saved only on this device', anivNom: 'Name', anivNaix: 'Date of birth', anivDesa: 'Save', anivEsborra: 'Delete',
+        pma: 'Happy birthday', years: 'years', birthdaySpeech: n => (n ? `Happy birthday, ${n}!` : 'Happy birthday!'),
+        alMobile: "Add it to the phone's clock", drTitle: 'Alarms in the iPhone Clock',
+        drSteps: s => ['Open the Shortcuts app and create a new shortcut (+).', 'Add the “Create Alarm” action and set “Time” to “Shortcut Input”.', `Name it exactly “${s}” and save it.`],
+        drOpen: 'Open Shortcuts', drDone: 'Done: create the alarm', drNote: "You only need to do this once. Repeat days are set in the phone's Clock.",
+        hello: 'Hello! I\'ll announce the time on the hour in English.'
+      }
+    };
+
+    function tx(key, ...args) {
+        let v = PRS_I18N[currentLang] && PRS_I18N[currentLang][key];
+        if (v === undefined) v = PRS_I18N.ca[key];
+        return typeof v === 'function' ? v(...args) : v;
+    }
 
     function detectDefaultLang() {
         try {
@@ -2094,6 +2935,8 @@
 
     // ---------- Calendari ----------
     let monthOffset = 0;
+    let calendarTitleText = '';
+    let fullsReady = false;
 
     function renderCalendar(offset) {
         if (typeof offset === 'number') {
@@ -2110,7 +2953,9 @@
         const today = realNow.getDate();
 
         const monthName = new Intl.DateTimeFormat(T().locale, { month: 'long' }).format(target);
-        document.getElementById('calendarHeader').innerText = `${monthName} ${year}`;
+        calendarTitleText = `${monthName} ${year}`;
+        if (typeof updateFullTitle === 'function' && fullsReady) updateFullTitle();
+        else document.getElementById('calendarHeader').innerText = calendarTitleText;
 
         // Les festes (calendari laboral de Catalunya) només es mostren en català
         const holidays = currentLang === 'ca' ? getHolidaysForYear(year) : new Map();
@@ -2458,7 +3303,9 @@
     window.addEventListener('orientationchange', () => setTimeout(sizeClockForPortrait, 250));
 
     // ---------- Navegació del calendari ----------
+    // AVUI (i doble toc al títol): torna al calendari i al mes actual, des d'on sigui
     function goToCurrentMonth() {
+        if (typeof goFull === 'function' && fullsReady && !isCalendarFull()) goFull(0);
         if (monthOffset !== 0) renderCalendar(0);
     }
 
@@ -2512,97 +3359,244 @@
         lastHeaderTap = now;
     });
 
-    // Lliscar a esquerra/dreta sobre el calendari canvia de mes
-    let touchStartX = null;
-    let touchStartY = null;
-
+    // ---------- Finestres apilades en vertical i en cercle (com al PRS 516) ----------
+    // Lliscant avall es passa a la finestra següent (ve de dalt); amunt, a l'anterior. Després de
+    // l'última torna el calendari. De costat: el mes (calendari) o el subpanell de la finestra.
     const calendarSectionEl = document.querySelector('.calendar-section');
+    const fullsBox = document.getElementById('fulls');
+    const viewDotsEl = document.getElementById('viewDots');
+    const FULL_SEP = 40;
+    let fullIndex = 0;
+    const fullPrev = new WeakMap(); // posició anterior de cada finestra (per als salts del cercle)
 
-    calendarSectionEl.addEventListener('touchstart', (e) => {
-        const t = e.touches[0];
-        touchStartX = t.clientX;
-        touchStartY = t.clientY;
-    }, { passive: true });
+    function fullsList() { return [...fullsBox.children].filter(f => f.classList.contains('full') && !f.hidden); }
+    function currentFull() { const list = fullsList(); return list[fullIndex] || list[0]; }
+    function isCalendarFull() { const f = currentFull(); return !f || f.dataset.key === 'calendari'; }
 
-    calendarSectionEl.addEventListener('touchend', (e) => {
-        if (touchStartX === null) return;
-        const t = e.changedTouches[0];
-        const dx = t.clientX - touchStartX;
-        const dy = t.clientY - touchStartY;
-        touchStartX = null;
-        touchStartY = null;
-        handleCalendarSwipe(dx, dy);
-    }, { passive: true });
-
-    // Amb el ratolí (escriptori) també es pot arrossegar
-    let mouseStart = null;
-    calendarSectionEl.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'mouse') mouseStart = { x: e.clientX, y: e.clientY };
-    });
-    window.addEventListener('pointerup', (e) => {
-        if (!mouseStart || e.pointerType !== 'mouse') return;
-        const dx = e.clientX - mouseStart.x;
-        const dy = e.clientY - mouseStart.y;
-        mouseStart = null;
-        handleCalendarSwipe(dx, dy);
-    });
-
-    // Vertical: alterna calendari ⇅ finestra d'informació (avall des del calendari, amunt per tornar).
-    // Horitzontal: al calendari canvia de mes; a la finestra d'informació canvia de pàgina.
-    function handleCalendarSwipe(dx, dy) {
-        const vertical = Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5;
-        const horizontal = Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5;
-        if (vertical) {
-            setCalendarView(calendarView === 'calendar' ? 'info' : 'calendar');
-        } else if (horizontal && calendarView === 'calendar') {
-            renderCalendar(dx < 0 ? monthOffset + 1 : monthOffset - 1);
-        } else if (horizontal) {
-            // Lliscar cap a la dreta mostra la pàgina de l'esquerra (la data, des de la primera)
-            setInfoPage(infoPageIndex + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-        }
+    function windowName(f) {
+        if (!f) return '';
+        if (f.dataset.key === 'calendari') return calendarTitleText;
+        const pages = tx('pages') || {};
+        return pages[f.dataset.key] || '';
     }
 
-    // A l'escriptori, també amb les fletxes del teclat
-    document.addEventListener('keydown', (e) => {
-        if (e.target.closest && e.target.closest('input, textarea, select')) return;
-        if (e.key === 'ArrowDown' && calendarView === 'calendar') setCalendarView('info');
-        else if (e.key === 'ArrowUp' && calendarView === 'info') setCalendarView('calendar');
-        else if (e.key === 'ArrowLeft') handleCalendarSwipe(60, 0);
-        else if (e.key === 'ArrowRight') handleCalendarSwipe(-60, 0);
-    });
+    // L'element que es desplaça amunt i avall dins la finestra (el subpanell, si n'hi ha)
+    function currentScroller() {
+        const f = currentFull();
+        if (!f || f.dataset.key === 'calendari') return null;
+        if (f._ll) return f._ll.current();
+        return f.querySelector('.desplaca') || null;
+    }
 
-    // ---------- Requadre del calendari: calendari ⇅ finestra d'informació ----------
-    let calendarView = 'calendar';
-    const infoViewEl = calendarSectionEl.querySelector('.alt-view--info');
+    function updateFullTitle() {
+        const titleEl = document.getElementById('calendarHeader');
+        const f = currentFull();
+        const cal = !f || f.dataset.key === 'calendari';
+        titleEl.classList.toggle('window-title', !cal);
+        titleEl.textContent = cal ? calendarTitleText : windowName(f);
+    }
 
-    function setCalendarView(view) {
-        calendarView = view;
+    function refreshFullDots() {
+        const list = fullsList();
+        if (viewDotsEl.children.length !== list.length) {
+            viewDotsEl.innerHTML = '';
+            list.forEach((f, i) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.addEventListener('click', (e) => { e.stopPropagation(); goFull(i); });
+                viewDotsEl.appendChild(b);
+            });
+        }
+        [...viewDotsEl.children].forEach((b, i) => {
+            b.classList.toggle('on', i === fullIndex);
+            const nom = windowName(list[i]);
+            b.title = nom;
+            b.setAttribute('aria-label', nom);
+        });
+    }
+
+    function positionFulls(animate) {
+        const list = fullsList();
+        const N = list.length;
+        list.forEach((f, i) => {
+            let o = ((i - fullIndex) % N + N) % N;
+            if (o > N / 2) o -= N;
+            const prev = fullPrev.get(f);
+            const jump = prev !== undefined && Math.abs(o - prev) > 1; // passa per fora de la vista
+            f.style.transition = animate && !jump ? 'transform 0.5s cubic-bezier(.22,.9,.3,1)' : 'none';
+            // La següent espera a dalt (lliscant avall baixa); la visible, sense cap transformació
+            f.style.transform = o === 0 ? 'none' : `translateY(calc(${-o} * (100% + ${FULL_SEP}px)))`;
+            f.style.visibility = Math.abs(o) > 1 ? 'hidden' : '';
+            f.inert = o !== 0;
+            f.setAttribute('aria-hidden', String(o !== 0));
+            fullPrev.set(f, o);
+        });
+        const cur = currentFull();
+        calendarSectionEl.dataset.view = cur ? cur.dataset.key : 'calendari';
+        refreshFullDots();
+        updateFullTitle();
+    }
+
+    function goFull(i, animate = true) {
+        const list = fullsList();
+        const N = list.length;
+        if (!N) return;
+        fullIndex = ((i % N) + N) % N;
         hideHolidayTooltip();
-        calendarSectionEl.dataset.view = view;
-        infoViewEl.setAttribute('aria-hidden', String(view !== 'info'));
-        if (view === 'info') {
+        positionFulls(animate);
+        const sc = currentScroller();
+        if (sc) sc.scrollTop = 0; // cada finestra s'obre pel principi
+        const f = list[fullIndex];
+        if (f.dataset.key !== 'calendari') {
             renderInfo();
             requestAnimationFrame(fitAltViews);
         }
+        if (typeof onFullShown === 'function') onFullShown(f.dataset.key);
     }
 
-    // Pàgines, d'esquerra a dreta: data · població i temps (la que surt primer) · indicadors · localització
-    const INFO_PAGES = ['date', 'place', 'metrics', 'location'];
-    let infoPageIndex = 1;
+    function goFullKey(key) {
+        const i = fullsList().findIndex(f => f.dataset.key === key);
+        if (i >= 0) goFull(i);
+    }
 
-    function setInfoPage(index, direction = 1) {
-        infoPageIndex = (index + INFO_PAGES.length) % INFO_PAGES.length;
-        const name = INFO_PAGES[infoPageIndex];
-        infoViewEl.querySelectorAll('.info-page').forEach((page) => {
-            const active = page.classList.contains(`info-page--${name}`);
-            // La pàgina que entra ve del costat cap on llisques; la que surt marxa cap a l'altre
-            page.style.setProperty('--page-from', `${(active ? 1 : -1) * direction * 22}px`);
-            page.classList.toggle('active', active);
-            page.setAttribute('aria-hidden', String(!active));
+    function shiftFull(dir) { goFull(fullIndex + dir); }
+
+    // Quan apareixen o desapareixen finestres (en canviar d'idioma), es manté l'actual
+    function refreshFulls() {
+        const cur = currentFull();
+        const list = fullsList();
+        fullIndex = Math.max(0, list.indexOf(cur));
+        positionFulls(false);
+    }
+
+    // Subpanells laterals dins d'una finestra (dit de costat, fletxes o puntets)
+    function makeSlider(full) {
+        const root = full.querySelector('.lliscador');
+        if (!root) return null;
+        const track = root.querySelector('.ll-pista');
+        const panes = [...track.children];
+        const dots = root.querySelector('.ll-punts');
+        let i = 0;
+        dots.innerHTML = '';
+        panes.forEach((pane, k) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.addEventListener('click', (e) => { e.stopPropagation(); go(k); });
+            dots.appendChild(b);
         });
-        infoViewEl.querySelectorAll('.page-dots span').forEach((dot, i) => dot.classList.toggle('active', i === infoPageIndex));
-        requestAnimationFrame(fitAltViews);
+        function go(k, animate = true) {
+            i = Math.max(0, Math.min(panes.length - 1, k));
+            track.style.transition = animate ? 'margin-left 0.42s cubic-bezier(.22,.9,.3,1)' : 'none';
+            track.style.marginLeft = `${-i * 100}%`;
+            panes.forEach((pane, n) => { pane.inert = n !== i; });
+            [...dots.children].forEach((b, n) => b.classList.toggle('on', n === i));
+            panes[i].scrollTop = 0;
+            requestAnimationFrame(fitAltViews);
+        }
+        go(0, false);
+        return {
+            go,
+            shift(d) { const n = i + d; if (n < 0 || n >= panes.length) return false; go(n); return true; },
+            current: () => panes[i]
+        };
     }
+    [...fullsBox.children].forEach(f => { f._ll = makeSlider(f); });
+
+    // Gest de costat: mes (calendari) o subpanell
+    function sideStep(dir) {
+        if (isCalendarFull()) { renderCalendar(monthOffset + dir); return; }
+        const ll = currentFull()._ll;
+        if (ll) ll.shift(dir);
+    }
+
+    // Dit i ratolí sobre el requadre. Si la finestra té més contingut, primer es desplaça
+    // com una cinta; quan s'arriba al final (o al principi), el gest passa de finestra.
+    (function setupFullsSwipe() {
+        const SWIPE = 40;
+        let startX = 0, startY = 0, startTop = 0, startMax = 0, tracking = false;
+
+        function onStart(x, y, target) {
+            if (target && target.closest && target.closest('input, select, textarea, .view-dots')) { tracking = false; return; }
+            startX = x;
+            startY = y;
+            const sc = currentScroller();
+            startTop = sc ? sc.scrollTop : 0;
+            startMax = sc ? sc.scrollHeight - sc.clientHeight : 0;
+            tracking = true;
+        }
+
+        function onEnd(x, y) {
+            if (!tracking) return;
+            tracking = false;
+            const dx = x - startX;
+            const dy = y - startY;
+            if (Math.abs(dy) >= SWIPE && Math.abs(dy) > Math.abs(dx) * 1.2) {
+                const sc = currentScroller();
+                if (sc && startMax > 2) {
+                    const max = sc.scrollHeight - sc.clientHeight;
+                    if (dy < 0 && !(startTop >= startMax - 2 && sc.scrollTop >= max - 2)) return; // encara hi ha cinta avall
+                    if (dy > 0 && !(startTop <= 0 && sc.scrollTop <= 0)) return;                 // encara hi ha cinta amunt
+                }
+                shiftFull(dy > 0 ? 1 : -1);
+                return;
+            }
+            if (Math.abs(dx) >= SWIPE && Math.abs(dx) > Math.abs(dy) * 1.2) sideStep(dx < 0 ? 1 : -1);
+        }
+
+        calendarSectionEl.addEventListener('touchstart', (e) => {
+            const tp = e.changedTouches[0];
+            onStart(tp.clientX, tp.clientY, e.target);
+        }, { passive: true });
+        calendarSectionEl.addEventListener('touchend', (e) => {
+            const tp = e.changedTouches[0];
+            onEnd(tp.clientX, tp.clientY);
+        }, { passive: true });
+        // Amb el ratolí (escriptori) també es pot arrossegar
+        calendarSectionEl.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY, e.target));
+        window.addEventListener('mouseup', (e) => onEnd(e.clientX, e.clientY));
+
+        // Roda del ratolí / trackpad: amunt i avall canvien de finestra; de costat, mes o subpanell
+        let wheelLock = 0;
+        calendarSectionEl.addEventListener('wheel', (e) => {
+            const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+            const amount = horizontal ? e.deltaX : e.deltaY;
+            const now = Date.now();
+            if (!horizontal) {
+                const sc = currentScroller();
+                if (sc && sc.scrollHeight - sc.clientHeight > 2) {
+                    const atTop = sc.scrollTop <= 0;
+                    const atBottom = sc.scrollTop >= sc.scrollHeight - sc.clientHeight - 2;
+                    if ((amount < 0 && !atTop) || (amount > 0 && !atBottom)) return; // desplaça la cinta
+                }
+            }
+            e.preventDefault();
+            if (Math.abs(amount) < 25 || now < wheelLock) return;
+            wheelLock = now + 700;
+            if (horizontal) sideStep(amount > 0 ? 1 : -1);
+            else shiftFull(amount > 0 ? 1 : -1);
+        }, { passive: false });
+    })();
+
+    // Per compatibilitat amb proves i dreceres antigues
+    function handleCalendarSwipe(dx, dy) {
+        if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.2) shiftFull(dy > 0 ? 1 : -1);
+        else if (Math.abs(dx) > 40) sideStep(dx < 0 ? 1 : -1);
+    }
+
+    // Teclat: ↓ ↑ finestres, ← → mesos o subpanells, Esc torna al calendari
+    document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target && e.target.closest && e.target.closest('input, select, textarea, .dialeg')) return;
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') shiftFull(1);
+        else if (e.key === 'ArrowUp' || e.key === 'PageUp') shiftFull(-1);
+        else if (e.key === 'ArrowRight') sideStep(1);
+        else if (e.key === 'ArrowLeft') sideStep(-1);
+        else if (e.key === 'Escape') { if (!closeLangMenu()) goFull(0); }
+        else return;
+        e.preventDefault();
+    });
+
+    fullsReady = true;
 
     function compassPoint(deg) {
         if (deg == null || Number.isNaN(deg)) return '';
@@ -2640,9 +3634,12 @@
                 windEl.appendChild(unit);
             }
         }
-        const windLabel = infoViewEl.querySelector('.metric--wind .metric-label');
+        const windLabel = fullsBox.querySelector('.metric--wind .metric-label');
         const dir = wx.windSpeed ? compassPoint(wx.windDir) : '';
         if (windLabel) windLabel.textContent = dir ? `${t.wind} · ${dir}` : t.wind;
+        // Placa de la fila de baix
+        setPlacaLloc(wx.city || dash);
+
         // Localització: el país no es posa si és l'Estat espanyol
         set('locName', wx.city || dash);
         set('locRegion', wx.region || '');
@@ -2701,7 +3698,7 @@
         fitPlaceName(document.getElementById('locName'));
         [['.info-page--place', '.alt-temp-row', 0.84, 0.42],
          ['.info-page--date', '.page-weekday', 0.86, 0.3]].forEach(([pageSel, targetSel, wRatio, hRatio]) => {
-            const page = infoViewEl.querySelector(pageSel);
+            const page = fullsBox.querySelector(pageSel);
             const el = page && page.querySelector(targetSel);
             if (!el) return;
             const cs = getComputedStyle(page);
@@ -2726,7 +3723,7 @@
 
     // Si una xifra no cap a la seva casella, només aquella s'encongeix (les altres mantenen la mida)
     function fitMetricValues() {
-        infoViewEl.querySelectorAll('.metric-main').forEach((main) => {
+        fullsBox.querySelectorAll('.metric-main').forEach((main) => {
             main.style.fontSize = '';
             const cell = main.parentElement;
             const avail = cell.clientWidth;
@@ -2739,6 +3736,22 @@
             }
         });
     }
+
+    // ---------- Placa de la població (fila de baix) ----------
+    // Un toc porta a la finestra d'ubicació. Si el nom és llarg, passa a dues línies més petites.
+    const plLloc = document.getElementById('plLloc');
+
+    function setPlacaLloc(text) {
+        if (plLloc.textContent !== text) plLloc.textContent = text;
+        plLloc.classList.remove('dues');
+        if (plLloc.scrollWidth > plLloc.clientWidth + 1) plLloc.classList.add('dues');
+    }
+
+    document.getElementById('placaLloc').addEventListener('click', () => goFullKey('ubicacio'));
+    document.getElementById('placaLloc').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goFullKey('ubicacio'); }
+    });
+    window.addEventListener('resize', () => requestAnimationFrame(() => setPlacaLloc(plLloc.textContent)));
 
     // Abans hi havia vistes separades; ara tot es refresca des de renderInfo()
     function updateAltViews() {
@@ -2807,11 +3820,11 @@
     const toastEl = document.getElementById('toast');
     let toastTimer = null;
 
-    function showToast(text) {
+    function showToast(text, ms = 2200) {
         toastEl.textContent = text;
         toastEl.classList.add('visible');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 2200);
+        toastTimer = setTimeout(() => toastEl.classList.remove('visible'), ms);
     }
 
     // ---------- Tema: automàtic, diürn, nocturn o zz ----------
@@ -3017,6 +4030,26 @@
                 'amala', 'seraphina', 'google deutsch'],
             male: ['markus', 'yannick', 'hans', 'conrad', 'stefan', 'martin', 'florian', 'killian', 'eddy', 'reed', 'rocko', 'grandpa'],
             region: /^de[-_]de/i
+        },
+        it: {
+            hour(h) {
+                if (h === 0) return 'È mezzanotte.';
+                if (h === 12) return 'È mezzogiorno.';
+                if (h === 1) return 'È l’una.';
+                return `Sono le ${h}.`;
+            },
+            greeting: h => ['Ciao!', `Ti auguro una buona ${(h >= 19 || h < 5) ? 'serata' : 'giornata'}.`],
+            friendly(h, hour) {
+                if (h >= 5 && h <= 11) return ['Buongiorno!', hour];
+                if (h === 12) return [hour, pick(['Buon appetito!', 'Buona pausa pranzo!'])];
+                if (h >= 13 && h <= 17) return [hour, pick(['Buon pomeriggio!', 'Ti auguro un buon pomeriggio!'])];
+                if (h >= 18 && h <= 21) return [pick(['Buonasera!', 'Buonasera a te!']), hour];
+                if (h >= 22) return [hour, pick(['Buona notte.', 'Sogni d’oro.'])];
+                return [hour, 'Dormi bene.'];
+            },
+            female: ['alice', 'federica', 'elsa', 'paola', 'emma', 'isabella', 'chiara', 'google italiano'],
+            male: ['luca', 'diego', 'giorgio', 'cosimo', 'roberto', 'marco'],
+            region: /^it[-_]it/i
         },
         en: {
             hour(h) {
@@ -3274,6 +4307,14 @@
             if (m === 0) return SPEECH.de.hour(h);
             return `Es ist ${h} Uhr ${m}.`;
         },
+        it(now) {
+            const h = now.getHours(), m = now.getMinutes();
+            if (m === 0) return SPEECH.it.hour(h);
+            if (h === 0) return `È mezzanotte e ${m}.`;
+            if (h === 12) return `È mezzogiorno e ${m}.`;
+            if (h === 1) return `È l’una e ${m}.`;
+            return `Sono le ${h} e ${m}.`;
+        },
         en(now) {
             const h = now.getHours(), m = now.getMinutes();
             if (m === 0) return SPEECH.en.hour(h);
@@ -3318,6 +4359,7 @@
             [1, 3, 5, 7].map(i => `<rect y="${(i * 32 / 9).toFixed(3)}" width="32" height="${(32 / 9).toFixed(3)}" fill="#DA121A"/>`).join(''),
         fr: '<rect width="32" height="32" fill="#FFFFFF"/><rect width="10.67" height="32" fill="#0055A4"/><rect x="21.33" width="10.67" height="32" fill="#EF4135"/>',
         de: '<rect width="32" height="10.67" fill="#000000"/><rect y="10.67" width="32" height="10.67" fill="#DD0000"/><rect y="21.33" width="32" height="10.67" fill="#FFCE00"/>',
+        it: '<rect width="32" height="32" fill="#FFFFFF"/><rect width="10.67" height="32" fill="#009246"/><rect x="21.33" width="10.67" height="32" fill="#CE2B37"/>',
         // Union Jack (retall quadrat del centre)
         en: '<rect width="32" height="32" fill="#012169"/>' +
             '<path d="M0 0L32 32M32 0L0 32" stroke="#FFFFFF" stroke-width="6.4"/>' +
@@ -3375,7 +4417,12 @@
         });
         document.querySelectorAll('#calendarGrid .day-name').forEach((el, i) => { el.textContent = t.days[i]; });
 
-        document.getElementById('langPills').setAttribute('aria-label', t.language);
+        const langActual = document.getElementById('langActual');
+        langActual.textContent = currentLang.toUpperCase();
+        langActual.setAttribute('aria-label', `${t.language}: ${t.langName}`);
+        langActual.title = `${t.language}: ${t.langName}`;
+        document.getElementById('langMenu').setAttribute('aria-label', t.language);
+        document.getElementById('plLlocEtq').textContent = tx('plPoblacio');
         const todayBtn = document.getElementById('todayBtn');
         todayBtn.textContent = t.today;
         todayBtn.title = t.today;
@@ -3391,6 +4438,8 @@
         applyAwakeButton();
         renderBackFlag();
         renderInstallBanner();
+        mediaApplyLanguage();
+        if (fullsReady) refreshFulls();
         applySayTimeButton();
         applyVoiceButton();
         applyTheme();
@@ -3413,8 +4462,37 @@
         if (voiceMode !== 'off') speak(activationGreeting(new Date().getHours()));
     }
 
+    // Menú d'idioma: s'obre cap amunt des del botó i es tanca en triar o en tocar fora
+    const langMenuEl = document.getElementById('langMenu');
+    const langActualBtn = document.getElementById('langActual');
+
+    function openLangMenu() {
+        langMenuEl.hidden = false;
+        langActualBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeLangMenu() {
+        if (langMenuEl.hidden) return false;
+        langMenuEl.hidden = true;
+        langActualBtn.setAttribute('aria-expanded', 'false');
+        return true;
+    }
+
+    langActualBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (langMenuEl.hidden) openLangMenu(); else closeLangMenu();
+    });
+
     document.querySelectorAll('.lang-option').forEach((el) => {
-        el.addEventListener('click', () => setLanguage(el.dataset.lang));
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeLangMenu();
+            setLanguage(el.dataset.lang);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#langTria')) closeLangMenu();
     });
 
     // ---------- Avís d'instal·lació ----------
@@ -3496,9 +4574,784 @@
         setTimeout(() => showInstallBanner('ios'), 1500);
     }
 
+    // ==========================================================================
+    // Ràdio, podcasts i notícies (adaptat del PRS 516)
+    // ==========================================================================
+    var mediaReady = false;
+    const OFFLINE_TX = { ca: 'Sense connexió', fr: 'Pas de connexion', de: 'Keine Verbindung', it: 'Nessuna connessione', en: 'No connection' };
+    const offlineText = () => OFFLINE_TX[currentLang] || OFFLINE_TX.ca;
+    const isOffline = () => navigator.onLine === false;
+
+    function withTimeout(promise, ms) {
+        return new Promise((resolve, reject) => {
+            const tm = setTimeout(() => reject(new Error('temps')), ms);
+            promise.then(v => { clearTimeout(tm); resolve(v); }, e => { clearTimeout(tm); reject(e); });
+        });
+    }
+
+    function cleanText(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+    const pad2m = n => String(n).padStart(2, '0');
+
+    // ---- Reproductor únic per a ràdios i podcasts ----
+    const player = new Audio();
+    player.preload = 'none';
+    let nowPlaying = null; // { id, titol, sub, audio, web, tipus, rb }
+    const ICON_MINI_PLAY = '<svg viewBox="0 0 10 10"><path d="M2.4 1l6.6 4-6.6 4z" fill="currentColor"/></svg>';
+    const ICON_MINI_PAUSE = '<svg viewBox="0 0 10 10"><path d="M2 1h2.2v8H2zM5.8 1H8v8H5.8z" fill="currentColor"/></svg>';
+    const ICON_PLAY = '<svg class="ic-play" viewBox="0 0 10 10"><path d="M2.4 1l6.6 4-6.6 4z" fill="currentColor"/></svg>';
+    const ICON_PAUSE = '<svg class="ic-pausa" viewBox="0 0 10 10"><path d="M2 1h2.2v8H2zM5.8 1H8v8H5.8z" fill="currentColor"/></svg>';
+    const ICON_EXT = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3H3v10h10v-3M9 2h5v5M14 2L7 9"/></svg>';
+
+    const placaSonaEl = document.getElementById('placaSona');
+    const placaLlocEl = document.getElementById('placaLloc');
+
+    function updatePlayState() {
+        const playing = !!(nowPlaying && !player.paused);
+        document.querySelectorAll('[data-audio-id]').forEach(el => {
+            const mine = nowPlaying && el.getAttribute('data-audio-id') === nowPlaying.id;
+            el.classList.toggle('sonant', !!(mine && playing));
+            el.classList.toggle('carregant', !!(mine && playing && player.readyState < 3));
+            const bar = el.querySelector('.prog-barra');
+            if (bar && !mine) bar.style.width = '0';
+        });
+        // La placa «Ara sona» ocupa el lloc de la població mentre hi ha alguna cosa triada
+        placaSonaEl.hidden = !nowPlaying;
+        placaLlocEl.hidden = !!nowPlaying;
+        if (nowPlaying) {
+            document.getElementById('araSonaIc').innerHTML = playing ? ICON_MINI_PAUSE : ICON_MINI_PLAY;
+            // A dalt, petit, «en directe» o el dia del programa; a sota, el nom (que s'encongeix si cal)
+            document.getElementById('araSonaEtq').textContent = nowPlaying.sub || tx('araSona');
+            const val = document.getElementById('araSonaTx');
+            if (val.textContent !== nowPlaying.titol) { val.textContent = nowPlaying.titol; requestAnimationFrame(fitSonaVal); }
+            placaSonaEl.title = `${tx('araSona')}: ${nowPlaying.titol}${nowPlaying.sub ? ' · ' + nowPlaying.sub : ''}`;
+            const b = document.getElementById('araSona');
+            b.setAttribute('aria-label', tx('pausePlay') || '');
+        } else {
+            requestAnimationFrame(() => setPlacaLloc(plLloc.textContent));
+        }
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = nowPlaying ? (playing ? 'playing' : 'paused') : 'none';
+    }
+
+    function fitSonaVal() {
+        const val = document.getElementById('araSonaTx');
+        val.style.fontSize = '';
+        if (placaSonaEl.hidden) return;
+        const base = parseFloat(getComputedStyle(val).fontSize);
+        let size = base;
+        while (val.scrollWidth > val.clientWidth + 1 && size > base * 0.72) {
+            size -= 0.5;
+            val.style.fontSize = `${size}px`;
+        }
+    }
+    window.addEventListener('resize', () => requestAnimationFrame(fitSonaVal));
+
+    // Fluxos HLS (.m3u8): Safari els reprodueix directament; als altres navegadors es
+    // carrega hls.js només el primer cop que cal
+    let hls = null;
+    let hlsLib = null;
+    const isHlsUrl = url => /\.m3u8(\?|$)/i.test(url || '');
+
+    function stopHls() {
+        if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+    }
+
+    function loadHlsLib() {
+        if (window.Hls) return Promise.resolve(window.Hls);
+        if (!hlsLib) {
+            hlsLib = new Promise((resolve, reject) => {
+                const sc = document.createElement('script');
+                sc.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js';
+                sc.onload = () => (window.Hls ? resolve(window.Hls) : reject(new Error('hls')));
+                sc.onerror = () => { hlsLib = null; reject(new Error('hls')); };
+                document.head.appendChild(sc);
+            });
+        }
+        return hlsLib;
+    }
+
+    // Fluxos trobats a Radio Browser durant aquesta sessió (id -> url)
+    const resolvedStreams = {};
+    const RB_HOSTS = ['de1', 'nl1', 'at1', 'all'];
+
+    // Busca el flux d'una emissora a l'índex obert Radio Browser
+    function resolveRadioBrowser(rb, i = 0) {
+        if (i >= RB_HOSTS.length) return Promise.reject(new Error('rb'));
+        const url = `https://${RB_HOSTS[i]}.api.radio-browser.info/json/stations/search?name=${encodeURIComponent(rb.name)}` +
+            `&countrycode=${rb.cc}&hidebroken=true&order=clickcount&reverse=true&limit=20`;
+        return withTimeout(fetch(url), 7000)
+            .then(r => { if (!r.ok) throw new Error('http'); return r.json(); })
+            .then(list => {
+                const ok = list.filter(st => /^https:/i.test(st.url_resolved || ''));
+                const exact = ok.filter(st => (st.name || '').trim().toLowerCase() === rb.name.toLowerCase());
+                const pool = exact.length ? exact : ok;
+                const best = pool.find(st => !isHlsUrl(st.url_resolved)) || pool[0];
+                if (!best) throw new Error('cap');
+                return best.url_resolved;
+            })
+            .catch(() => resolveRadioBrowser(rb, i + 1));
+    }
+
+    function startSource(item, url) {
+        stopHls();
+        item.currentUrl = url;
+        item.attempt = (item.attempt || 0) + 1;
+        const attempt = item.attempt;
+        if (isHlsUrl(url) && !player.canPlayType('application/vnd.apple.mpegurl')) {
+            player.removeAttribute('src');
+            loadHlsLib().then(Hls => {
+                if (nowPlaying !== item || item.attempt !== attempt) return;
+                if (!Hls.isSupported()) throw new Error('hls');
+                hls = new Hls();
+                hls.on(Hls.Events.ERROR, (ev, data) => {
+                    if (data && data.fatal && nowPlaying === item && item.attempt === attempt) streamFailed(item);
+                });
+                hls.loadSource(url);
+                hls.attachMedia(player);
+                player.play().catch(() => {});
+            }).catch(() => { if (nowPlaying === item && item.attempt === attempt) streamFailed(item); });
+            updatePlayState();
+            return;
+        }
+        player.src = url;
+        player.play().catch(() => {});
+    }
+
+    // Un flux no ha funcionat: es prova el de Radio Browser i, si tampoc, s'avisa
+    function streamFailed(item) {
+        if (item.failing) return;
+        if (item.rb && !item.rbTried) {
+            item.rbTried = true;
+            item.failing = true;
+            resolveRadioBrowser(item.rb).then(url => {
+                item.failing = false;
+                if (nowPlaying !== item) return;
+                if (url && url !== item.currentUrl) { resolvedStreams[item.id] = url; startSource(item, url); }
+                else giveUpStream(item);
+            }).catch(() => { item.failing = false; if (nowPlaying === item) giveUpStream(item); });
+            return;
+        }
+        giveUpStream(item);
+    }
+
+    function giveUpStream(failed) {
+        stopHls();
+        player.removeAttribute('src');
+        try { player.load(); } catch (e) {}
+        nowPlaying = null;
+        delete resolvedStreams[failed.id];
+        setSleep(0);
+        updatePlayState();
+        if (isOffline()) { showToast(offlineText(), 4000); return; }
+        if (failed.tipus === 'radio') {
+            const tile = document.querySelector(`[data-audio-id="${failed.id}"]`);
+            if (tile) tile.setAttribute('data-nomes-web', '1');
+            showToast(tx('toastRadio', failed.titol), 6000);
+        } else {
+            showToast(tx('toastPodcast'), 6000);
+        }
+    }
+
+    function playItem(item) {
+        if (nowPlaying && nowPlaying.id === item.id) {
+            if (player.paused) player.play().catch(() => {}); else player.pause();
+            return;
+        }
+        if (isOffline()) { showToast(offlineText(), 3000); return; }
+        nowPlaying = item;
+        const known = resolvedStreams[item.id] || item.audio;
+        if (known) startSource(item, known);
+        else if (item.rb) {
+            // No se'n coneix cap flux fix: directament a Radio Browser
+            item.rbTried = true;
+            player.pause();
+            resolveRadioBrowser(item.rb).then(url => {
+                if (nowPlaying !== item) return;
+                resolvedStreams[item.id] = url;
+                startSource(item, url);
+            }).catch(() => { if (nowPlaying === item) giveUpStream(item); });
+        }
+        if ('mediaSession' in navigator && window.MediaMetadata) {
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: item.titol + (item.sub ? ' · ' + item.sub : ''),
+                    artist: item.tipus === 'radio' ? tx('live') : 'RAC1',
+                    artwork: [{ src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }]
+                });
+            } catch (e) {}
+        }
+        updatePlayState();
+    }
+
+    function stopPlayback() {
+        setSleep(0);
+        stopHls();
+        player.pause();
+        player.removeAttribute('src');
+        try { player.load(); } catch (e) {}
+        nowPlaying = null;
+        updatePlayState();
+    }
+
+    ['play', 'playing', 'pause', 'waiting', 'canplay', 'ended'].forEach(ev => player.addEventListener(ev, updatePlayState));
+    player.addEventListener('timeupdate', () => {
+        if (!nowPlaying || nowPlaying.tipus !== 'podcast' || !player.duration) return;
+        const bar = document.querySelector(`[data-audio-id="${nowPlaying.id}"] .prog-barra`);
+        if (bar) bar.style.width = (player.currentTime / player.duration * 100) + '%';
+    });
+    player.addEventListener('error', () => {
+        if (!nowPlaying || hls || !player.getAttribute('src')) return;
+        streamFailed(nowPlaying);
+    });
+    document.getElementById('araSona').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!nowPlaying) return;
+        if (player.paused) player.play().catch(() => {}); else player.pause();
+    });
+    document.getElementById('araSonaTanca').addEventListener('click', (e) => {
+        e.stopPropagation();
+        stopPlayback();
+    });
+    // Tocar el nom del que sona porta a la seva finestra
+    document.querySelector('#placaSona .txt').addEventListener('click', () => {
+        if (nowPlaying) goFullKey(nowPlaying.tipus === 'podcast' ? 'podcasts' : 'radio');
+    });
+
+    // ---- Temporitzador de la ràdio (i dels podcasts) ----
+    // Cada toc: 15 → 30 → 45 → 60 → 90 min → desactivat. En acabar, el volum baixa a poc a poc
+    // durant uns segons i el so s'atura. (A l'iPhone, Safari no deixa canviar el volum des d'una
+    // pàgina: allà s'atura sense esvair-se.)
+    const SLEEP_STEPS = [0, 15, 30, 45, 60, 90];
+    const SLEEP_FADE_MS = 8000;
+    let sleepStep = 0;
+    let sleepEnd = 0;
+    let sleepTimer = null;
+    let sleepFade = null;
+    let sleepVolume = 1;
+
+    function sleepMinutesLeft() { return Math.max(1, Math.ceil((sleepEnd - Date.now()) / 60000)); }
+
+    function renderSleepBtn() {
+        const b = document.getElementById('araSonaTemps');
+        const on = sleepEnd > 0 || !!sleepFade;
+        b.classList.toggle('on', on);
+        const mins = sleepEnd > 0 ? sleepMinutesLeft() : 0;
+        document.getElementById('araSonaTempsTx').textContent = sleepFade ? '…' : on ? `${mins}′` : '';
+        b.title = sleepEnd > 0 ? tx('sleepOn', mins) : tx('sleepOff');
+        b.setAttribute('aria-label', b.title);
+        if (b.dataset.w !== String(on)) { b.dataset.w = String(on); requestAnimationFrame(fitSonaVal); }
+    }
+
+    function cancelSleepFade() {
+        if (!sleepFade) return;
+        clearInterval(sleepFade);
+        sleepFade = null;
+        try { player.volume = sleepVolume; } catch (e) {}
+    }
+
+    function setSleep(step) {
+        cancelSleepFade();
+        clearInterval(sleepTimer);
+        sleepTimer = null;
+        sleepStep = step;
+        sleepEnd = SLEEP_STEPS[step] ? Date.now() + SLEEP_STEPS[step] * 60000 : 0;
+        if (sleepEnd) sleepTimer = setInterval(tickSleep, 1000);
+        renderSleepBtn();
+    }
+
+    function tickSleep() {
+        if (!nowPlaying) { setSleep(0); return; }
+        if (Date.now() >= sleepEnd) {
+            clearInterval(sleepTimer);
+            sleepTimer = null;
+            sleepEnd = 0;
+            sleepStep = 0;
+            fadeOutAndStop();
+            return;
+        }
+        renderSleepBtn();
+    }
+
+    function fadeOutAndStop() {
+        sleepVolume = player.volume || 1;
+        const t0 = Date.now();
+        sleepFade = setInterval(() => {
+            const k = Math.min(1, (Date.now() - t0) / SLEEP_FADE_MS);
+            try { player.volume = Math.max(0, sleepVolume * (1 - k) * (1 - k)); } catch (e) {}
+            if (k >= 1) {
+                clearInterval(sleepFade);
+                sleepFade = null;
+                player.pause();
+                try { player.volume = sleepVolume; } catch (e) {}
+                renderSleepBtn();
+            }
+        }, 100);
+        renderSleepBtn();
+    }
+
+    document.getElementById('araSonaTemps').addEventListener('click', (e) => {
+        e.stopPropagation();
+        setSleep((sleepStep + 1) % SLEEP_STEPS.length);
+        showToast(sleepEnd ? tx('sleepOn', sleepMinutesLeft()) : tx('sleepOff'), 2600);
+    });
+    // Si es torna a engegar a mà mentre s'esvaeix, recupera el volum
+    player.addEventListener('play', () => { if (sleepFade) { cancelSleepFade(); renderSleepBtn(); } });
+    if ('mediaSession' in navigator) {
+        try {
+            navigator.mediaSession.setActionHandler('play', () => player.play().catch(() => {}));
+            navigator.mediaSession.setActionHandler('pause', () => player.pause());
+        } catch (e) {}
+    }
+
+    // ---- Ràdio en directe ----
+    // Emissores segons l'idioma. En català, sub és una llista de claus de traducció; en els altres
+    // idiomes, emissores de l'àrea lingüística amb un text fix. rb: nom i país per buscar el flux
+    // a Radio Browser si el conegut falla o no se'n coneix cap (audio: null).
+    const RADIO_SETS = {
+        ca: [
+            { id: 'r-rac1', nom: 'RAC1', sub: ['', 'live'], audio: 'https://playerservices.streamtheworld.com/api/livestream-redirect/RAC_1.mp3', web: 'https://www.rac1.cat/' },
+            { id: 'r-catradio', nom: 'Catalunya Ràdio', sub: ['3Cat'], audio: 'https://shoutcast.ccma.cat/ccma/catalunyaradioHD.mp3', web: 'https://www.3cat.cat/3cat/directes/catalunya-radio/' },
+            { id: 'r-catinfo', nom: 'Catalunya Informació', sub: ['3Cat', 'news'], audio: 'https://shoutcast.ccma.cat/ccma/catalunyainformacioHD.mp3', web: 'https://www.3cat.cat/3cat/directes/catalunya-informacio/' },
+            { id: 'r-rac105', nom: 'RAC105', sub: ['', 'live'], audio: 'https://playerservices.streamtheworld.com/api/livestream-redirect/RAC105.mp3', web: 'https://www.rac105.cat/' },
+            { id: 'r-clasica', nom: 'Radio Clásica', sub: ['RNE', 'classical'], audio: 'https://rtvelivestream.rtve.es/rtvesec/rne/rne_r2_main.m3u8', web: 'https://www.rtve.es/radio/radioclasica/' },
+            { id: 'r-bbc', nom: 'BBC World Service', sub: ['', 'world'], audio: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service', web: 'https://www.bbc.com/audio', rb: { name: 'BBC World Service', cc: 'GB' } }
+        ],
+        it: [
+            { id: 'it-rai1', nom: 'Rai Radio 1', sub: 'Notizie · Rai', audio: 'https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S16355530/Q4zh3NTu28Rx/icecast', web: 'https://www.raiplaysound.it/radio1', rb: { name: 'Rai Radio 1', cc: 'IT' } },
+            { id: 'it-rtl', nom: 'RTL 102.5', sub: 'Generalista', audio: 'https://StreamCdnF43-dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S97044836/tbbP8T1ZRPBL/playlist_audio.m3u8', web: 'https://www.rtl.it/', rb: { name: 'RTL 102.5', cc: 'IT' } },
+            { id: 'it-rds', nom: 'RDS', sub: 'Hit', audio: 'https://stream.rds.radio/audio/rds.stream_aac64/chunklist.m3u8', web: 'https://www.rds.it/', rb: { name: 'RDS', cc: 'IT' } },
+            { id: 'it-italia', nom: 'Radio Italia', sub: 'Pop italiano', audio: 'https://radioitaliasmi.akamaized.net/hls/live/2093120/RISMI/stream01/streamPlaylist.m3u8', web: 'https://www.radioitalia.it/', rb: { name: 'Radio Italia', cc: 'IT' } },
+            { id: 'it-rai3c', nom: 'Rai Radio 3 Classica', sub: 'Classica · Rai', audio: 'https://radiotreclassica-live.akamaized.net/hls/live/2032595/radiotreclassica/radiotreclassica/playlist.m3u8', web: 'https://www.raiplaysound.it/radio3classica', rb: { name: 'Rai Radio 3 Classica', cc: 'IT' } },
+            { id: 'it-classica', nom: 'Radio Classica', sub: 'Classica', audio: 'https://stream10.xdevel.com/audio0s978096-2470/stream/icecast.audio', web: 'https://www.radioclassica.fm/', rb: { name: 'Radio Classica', cc: 'IT' } },
+            { id: 'it-raisport', nom: 'Rai Radio 1 Sport', sub: 'Sport · Rai', audio: null, web: 'https://www.raiplaysound.it/radio1sport', rb: { name: 'Rai Radio 1 Sport', cc: 'IT' } },
+            { id: 'it-sportiva', nom: 'Radio Sportiva', sub: 'Sport', audio: 'https://sportiva.inmystream.it/stream/sportiva', web: 'https://www.radiosportiva.com/', rb: { name: 'Radio Sportiva', cc: 'IT' } },
+            { id: 'it-708090', nom: 'Radio 70 80 90', sub: 'Anni 70 80 90', audio: 'https://rblive.it:8020/radio.mp3', web: 'https://radio708090.it/', rb: { name: 'Radio 70 80 90', cc: 'IT' } },
+            { id: 'it-nostalgia', nom: 'Radio Nostalgia', sub: 'Successi di ieri', audio: 'https://rn1.fluidstream.eu/nostalgia_li.mp3', web: 'https://www.nostalgia.it/', rb: { name: 'Radio Nostalgia', cc: 'IT' } }
+        ],
+        de: [
+            { id: 'de-dlf', nom: 'Deutschlandfunk', sub: 'Nachrichten', audio: 'https://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3', web: 'https://www.deutschlandfunk.de/', rb: { name: 'Deutschlandfunk', cc: 'DE' } },
+            { id: 'de-br24', nom: 'BR24', sub: 'Nachrichten · BR', audio: 'https://dispatcher.rndfnk.com/br/br24/live/mp3/mid', web: 'https://www.br.de/radio/live/br24/', rb: { name: 'BR24', cc: 'DE' } },
+            { id: 'de-wdr2', nom: 'WDR 2', sub: 'Pop · WDR', audio: 'https://wdr-wdr2-rheinland.icecastssl.wdr.de/wdr/wdr2/rheinland/mp3/128/stream.mp3', web: 'https://www1.wdr.de/radio/wdr2/', rb: { name: 'WDR 2', cc: 'DE' } },
+            { id: 'de-swr3', nom: 'SWR3', sub: 'Pop · SWR', audio: 'https://liveradio.swr.de/sw282p3/swr3/play.mp3', web: 'https://www.swr3.de/', rb: { name: 'SWR3', cc: 'DE' } },
+            { id: 'de-brklassik', nom: 'BR-Klassik', sub: 'Klassik · BR', audio: 'https://dispatcher.rndfnk.com/br/brklassik/live/mp3/high', web: 'https://www.br-klassik.de/', rb: { name: 'BR-Klassik', cc: 'DE' } },
+            { id: 'de-klassik', nom: 'Klassik Radio', sub: 'Klassik', audio: 'https://klassikr.streamabc.net/klr-krdnational-mp3-192-4099384', web: 'https://www.klassikradio.de/', rb: { name: 'Klassik Radio', cc: 'DE' } },
+            { id: 'de-sportschau', nom: 'Sportschau', sub: 'Sport · ARD (live)', audio: 'https://wdr-sportschau-liga1konferenz.icecastssl.wdr.de/wdr/sportschau/liga1konferenz/mp3/128/stream.mp3', web: 'https://www.sportschau.de/audio/', rb: { name: 'Sportschau', cc: 'DE' } },
+            { id: 'de-schwarzwald', nom: 'Schwarzwaldradio', sub: 'Oldies', audio: null, web: 'https://www.schwarzwaldradio.com/', rb: { name: 'Schwarzwaldradio', cc: 'DE' } },
+            { id: 'de-harmony', nom: 'harmony.fm', sub: '70er & 80er', audio: 'https://mp3.harmonyfm.de/harmonyfm/hqlivestream.mp3', web: 'https://www.harmonyfm.de/', rb: { name: 'harmony', cc: 'DE' } }
+        ],
+        fr: [
+            { id: 'fr-franceinfo', nom: 'franceinfo', sub: 'Info · Radio France', audio: 'https://icecast.radiofrance.fr/franceinfo-midfi.mp3?id=radiofrance', web: 'https://www.radiofrance.fr/franceinfo', rb: { name: 'franceinfo', cc: 'FR' } },
+            { id: 'fr-rtl', nom: 'RTL', sub: 'Généraliste', audio: null, web: 'https://www.rtl.fr/ecouter', rb: { name: 'RTL', cc: 'FR' } },
+            { id: 'fr-nrj', nom: 'NRJ', sub: 'Hits', audio: 'https://scdn.nrjaudio.fm/adwz2/fr/30001/mp3_128.mp3?origine=fluxradios', web: 'https://www.nrj.fr/', rb: { name: 'NRJ', cc: 'FR' } },
+            { id: 'fr-inter', nom: 'France Inter', sub: 'Généraliste · Radio France', audio: 'https://icecast.radiofrance.fr/franceinter-midfi.mp3?id=radiofrance', web: 'https://www.radiofrance.fr/franceinter', rb: { name: 'France Inter', cc: 'FR' } },
+            { id: 'fr-musique', nom: 'France Musique', sub: 'Classique · Radio France', audio: 'https://icecast.radiofrance.fr/francemusique-midfi.mp3?id=radiofrance', web: 'https://www.radiofrance.fr/francemusique', rb: { name: 'France Musique', cc: 'FR' } },
+            { id: 'fr-classique', nom: 'Radio Classique', sub: 'Classique', audio: 'https://str0.creacast.com/classique1', web: 'https://www.radioclassique.fr/', rb: { name: 'Radio Classique', cc: 'FR' } },
+            { id: 'fr-rmc', nom: 'RMC', sub: 'Sport · talk', audio: 'https://audio.bfmtv.com/rmcradio_128.mp3', web: 'https://rmc.bfmtv.com/', rb: { name: 'RMC', cc: 'FR' } },
+            { id: 'fr-nostalgie', nom: 'Nostalgie', sub: 'Années 60 70 80', audio: 'https://streaming.nrjaudio.fm/oug7girb92oc?origine=fluxradios', web: 'https://www.nostalgie.fr/', rb: { name: 'Nostalgie', cc: 'FR' } },
+            { id: 'fr-rtl2', nom: 'RTL2', sub: 'Pop-rock', audio: null, web: 'https://www.rtl2.fr/', rb: { name: 'RTL2', cc: 'FR' } }
+        ],
+        en: [
+            { id: 'en-r4', nom: 'BBC Radio 4', sub: 'News · BBC', audio: 'https://lsn.lv/bbcradio.m3u8?station=bbc_radio_fourfm&bitrate=96000', web: 'https://www.bbc.co.uk/sounds/play/live:bbc_radio_fourfm', rb: { name: 'BBC Radio 4', cc: 'GB' } },
+            { id: 'en-lbc', nom: 'LBC', sub: 'Talk · news', audio: 'https://ice-sov.musicradio.com/LBCLondonHD?hdauth=:2000000000:a290d4b39a16153061d4c743008b9fe8d424a7e5ec6469d40acf51fdcd336e80', web: 'https://www.lbc.co.uk/', rb: { name: 'LBC', cc: 'GB' } },
+            { id: 'en-r2', nom: 'BBC Radio 2', sub: 'Pop · BBC', audio: 'https://lsn.lv/bbcradio.m3u8?station=bbc_radio_two&bitrate=96000', web: 'https://www.bbc.co.uk/sounds/play/live:bbc_radio_two', rb: { name: 'BBC Radio 2', cc: 'GB' } },
+            { id: 'en-heart', nom: 'Heart UK', sub: 'Pop', audio: 'https://media-ssl.musicradio.com/HeartUKMP3', web: 'https://www.heart.co.uk/', rb: { name: 'Heart UK', cc: 'GB' } },
+            { id: 'en-r3', nom: 'BBC Radio 3', sub: 'Classical · BBC', audio: 'https://lsn.lv/bbcradio.m3u8?station=bbc_radio_three&bitrate=96000', web: 'https://www.bbc.co.uk/sounds/play/live:bbc_radio_three', rb: { name: 'BBC Radio 3', cc: 'GB' } },
+            { id: 'en-classicfm', nom: 'Classic FM', sub: 'Classical', audio: 'https://media-ssl.musicradio.com/ClassicFM', web: 'https://www.classicfm.com/', rb: { name: 'Classic FM', cc: 'GB' } },
+            { id: 'en-talksport', nom: 'talkSPORT', sub: 'Sport', audio: 'https://radio.talksport.com/stream', web: 'https://talksport.com/', rb: { name: 'talkSPORT', cc: 'GB' } },
+            { id: 'en-r5', nom: 'BBC Radio 5 Live', sub: 'Sport · BBC', audio: 'https://lsn.lv/bbcradio.m3u8?station=bbc_radio_five_live&bitrate=96000', web: 'https://www.bbc.co.uk/sounds/play/live:bbc_radio_five_live', rb: { name: 'BBC Radio 5 Live', cc: 'GB' } },
+            { id: 'en-absolute', nom: 'Absolute Radio', sub: '70s 80s 90s', audio: null, web: 'https://www.absoluteradio.co.uk/', rb: { name: 'Absolute Radio', cc: 'GB' } },
+            { id: 'en-ghr', nom: 'Greatest Hits Radio', sub: '70s 80s 90s', audio: null, web: 'https://www.hellorayo.co.uk/greatest-hits', rb: { name: 'Greatest Hits Radio', cc: 'GB' } }
+        ]
+    };
+
+    function radioSub(r) {
+        if (!Array.isArray(r.sub)) return r.sub;
+        const words = { live: tx('live'), news: tx('newsWord'), classical: tx('classical'), world: tx('worldEnglish') };
+        return r.sub.map(p => words[p] || p).filter(Boolean).join(' · ');
+    }
+
+    function renderRadios() {
+        document.getElementById('radioTitol').textContent = tx('live');
+        const box = document.getElementById('llistaRadios');
+        box.innerHTML = '';
+        (RADIO_SETS[currentLang] || RADIO_SETS.ca).forEach(r => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'radio';
+            b.setAttribute('data-audio-id', r.id);
+            b.setAttribute('aria-label', `${r.nom} · ${tx('live')}`);
+            b.innerHTML = '<span class="nom"></span><span class="sub"></span><span class="punt"></span>';
+            b.querySelector('.nom').textContent = r.nom;
+            b.querySelector('.sub').textContent = radioSub(r);
+            b.addEventListener('click', () => {
+                if (b.getAttribute('data-nomes-web')) { window.open(r.web, '_blank', 'noopener'); return; }
+                playItem({ id: r.id, titol: r.nom, sub: tx('liveLower'), audio: r.audio, web: r.web, rb: r.rb, tipus: 'radio' });
+            });
+            box.appendChild(b);
+        });
+        updatePlayState();
+    }
+
+    // ---- Podcasts: La Competència i Via lliure (RAC1), només en català ----
+    // Font: API pública d'Omny Studio, on RAC1 publica els podcasts; si no respon, Apple Podcasts.
+    const OMNY_ORG = '47dc05c7-7279-4c6f-9b31-ae74013297d9';
+    const PROGRAMS = {
+        competencia: { omny: 'e38e0ded-b456-40ef-a8da-af1000eff5fc', apple: '330984064', n: 25, web: 'https://omny.fm/shows/la-competencia-programa-sencer' },
+        via: { omny: '48f190bf-f9df-4d37-961b-af0300af6177', apple: '395147618', n: 80, web: 'https://omny.fm/shows/via-lliure-programa-sencer' }
+    };
+    const DAY_NUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const fmtMadrid = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', hourCycle: 'h23' });
+
+    function madridParts(d) {
+        const o = {};
+        fmtMadrid.formatToParts(d).forEach(part => { o[part.type] = part.value; });
+        return { dow: DAY_NUM[o.weekday], dia: +o.day, mes: +o.month, hora: parseInt(o.hour, 10) % 24 };
+    }
+
+    function omnyClips(prog) {
+        return withTimeout(fetch(`https://api.omny.fm/orgs/${OMNY_ORG}/programs/${prog.omny}/clips?pageSize=${prog.n}`), 12000)
+            .then(r => { if (!r.ok) throw new Error('omny'); return r.json(); })
+            .then(j => (j.Clips || []).map(cl => ({ id: cl.Id, titol: (cl.Title || '').trim(), data: new Date(cl.PublishedUtc), audio: cl.AudioUrl, web: cl.PublishedUrl })));
+    }
+
+    function appleClips(prog) {
+        return new Promise((resolve, reject) => {
+            const cb = '__mondaineApple' + Date.now() + Math.floor(Math.random() * 1e5);
+            const sc = document.createElement('script');
+            const tm = setTimeout(() => { cleanup(); reject(new Error('apple')); }, 12000);
+            function cleanup() { clearTimeout(tm); try { delete window[cb]; } catch (e) { window[cb] = undefined; } sc.remove(); }
+            window[cb] = (j) => {
+                cleanup();
+                resolve((j.results || []).filter(r => r.wrapperType === 'podcastEpisode').map(r => ({
+                    id: String(r.trackId), titol: (r.trackName || '').trim(), data: new Date(r.releaseDate), audio: r.episodeUrl, web: r.trackViewUrl
+                })));
+            };
+            sc.onerror = () => { cleanup(); reject(new Error('apple')); };
+            sc.src = `https://itunes.apple.com/lookup?id=${prog.apple}&entity=podcastEpisode&limit=${prog.n}&callback=${cb}`;
+            document.head.appendChild(sc);
+        });
+    }
+
+    function loadClips(prog) { return omnyClips(prog).catch(() => appleClips(prog)); }
+
+    // El darrer programa de cada dia indicat, del més antic al més recent (l'últim emès al final)
+    function latestPerDay(clips, days, hour) {
+        const now = Date.now();
+        const perDay = {};
+        clips.forEach(cl => {
+            if (!cl.audio || isNaN(cl.data) || cl.data.getTime() > now) return;
+            const m = madridParts(cl.data);
+            if (!days.includes(m.dow)) return;
+            if (hour != null && m.hora !== hour) return;
+            if (!perDay[m.dow] || cl.data > perDay[m.dow].data) { cl.m = m; perDay[m.dow] = cl; }
+        });
+        return Object.values(perDay).sort((a, b) => a.data - b.data);
+    }
+
+    function programButton(cl, latest, program, withTitle) {
+        const row = document.createElement('div');
+        row.className = 'prog-fila';
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'prog' + (latest ? ' darrer' : '');
+        b.setAttribute('data-audio-id', cl.id);
+        const dayName = tx('longDays')[cl.m.dow];
+        b.innerHTML = '<span class="prog-dia"><b></b><small></small></span>' +
+            (withTitle ? '<span class="prog-titol"></span>' : '') +
+            `<span class="prog-icona">${ICON_PLAY}${ICON_PAUSE}</span><span class="prog-barra"></span>`;
+        b.querySelector('b').textContent = dayName;
+        b.querySelector('small').textContent = `${cl.m.dia}/${cl.m.mes}`;
+        if (withTitle) b.querySelector('.prog-titol').textContent = cl.titol;
+        b.setAttribute('aria-label', `${program}, ${dayName} ${cl.m.dia}/${cl.m.mes}` + (withTitle ? `: ${cl.titol}` : ''));
+        b.addEventListener('click', () => {
+            playItem({ id: cl.id, titol: program, sub: `${dayName} ${cl.m.dia}/${cl.m.mes}`, audio: cl.audio, web: cl.web, tipus: 'podcast' });
+        });
+        row.appendChild(b);
+        if (withTitle && cl.web) {
+            const a = document.createElement('a');
+            a.className = 'prog-ext';
+            a.href = cl.web;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.setAttribute('aria-label', tx('openWeb'));
+            a.innerHTML = ICON_EXT;
+            row.appendChild(a);
+        }
+        return row;
+    }
+
+    function stateBox(box, text, link) {
+        box.innerHTML = '<div class="estat-prog"><span></span></div>';
+        box.querySelector('span').textContent = text;
+        if (link) {
+            const a = document.createElement('a');
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.textContent = tx('openSite');
+            a.href = link;
+            box.firstChild.append(' ', a);
+        }
+    }
+
+    let programsLoadedAt = 0;
+    let programsBusy = false;
+    const programCache = { competencia: null, via: null };
+
+    function renderPrograms() {
+        const lc = document.getElementById('llistaCompetencia');
+        const lv = document.getElementById('llistaVia');
+        document.getElementById('via7').textContent = tx('via7');
+        [[programCache.competencia, lc, PROGRAMS.competencia, 'La Competència', true],
+         [programCache.via, lv, PROGRAMS.via, 'Via lliure', false]].forEach(([list, box, prog, name, withTitle]) => {
+            if (!list) { stateBox(box, isOffline() ? offlineText() : tx('loadingPrograms')); return; }
+            if (list === 'error') { stateBox(box, isOffline() ? offlineText() : tx('programsError'), isOffline() ? null : prog.web); return; }
+            box.innerHTML = '';
+            list.forEach((cl, i) => box.appendChild(programButton(cl, i === list.length - 1, name, withTitle)));
+        });
+        updatePlayState();
+    }
+
+    function loadPrograms(force) {
+        if (currentLang !== 'ca' || programsBusy) return;
+        if (!force && programsLoadedAt && Date.now() - programsLoadedAt < 10 * 60 * 1000) return;
+        if (isOffline()) {
+            if (!Array.isArray(programCache.competencia)) programCache.competencia = 'error';
+            if (!Array.isArray(programCache.via)) programCache.via = 'error';
+            renderPrograms();
+            return;
+        }
+        programsBusy = true;
+        const p1 = loadClips(PROGRAMS.competencia).then(clips => {
+            const list = latestPerDay(clips, [1, 2, 3, 4, 5], null);
+            if (!list.length) throw new Error('buit');
+            programCache.competencia = list;
+        }).catch(() => { if (!Array.isArray(programCache.competencia)) programCache.competencia = 'error'; });
+        const p2 = loadClips(PROGRAMS.via).then(clips => {
+            const list = latestPerDay(clips, [6, 0], 7);
+            if (!list.length) throw new Error('buit');
+            programCache.via = list;
+        }).catch(() => { if (!Array.isArray(programCache.via)) programCache.via = 'error'; });
+        Promise.all([p1, p2]).then(() => {
+            programsBusy = false;
+            programsLoadedAt = Date.now();
+            renderPrograms();
+        });
+    }
+
+    // ---- Notícies: ACN «Al minut» en català; agències i mitjans de cada àrea lingüística ----
+    const ACN_URL = 'https://www.acn.cat/';
+    const MAX_NEWS = 10;
+    const PROXIES = [
+        u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+        u => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u),
+        u => 'https://corsproxy.io/?url=' + encodeURIComponent(u)
+    ];
+
+    function headlinesFromHomepage(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const links = [...doc.querySelectorAll('a[href*="/new/"]')];
+        const heading = [...doc.querySelectorAll('h1,h2,h3,h4,span,div,p')].find(el => cleanText(el.textContent).toLowerCase() === 'al minut');
+        const chosen = heading ? links.filter(a => heading.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING) : links;
+        const seen = {};
+        const order = [];
+        chosen.forEach(a => {
+            let href = a.getAttribute('href') || '';
+            if (href.indexOf('http') !== 0) href = 'https://www.acn.cat' + (href.charAt(0) === '/' ? '' : '/') + href;
+            const text = cleanText(a.textContent);
+            if (text.length < 20) return;
+            if (!seen[href]) { seen[href] = text; order.push(href); }
+            else if (text.length > seen[href].length) seen[href] = text;
+        });
+        return order.slice(0, MAX_NEWS).map(h => ({ titol: seen[h], url: h }));
+    }
+
+    function headlinesViaProxy(i) {
+        if (i >= PROXIES.length) return Promise.reject(new Error('cap'));
+        return withTimeout(fetch(PROXIES[i](ACN_URL), { cache: 'no-store' }), 9000)
+            .then(r => { if (!r.ok) throw new Error('http'); return r.text(); })
+            .then(html => { const l = headlinesFromHomepage(html); if (!l.length) throw new Error('buit'); return l; })
+            .catch(() => headlinesViaProxy(i + 1));
+    }
+
+    function googleNewsUrl(query, hl, gl) {
+        return 'https://news.google.com/rss/search?q=' + encodeURIComponent(query) +
+            `&hl=${hl}&gl=${gl}&ceid=${gl}:${hl.slice(0, 2)}`;
+    }
+
+    function itemsFromRss(xml) {
+        const doc = new DOMParser().parseFromString(xml, 'text/xml');
+        return [...doc.querySelectorAll('item')].map(it => ({
+            title: (it.querySelector('title') || {}).textContent || '',
+            link: (it.querySelector('link') || {}).textContent || '',
+            pubDate: (it.querySelector('pubDate') || {}).textContent || ''
+        }));
+    }
+
+    function rssViaProxy(rss, i) {
+        if (i >= PROXIES.length) return Promise.reject(new Error('cap'));
+        return withTimeout(fetch(PROXIES[i](rss), { cache: 'no-store' }), 9000)
+            .then(r => { if (!r.ok) throw new Error('http'); return r.text(); })
+            .then(xml => { const items = itemsFromRss(xml); if (!items.length) throw new Error('buit'); return items; })
+            .catch(() => rssViaProxy(rss, i + 1));
+    }
+
+    function rssVia2json(rss) {
+        return withTimeout(fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rss)), 9000)
+            .then(r => r.json())
+            .then(j => {
+                const items = (j && j.items) || [];
+                if (!items.length) throw new Error('buit');
+                return items;
+            });
+    }
+
+    function googleHeadlines(query, hl, gl, dropSource) {
+        const rss = googleNewsUrl(query, hl, gl);
+        return rssVia2json(rss).catch(() => rssViaProxy(rss, 0)).then(items => items.slice(0, MAX_NEWS).map(it => {
+            let titol = cleanText(it.title);
+            titol = dropSource ? titol.replace(dropSource, '') : titol.replace(/\s+-\s+([^-]+)$/, ' · $1');
+            return { titol, url: it.link };
+        }));
+    }
+
+    function feedHeadlines(rss) {
+        return rssViaProxy(rss, 0).catch(() => rssVia2json(rss)).then(items => items
+            .map(it => ({ titol: cleanText(it.title), url: it.link, d: Date.parse(it.pubDate || '') || 0 }))
+            .filter(it => it.titol && it.url)
+            .sort((x, y) => y.d - x.d)
+            .slice(0, MAX_NEWS));
+    }
+
+    const NEWS_FEEDS = {
+        ca: [
+            { label: 'ACN · Al minut', foot: 'Agència Catalana de Notícies', home: 'https://www.acn.cat/', load: () => headlinesViaProxy(0) },
+            { label: 'ACN · Al minut', foot: 'Agència Catalana de Notícies', home: 'https://www.acn.cat/',
+              load: () => googleHeadlines('site:acn.cat when:1d', 'ca', 'ES', /\s+-\s+(ACN|acn\.cat|Agència Catalana de Notícies)\s*$/i) }
+        ],
+        it: [
+            { label: 'ANSA · Ultima ora', foot: 'ANSA', home: 'https://www.ansa.it/', load: () => feedHeadlines('https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml') },
+            { label: "Adnkronos · Ultim'ora", foot: 'Adnkronos', home: 'https://www.adnkronos.com/', load: () => feedHeadlines('https://www.adnkronos.com/RSS_Ultimora.xml') },
+            { label: 'ANSA', foot: 'ANSA', home: 'https://www.ansa.it/', load: () => feedHeadlines('https://www.ansa.it/sito/ansait_rss.xml') },
+            { label: 'AGI', foot: 'AGI', home: 'https://www.agi.it/', load: () => googleHeadlines('site:agi.it when:1d', 'it', 'IT', /\s+-\s+(AGI|Agenzia Italia|agi\.it).*$/i) }
+        ],
+        de: [
+            { label: 'dpa · Newsticker', foot: 'dpa (ZEIT ONLINE)', home: 'https://www.zeit.de/news/index', load: () => feedHeadlines('https://newsfeed.zeit.de/news/index') },
+            { label: 'stern · dpa', foot: 'stern', home: 'https://www.stern.de/', load: () => feedHeadlines('https://www.stern.de/feed/standard/all/') },
+            { label: 'AFP · Deutschland', foot: 'AFP (Google News)', home: 'https://www.afp.com/de', load: () => googleHeadlines('AFP when:1d', 'de', 'DE') }
+        ],
+        fr: [
+            { label: 'France 24', foot: 'France 24', home: 'https://www.france24.com/fr/', load: () => feedHeadlines('https://www.france24.com/fr/rss') },
+            { label: 'AFP', foot: 'AFP (Google Actualités)', home: 'https://www.afp.com/fr', load: () => googleHeadlines('site:afp.com when:2d', 'fr', 'FR', /\s+-\s+(AFP|afp\.com).*$/i) },
+            { label: 'Reuters', foot: 'Reuters (Google Actualités)', home: 'https://www.reuters.com/', load: () => googleHeadlines('site:reuters.com when:1d', 'fr', 'FR', /\s+-\s+Reuters\s*$/i) }
+        ],
+        en: [
+            { label: 'Reuters · UK', foot: 'Reuters (Google News)', home: 'https://www.reuters.com/world/uk/', load: () => googleHeadlines('site:reuters.com when:1d', 'en-GB', 'GB', /\s+-\s+Reuters\s*$/i) },
+            { label: 'The Independent · PA', foot: 'The Independent', home: 'https://www.independent.co.uk/news/uk', load: () => feedHeadlines('https://www.independent.co.uk/news/uk/rss') },
+            { label: 'Evening Standard', foot: 'Evening Standard', home: 'https://www.standard.co.uk/news/uk', load: () => feedHeadlines('https://www.standard.co.uk/news/uk/rss') }
+        ]
+    };
+
+    function loadNewsFrom(sources, i = 0) {
+        if (i >= sources.length) return Promise.reject(new Error('cap'));
+        return sources[i].load()
+            .then(list => { if (!list || !list.length) throw new Error('buit'); return { source: sources[i], headlines: list }; })
+            .catch(() => loadNewsFrom(sources, i + 1));
+    }
+
+    let newsLoadedAt = 0;
+    let newsLang = '';
+    let newsToken = 0;
+    let newsBusy = false;
+    let newsWantLang = '';
+
+    function loadNews(force, langChanged) {
+        if (newsBusy && !langChanged) return;
+        if (!force && newsLang === currentLang && Date.now() - newsLoadedAt < 5 * 60 * 1000) return;
+        const token = ++newsToken;
+        const lang = currentLang;
+        newsWantLang = lang;
+        const box = document.getElementById('llistaNoticies');
+        const box2 = document.getElementById('llistaNoticies2');
+        const sources = NEWS_FEEDS[lang] || NEWS_FEEDS.ca;
+        if (newsLang !== lang) {
+            document.getElementById('noticiesTitol').textContent = sources[0].label;
+            stateBox(box, isOffline() ? offlineText() : tx('loadingNews'));
+            box2.innerHTML = '';
+            document.getElementById('noticiesPeu').textContent = '';
+        }
+        if (isOffline()) { newsBusy = false; return; }
+        newsBusy = true;
+        loadNewsFrom(sources).then(({ source, headlines }) => {
+            if (token !== newsToken) return;
+            document.getElementById('noticiesTitol').textContent = source.label;
+            box.innerHTML = '';
+            box2.innerHTML = '';
+            headlines.forEach((n, i) => {
+                const a = document.createElement('a');
+                a.className = 'noticia';
+                a.draggable = false;
+                a.href = n.url;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.innerHTML = `<span class="num"></span><span class="txt"></span><span class="ext">${ICON_EXT}</span>`;
+                a.querySelector('.num').textContent = i + 1;
+                a.querySelector('.txt').textContent = n.titol;
+                (i < 5 ? box : box2).appendChild(a); // cinc titulars per panell
+            });
+            const now = new Date();
+            document.getElementById('noticiesPeu').textContent = `${source.foot} · ${tx('newsFoot', `${pad2m(now.getHours())}:${pad2m(now.getMinutes())}`)}`;
+            newsLoadedAt = Date.now();
+            newsLang = lang;
+        }).catch(() => {
+            if (token !== newsToken) return;
+            if (newsLang !== lang) stateBox(box, isOffline() ? offlineText() : tx('newsError'), isOffline() ? null : sources[0].home);
+        }).then(() => { if (token === newsToken) newsBusy = false; });
+    }
+
+    // En canviar d'idioma: emissores, podcasts (només en català) i notícies de la nova llengua
+    function mediaApplyLanguage() {
+        if (!mediaReady) return;
+        document.getElementById('araSonaTanca').setAttribute('aria-label', tx('close') || '');
+        const pod = fullsBox.querySelector('[data-key="podcasts"]');
+        const hide = currentLang !== 'ca';
+        if (pod.hidden !== hide) {
+            const wasPod = fullsReady && currentFull() === pod;
+            pod.hidden = hide;
+            if (wasPod) fullIndex = Math.max(0, fullsList().findIndex(f => f.dataset.key === 'radio'));
+        }
+        // Una ràdio d'un altre idioma continua sonant fins que es tanqui
+        renderRadios();
+        renderSleepBtn();
+        if (currentLang === 'ca') { renderPrograms(); loadPrograms(false); }
+        if (newsWantLang !== currentLang) loadNews(true, true);
+    }
+
+    // Finestra que es mostra: es carrega el que calgui si fa estona
+    function onFullShown(key) {
+        if (key === 'noticies') loadNews(false);
+        else if (key === 'podcasts') loadPrograms(false);
+    }
+
+    mediaReady = true;
+    mediaApplyLanguage();
+    // Es comprova cada 20 minuts (programes) i 10 minuts (notícies)
+    setInterval(() => { if (document.visibilityState === 'visible') loadPrograms(true); }, 20 * 60 * 1000);
+    setInterval(() => { if (document.visibilityState === 'visible') loadNews(true); }, 10 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadNews(false); });
+    // Sense connexió / connexió recuperada
+    window.addEventListener('offline', () => {
+        if (newsLang !== currentLang) stateBox(document.getElementById('llistaNoticies'), offlineText());
+        if (currentLang === 'ca') renderPrograms();
+    });
+    window.addEventListener('online', () => {
+        programCache.competencia = Array.isArray(programCache.competencia) ? programCache.competencia : null;
+        programCache.via = Array.isArray(programCache.via) ? programCache.via : null;
+        loadNews(true, true);
+        loadPrograms(true);
+    });
+
     // ---------- Inici ----------
     lastAnnounceKey = hourKey(new Date()); // no s'anuncia l'hora només per obrir la pàgina
-    setInfoPage(infoPageIndex);
+    goFull(0, false);
     applyLanguage(); // textos, botons, tema i calendari
     currentDateKey = fmtKey(new Date());
     refreshOfficialHolidays(false);
