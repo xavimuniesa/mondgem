@@ -75,6 +75,7 @@
             --zz: #ff4500;
             --zz-rgb: 255, 69, 0;
             --zz-dim: rgba(var(--zz-rgb), 0.45);
+            --zz-dim-solid: rgb(115, 31, 0);
             --mondaine-red: var(--zz);
             --bg-color: #000000;
             --card-bg: #000000;
@@ -1975,8 +1976,10 @@
         html[data-theme="zz"] .mark-hour { stroke: var(--zz); }
         html[data-theme="zz"] .mark-minute { stroke: var(--zz-dim); }
         html[data-theme="zz"] .hand { stroke: var(--zz); }
-        html[data-theme="zz"] .second-line { stroke: var(--zz-dim); }
-        html[data-theme="zz"] .second-dot { fill: var(--zz-dim); }
+        /* Segonera: el mateix to mig apagat, però opac (sense transparència: el disc i la tija no es
+           sumen entre ells ni deixen veure les agulles a través) */
+        html[data-theme="zz"] .second-line { stroke: var(--zz-dim-solid); }
+        html[data-theme="zz"] .second-dot { fill: var(--zz-dim-solid); }
         html[data-theme="zz"] .clock-cap { fill: var(--zz); }
 
         html[data-theme="zz"] .day:not(.today):not(.holiday) .day-number {
@@ -5745,6 +5748,8 @@
         root.setAttribute('data-zz', zzTint);
         root.style.setProperty('--zz', `rgb(${r}, ${g}, ${b})`);
         root.style.setProperty('--zz-rgb', `${r}, ${g}, ${b}`);
+        // El 45 % del to sobre negre, com a color opac (per a la segonera)
+        root.style.setProperty('--zz-dim-solid', `rgb(${Math.round(r * 0.45)}, ${Math.round(g * 0.45)}, ${Math.round(b * 0.45)})`);
     }
 
     function cycleZzTint() {
