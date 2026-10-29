@@ -192,6 +192,18 @@
             perspective: 1800px;
         }
 
+        html[data-theme="zz"] .clock-flip {
+            touch-action: none;
+        }
+
+        /* Tocar o arrossegar sobre l'esfera no selecciona el text del logo */
+        .clock-flip,
+        .clock-flip * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
         .clock-flip {
             --thick: 36px; /* gruix del rellotge; el JS l'ajusta a la mida de l'esfera */
             position: relative;
@@ -5741,9 +5753,15 @@
     const ZZ_ORDER = ['orange', 'red', 'yellow', 'green', 'blue'];
     const ZZ_KEY = 'mondaineZzTint';
     let zzTint = (() => { const v = readStorage(ZZ_KEY, 'orange'); return ZZ_ORDER.includes(v) ? v : 'orange'; })();
+    // Intensitat del mode Zz (comuna a tots els tons): dit amunt o avall sobre l'esfera
+    const ZZ_LEVEL_KEY = 'mondaineZzIntensitat';
+    const ZZ_LEVEL_MIN = 0.2;
+    const ZZ_LEVEL_TX = { ca: 'Intensitat', fr: 'Intensité', de: 'Helligkeit', it: 'Intensità', en: 'Brightness' };
+    let zzLevel = (() => { const v = parseFloat(readStorage(ZZ_LEVEL_KEY, '1')); return isFinite(v) ? Math.min(1, Math.max(ZZ_LEVEL_MIN, v)) : 1; })();
 
     function applyZzTint() {
-        const [r, g, b] = ZZ_TINTS[zzTint];
+        // Tots els colors del mode Zz surten d'aquest to: escalant-lo s'apaga o s'aviva tota la pantalla
+        const [r, g, b] = ZZ_TINTS[zzTint].map(v => Math.round(v * zzLevel));
         const root = document.documentElement;
         root.setAttribute('data-zz', zzTint);
         root.style.setProperty('--zz', `rgb(${r}, ${g}, ${b})`);
@@ -5759,10 +5777,57 @@
     }
     applyZzTint();
 
+    function setZzLevel(v, withToast) {
+        const nv = Math.min(1, Math.max(ZZ_LEVEL_MIN, v));
+        if (Math.abs(nv - zzLevel) < 0.005) return;
+        zzLevel = nv;
+        applyZzTint();
+        writeStorage(ZZ_LEVEL_KEY, String(Math.round(zzLevel * 100) / 100));
+        if (withToast) showToast(`${ZZ_LEVEL_TX[currentLang] || ZZ_LEVEL_TX.ca} ${Math.round(zzLevel * 100)} %`, 1200);
+    }
+
+    // Arrossegar amunt (més intens) o avall (més apagat) sobre l'esfera, només en mode Zz.
+    // Si el dit gairebé no es mou, continua sent un toc (canvi de to) o un doble toc (gir).
+    let zzDragUntil = 0;
+    (function setupZzIntensityDrag() {
+        const DRAG_PX = 12;      // a partir d'aquí ja és arrossegar
+        const FULL_RANGE = 260;  // píxels per anar del mínim al màxim
+        let startY = 0, startLevel = 1, active = false, dragging = false, pid = null;
+        clockFlip.addEventListener('pointerdown', (e) => {
+            if (!isZzTheme()) return;
+            active = true; dragging = false; pid = e.pointerId;
+            startY = e.clientY; startLevel = zzLevel;
+        });
+        clockFlip.addEventListener('pointermove', (e) => {
+            if (!active || e.pointerId !== pid) return;
+            const dy = e.clientY - startY;
+            if (!dragging && Math.abs(dy) < DRAG_PX) return;
+            if (!dragging) { dragging = true; try { clockFlip.setPointerCapture(pid); } catch (err) {} }
+            e.preventDefault();
+            setZzLevel(startLevel - (dy - Math.sign(dy) * DRAG_PX) / FULL_RANGE * (1 - ZZ_LEVEL_MIN), true);
+        });
+        const end = (e) => {
+            if (!active || (e && e.pointerId !== pid)) return;
+            if (dragging) zzDragUntil = Date.now() + 400; // el «click» que ve després no és un toc
+            active = false; dragging = false; pid = null;
+        };
+        clockFlip.addEventListener('pointerup', end);
+        clockFlip.addEventListener('pointercancel', end);
+        // Ordinador: la roda del ratolí sobre l'esfera
+        clockFlip.addEventListener('wheel', (e) => {
+            if (!isZzTheme()) return;
+            e.preventDefault();
+            setZzLevel(zzLevel - e.deltaY / 1500, true);
+        }, { passive: false });
+    })();
+
+    function isZzTheme() { return document.documentElement.getAttribute('data-theme') === 'zz'; }
+
     (function setupDialTaps() {
         let tapTimer = null;
         clockFlip.style.cursor = 'pointer';
         clockFlip.addEventListener('click', () => {
+            if (Date.now() < zzDragUntil) return;
             if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; spinClock(); return; }
             tapTimer = setTimeout(() => {
                 tapTimer = null;
