@@ -1736,6 +1736,101 @@
         .placa.placa-aniv { border-color: var(--accent); }
         .placa.placa-aniv > svg { stroke: var(--accent); }
 
+        /* ---------- Botó d'ajuda («?») i finestra d'ajuda ---------- */
+        .pill.help-btn {
+            min-width: 0;
+            width: calc(clamp(28px, 4vh, 36px) * var(--cal-scale, 1));
+            padding: 0;
+            justify-content: center;
+            font-size: clamp(0.85rem, 3.6vw, 1rem);
+            letter-spacing: 0;
+        }
+
+        .dialeg-cara.ajuda {
+            width: min(100%, 460px);
+            max-height: min(88vh, 760px);
+            padding: 20px 0 0;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        .ajuda .dialeg-titol {
+            padding: 0 56px 12px 20px;
+            font-size: 1.25rem;
+            border-bottom: 1px solid var(--pill-border);
+        }
+
+        .ajuda-cos {
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            padding: 6px 20px 20px;
+        }
+
+        .ajuda-sec h3 {
+            margin: 14px 0 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .ajuda-fila {
+            display: grid;
+            grid-template-columns: 7.2em minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--pill-border);
+            font-size: 0.86rem;
+            line-height: 1.35;
+        }
+
+        .ajuda-sec .ajuda-fila:last-child { border-bottom: none; }
+
+        .ajuda-clau {
+            font-weight: 800;
+            color: var(--text-color);
+        }
+
+        .ajuda-clau.icona,
+        .ajuda-clau.idioma {
+            justify-self: start;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            min-width: 34px;
+            height: 30px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: 1.5px solid var(--pill-border);
+        }
+
+        .ajuda-clau.idioma {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-text);
+            font-size: 0.8rem;
+            letter-spacing: 0.06em;
+        }
+
+        .ajuda-clau svg {
+            display: block;
+            width: 17px;
+            height: 17px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .ajuda-clau b { font-size: 0.8rem; }
+
+        .ajuda-text { color: var(--text-color); }
+
         .controls-row .ctrl-btn {
             width: var(--u);
             height: var(--u);
@@ -2217,6 +2312,7 @@
         <div class="calendar-header-row">
             <div class="calendar-header" id="calendarHeader"></div>
             <div class="header-pills">
+                <button class="pill help-btn" id="helpBtn" type="button" aria-label="Ajuda">?</button>
                 <button class="pill theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
                     <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="4.5"/>
@@ -2522,6 +2618,15 @@
 
 <div class="holiday-tooltip" id="holidayTooltip"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Ajuda: què fa l'app i com es fa servir -->
+<div class="dialeg" id="ajudaDialeg" role="dialog" aria-modal="true" aria-labelledby="ajudaTitol" hidden>
+    <div class="dialeg-cara ajuda">
+        <button type="button" class="dialeg-tanca" id="ajudaTanca" aria-label="Tanca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+        <div class="dialeg-titol" id="ajudaTitol">Com funciona</div>
+        <div class="ajuda-cos" id="ajudaCos"></div>
+    </div>
+</div>
 
 <!-- Alarma sonant -->
 <div class="alarm-overlay" id="alarmOverlay" role="alertdialog" aria-live="assertive" hidden>
@@ -4837,6 +4942,7 @@
         }
         if (fullsReady) refreshFulls();
         applySayTimeButton();
+        applyHelpButton();
         applyVoiceButton();
         applyTheme();
         renderCalendar();
@@ -6674,6 +6780,289 @@
     bloc3Ready = true;
     bloc3ApplyLanguage();
     renderForecast(lastForecast);
+
+    // ---------- Ajuda: què fa l'app i com es fa servir (botó «?» de la capçalera) ----------
+    // Cada fila: [clau, explicació]. Una clau que comença per «#» o «.» és un selector: es mostra
+    // la icona del botó de l'app (així s'hi reconeix d'una ullada).
+    const HELP = {
+        ca: {
+            title: 'Com funciona', btn: 'Ajuda', close: 'Tanca',
+            sections: [
+                ['L’esfera', [
+                    ['Doble toc', 'L’esfera gira i mostra la bandera de l’idioma.'],
+                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd i blau.'],
+                    ['Dit amunt o avall · mode Zz', 'Més o menys intensitat de tota la pantalla.']
+                ]],
+                ['Les finestres', [
+                    ['Dit avall o amunt', 'Passa a la finestra següent o a l’anterior. Van en cercle.'],
+                    ['Dit de costat', 'Al calendari, canvia de mes. A El temps, Avui i Notícies, mostra més panells.'],
+                    ['Puntets', 'Els de la dreta diuen on ets: toca’n un per anar-hi.'],
+                    ['AVUI', 'Torna al calendari, al mes actual.'],
+                    ['Un festiu', 'Toca’l per veure’n el nom. Festius i diumenges en vermell; dissabtes en verd.'],
+                    ['Finestres', 'Calendari · Temperatura · Data · El temps · Avui · Properament · Avisos · Qualitat de l’aire · Ubicació · Ràdio · Podcasts · Notícies · Alarmes']
+                ]],
+                ['Els botons', [
+                    ['.icon-sun', 'Tema: A automàtic (dia o nit segons el sol), dia, nit o Zz, la tauleta de nit.'],
+                    ['CA', 'Idioma: català, francès, alemany, italià o anglès. Canvia també la veu.'],
+                    ['#placaLloc > svg', 'La població: un toc porta a la seva ubicació.'],
+                    ['#voiceToggleBtn .icon-voice-on', 'Anunci de les hores en punt (ding-dong i veu). En mode Zz calla.'],
+                    ['#sayTimeBtn svg', 'Diu l’hora ara mateix; en català, amb quarts.'],
+                    ['#awakeBtn .icon-awake-on', 'La pantalla no s’apaga.']
+                ]],
+                ['Ràdio i podcasts', [
+                    ['Emissora o programa', 'Un toc per escoltar-lo; un altre toc l’atura.'],
+                    ['Ara sona', 'La placa de baix: pausa, nom i ✕ per tancar.'],
+                    ['#araSonaTemps svg', 'Temporitzador: 15, 30, 45, 60, 90 min o res. Al final, el so baixa a poc a poc.']
+                ]],
+                ['Alarmes', [
+                    ['Interruptor, hora i dies', 'Fins a tres alarmes. Sense cap dia marcat, sona un sol cop.'],
+                    ['Quan sona', 'Diu l’hora, fa un to que puja i vibra: +5 min o Atura.'],
+                    ['Important', 'Només sona amb l’app oberta i la pantalla encesa (botó de l’ull).'],
+                    ['.alarm-mobil-ic', 'La passa al rellotge del mòbil: sona encara que estigui bloquejat.']
+                ]],
+                ['L’app', [
+                    ['Instal·lar-la', 'Afegeix-la a la pantalla d’inici: s’obre a pantalla completa.'],
+                    ['Sense connexió', 'Rellotge i calendari funcionen igual; el temps, la ràdio i les notícies necessiten internet.']
+                ]]
+            ]
+        },
+        fr: {
+            title: 'Mode d’emploi', btn: 'Aide', close: 'Fermer',
+            sections: [
+                ['Le cadran', [
+                    ['Double tap', 'Le cadran tourne et montre le drapeau de la langue.'],
+                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert et bleu.'],
+                    ['Doigt vers le haut ou le bas · mode Zz', 'Plus ou moins d’intensité sur tout l’écran.']
+                ]],
+                ['Les fenêtres', [
+                    ['Doigt vers le bas ou le haut', 'Fenêtre suivante ou précédente. Elles tournent en cercle.'],
+                    ['Doigt sur le côté', 'Dans le calendrier, change de mois. Dans Météo, Aujourd’hui et Actualités, d’autres panneaux.'],
+                    ['Points', 'Ceux de droite indiquent où vous êtes : touchez-en un pour y aller.'],
+                    ['AUJ.', 'Revient au calendrier du mois en cours.'],
+                    ['Fenêtres', 'Calendrier · Température · Date · Météo · Aujourd’hui · Alertes · Qualité de l’air · Lieu · Radio · Actualités · Réveils']
+                ]],
+                ['Les boutons', [
+                    ['.icon-sun', 'Thème : A automatique (jour ou nuit selon le soleil), jour, nuit ou Zz, table de chevet.'],
+                    ['FR', 'Langue : catalan, français, allemand, italien ou anglais. Change aussi la voix.'],
+                    ['#placaLloc > svg', 'La localité : un tap ouvre sa fenêtre Lieu.'],
+                    ['#voiceToggleBtn .icon-voice-on', 'Annonce des heures pile (ding-dong et voix). Silence en mode Zz.'],
+                    ['#sayTimeBtn svg', 'Dit l’heure tout de suite.'],
+                    ['#awakeBtn .icon-awake-on', 'L’écran reste allumé.']
+                ]],
+                ['Radio', [
+                    ['Station', 'Un tap pour écouter, un autre pour arrêter.'],
+                    ['En écoute', 'La plaque du bas : pause, nom et ✕ pour fermer.'],
+                    ['#araSonaTemps svg', 'Minuterie : 15, 30, 45, 60, 90 min ou rien. À la fin, le son baisse doucement.']
+                ]],
+                ['Réveils', [
+                    ['Interrupteur, heure et jours', 'Jusqu’à trois réveils. Sans jour coché, il sonne une seule fois.'],
+                    ['Quand il sonne', 'Dit l’heure, une sonnerie qui monte et vibre : +5 min ou Arrêter.'],
+                    ['Important', 'Il sonne seulement avec l’app ouverte et l’écran allumé (bouton de l’œil).'],
+                    ['.alarm-mobil-ic', 'Le copie dans l’horloge du téléphone : il sonnera même verrouillé.']
+                ]],
+                ['L’app', [
+                    ['L’installer', 'Ajoutez-la à l’écran d’accueil : elle s’ouvre en plein écran.'],
+                    ['Hors connexion', 'Horloge et calendrier fonctionnent ; météo, radio et actualités ont besoin d’internet.']
+                ]]
+            ]
+        },
+        de: {
+            title: 'So funktioniert’s', btn: 'Hilfe', close: 'Schließen',
+            sections: [
+                ['Das Zifferblatt', [
+                    ['Doppeltippen', 'Das Zifferblatt dreht sich und zeigt die Flagge der Sprache.'],
+                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün und Blau.'],
+                    ['Finger hoch oder runter · Zz-Modus', 'Mehr oder weniger Helligkeit für den ganzen Bildschirm.']
+                ]],
+                ['Die Fenster', [
+                    ['Finger runter oder hoch', 'Nächstes oder vorheriges Fenster. Sie laufen im Kreis.'],
+                    ['Finger seitlich', 'Im Kalender: Monat wechseln. Bei Wetter, Heute und Nachrichten: weitere Seiten.'],
+                    ['Punkte', 'Die Punkte rechts zeigen, wo du bist: antippen, um hinzuspringen.'],
+                    ['HEUTE', 'Zurück zum Kalender des aktuellen Monats.'],
+                    ['Fenster', 'Kalender · Temperatur · Datum · Wetter · Heute · Warnungen · Luftqualität · Ort · Radio · Nachrichten · Wecker']
+                ]],
+                ['Die Tasten', [
+                    ['.icon-sun', 'Design: A automatisch (Tag oder Nacht nach der Sonne), Tag, Nacht oder Zz, der Nachttisch.'],
+                    ['DE', 'Sprache: Katalanisch, Französisch, Deutsch, Italienisch oder Englisch. Auch die Stimme.'],
+                    ['#placaLloc > svg', 'Der Ort: Antippen öffnet das Fenster Ort.'],
+                    ['#voiceToggleBtn .icon-voice-on', 'Ansage zur vollen Stunde (Gong und Stimme). Im Zz-Modus still.'],
+                    ['#sayTimeBtn svg', 'Sagt sofort die Uhrzeit.'],
+                    ['#awakeBtn .icon-awake-on', 'Der Bildschirm bleibt an.']
+                ]],
+                ['Radio', [
+                    ['Sender', 'Einmal tippen zum Hören, nochmal zum Stoppen.'],
+                    ['Läuft gerade', 'Das Schild unten: Pause, Name und ✕ zum Schließen.'],
+                    ['#araSonaTemps svg', 'Sleep-Timer: 15, 30, 45, 60, 90 Min. oder aus. Am Ende wird der Ton langsam leiser.']
+                ]],
+                ['Wecker', [
+                    ['Schalter, Uhrzeit und Tage', 'Bis zu drei Wecker. Ohne Tag klingelt er nur einmal.'],
+                    ['Wenn er klingelt', 'Sagt die Uhrzeit, ein Ton wird lauter, Vibration: +5 Min. oder Stopp.'],
+                    ['Wichtig', 'Klingelt nur bei offener App und eingeschaltetem Bildschirm (Augen-Taste).'],
+                    ['.alarm-mobil-ic', 'Überträgt ihn in die Uhr-App des Handys: klingelt auch gesperrt.']
+                ]],
+                ['Die App', [
+                    ['Installieren', 'Zum Home-Bildschirm hinzufügen: öffnet sich im Vollbild.'],
+                    ['Ohne Verbindung', 'Uhr und Kalender laufen weiter; Wetter, Radio und Nachrichten brauchen Internet.']
+                ]]
+            ]
+        },
+        it: {
+            title: 'Come funziona', btn: 'Aiuto', close: 'Chiudi',
+            sections: [
+                ['Il quadrante', [
+                    ['Doppio tocco', 'Il quadrante gira e mostra la bandiera della lingua.'],
+                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde e blu.'],
+                    ['Dito su o giù · modalità Zz', 'Più o meno intensità su tutto lo schermo.']
+                ]],
+                ['Le finestre', [
+                    ['Dito giù o su', 'Finestra successiva o precedente. Girano in cerchio.'],
+                    ['Dito di lato', 'Nel calendario cambia mese. In Meteo, Oggi e Notizie, altri pannelli.'],
+                    ['Puntini', 'Quelli a destra dicono dove sei: toccane uno per andarci.'],
+                    ['OGGI', 'Torna al calendario del mese corrente.'],
+                    ['Finestre', 'Calendario · Temperatura · Data · Meteo · Oggi · Avvisi · Qualità dell’aria · Posizione · Radio · Notizie · Sveglie']
+                ]],
+                ['I pulsanti', [
+                    ['.icon-sun', 'Tema: A automatico (giorno o notte secondo il sole), giorno, notte o Zz, il comodino.'],
+                    ['IT', 'Lingua: catalano, francese, tedesco, italiano o inglese. Cambia anche la voce.'],
+                    ['#placaLloc > svg', 'La località: un tocco apre la finestra Posizione.'],
+                    ['#voiceToggleBtn .icon-voice-on', 'Annuncio delle ore piene (din-don e voce). In modalità Zz tace.'],
+                    ['#sayTimeBtn svg', 'Dice l’ora adesso.'],
+                    ['#awakeBtn .icon-awake-on', 'Lo schermo non si spegne.']
+                ]],
+                ['Radio', [
+                    ['Emittente', 'Un tocco per ascoltare, un altro per fermare.'],
+                    ['In onda', 'La targhetta in basso: pausa, nome e ✕ per chiudere.'],
+                    ['#araSonaTemps svg', 'Timer: 15, 30, 45, 60, 90 min o niente. Alla fine il suono si abbassa piano piano.']
+                ]],
+                ['Sveglie', [
+                    ['Interruttore, ora e giorni', 'Fino a tre sveglie. Senza giorni, suona una volta sola.'],
+                    ['Quando suona', 'Dice l’ora, un suono che sale e vibra: +5 min o Ferma.'],
+                    ['Importante', 'Suona solo con l’app aperta e lo schermo acceso (pulsante dell’occhio).'],
+                    ['.alarm-mobil-ic', 'La copia nell’orologio del telefono: suona anche se è bloccato.']
+                ]],
+                ['L’app', [
+                    ['Installarla', 'Aggiungila alla schermata Home: si apre a schermo intero.'],
+                    ['Senza connessione', 'Orologio e calendario funzionano; meteo, radio e notizie richiedono internet.']
+                ]]
+            ]
+        },
+        en: {
+            title: 'How it works', btn: 'Help', close: 'Close',
+            sections: [
+                ['The dial', [
+                    ['Double tap', 'The dial spins and shows the flag of the language.'],
+                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green and blue.'],
+                    ['Finger up or down · Zz mode', 'More or less brightness for the whole screen.']
+                ]],
+                ['The windows', [
+                    ['Finger down or up', 'Next or previous window. They go round in a circle.'],
+                    ['Finger sideways', 'In the calendar, changes month. In Weather, Today and News, more panels.'],
+                    ['Dots', 'The dots on the right show where you are: tap one to jump there.'],
+                    ['TODAY', 'Back to the calendar, current month.'],
+                    ['Windows', 'Calendar · Temperature · Date · Weather · Today · Alerts · Air quality · Location · Radio · News · Alarms']
+                ]],
+                ['The buttons', [
+                    ['.icon-sun', 'Theme: A automatic (day or night by the sun), day, night or Zz, the bedside mode.'],
+                    ['EN', 'Language: Catalan, French, German, Italian or English. The voice changes too.'],
+                    ['#placaLloc > svg', 'The town: a tap opens its Location window.'],
+                    ['#voiceToggleBtn .icon-voice-on', 'On-the-hour announcement (chime and voice). Silent in Zz mode.'],
+                    ['#sayTimeBtn svg', 'Says the time right now.'],
+                    ['#awakeBtn .icon-awake-on', 'The screen stays on.']
+                ]],
+                ['Radio', [
+                    ['Station', 'Tap to listen, tap again to stop.'],
+                    ['Now playing', 'The plate at the bottom: pause, name and ✕ to close.'],
+                    ['#araSonaTemps svg', 'Sleep timer: 15, 30, 45, 60, 90 min or off. At the end the sound fades out slowly.']
+                ]],
+                ['Alarms', [
+                    ['Switch, time and days', 'Up to three alarms. With no day ticked, it rings once.'],
+                    ['When it rings', 'Says the time, a rising tone and vibration: +5 min or Stop.'],
+                    ['Important', 'It only rings with the app open and the screen on (eye button).'],
+                    ['.alarm-mobil-ic', 'Copies it to the phone’s clock: it rings even when locked.']
+                ]],
+                ['The app', [
+                    ['Install it', 'Add it to the home screen: it opens full screen.'],
+                    ['Offline', 'Clock and calendar keep working; weather, radio and news need internet.']
+                ]]
+            ]
+        }
+    };
+
+    const ALARM_MOBILE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><circle cx="12" cy="12" r="3.6"/><path d="M12 10.2V12l1.2 1"/></svg>';
+
+    function helpKey(key) {
+        const span = document.createElement('span');
+        span.className = 'ajuda-clau';
+        if (key === '.alarm-mobil-ic') {
+            span.classList.add('icona');
+            span.innerHTML = ALARM_MOBILE_ICON;
+        } else if (/^[#.]/.test(key)) {
+            const src = document.querySelector(key);
+            span.classList.add('icona');
+            if (src) {
+                const svg = src.cloneNode(true);
+                svg.removeAttribute('id');
+                svg.removeAttribute('class');
+                span.appendChild(svg);
+            }
+            if (key === '.icon-sun') span.insertAdjacentHTML('beforeend', '<b>A</b>');
+        } else if (/^[A-Z]{2}$/.test(key)) {
+            span.classList.add('idioma');
+            span.textContent = key;
+        } else {
+            span.textContent = key;
+        }
+        return span;
+    }
+
+    function renderHelp() {
+        const h = HELP[currentLang] || HELP.ca;
+        document.getElementById('ajudaTitol').textContent = h.title;
+        document.getElementById('ajudaTanca').setAttribute('aria-label', h.close);
+        const box = document.getElementById('ajudaCos');
+        box.innerHTML = '';
+        h.sections.forEach(([titol, rows]) => {
+            const sec = document.createElement('section');
+            sec.className = 'ajuda-sec';
+            const hd = document.createElement('h3');
+            hd.textContent = titol;
+            sec.appendChild(hd);
+            rows.forEach(([k, txt]) => {
+                const row = document.createElement('div');
+                row.className = 'ajuda-fila';
+                const p = document.createElement('span');
+                p.className = 'ajuda-text';
+                p.textContent = txt;
+                row.append(helpKey(k), p);
+                sec.appendChild(row);
+            });
+            box.appendChild(sec);
+        });
+    }
+
+    function applyHelpButton() {
+        const h = HELP[currentLang] || HELP.ca;
+        const b = document.getElementById('helpBtn');
+        b.setAttribute('aria-label', h.btn);
+        b.title = h.btn;
+    }
+
+    function openHelp() {
+        renderHelp();
+        const dlg = document.getElementById('ajudaDialeg');
+        dlg.hidden = false;
+        document.getElementById('ajudaCos').scrollTop = 0;
+    }
+
+    (function setupHelp() {
+        const dlg = document.getElementById('ajudaDialeg');
+        const close = () => { dlg.hidden = true; };
+        document.getElementById('helpBtn').addEventListener('click', (e) => { e.stopPropagation(); openHelp(); });
+        document.getElementById('ajudaTanca').addEventListener('click', close);
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dlg.hidden) close(); });
+        applyHelpButton();
+    })();
 
     // ---------- Inici ----------
     lastAnnounceKey = hourKey(new Date()); // no s'anuncia l'hora només per obrir la pàgina
