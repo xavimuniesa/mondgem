@@ -76,21 +76,25 @@
             --zz-rgb: 255, 69, 0;
             --zz-dim: rgba(var(--zz-rgb), 0.45);
             --zz-dim-solid: rgb(115, 31, 0);
-            --mondaine-red: var(--zz);
+            /* Segon color (combinacions de dos tons): en els tons simples és igual que el primer */
+            --zz2: #ff4500;
+            --zz2-rgb: 255, 69, 0;
+            --zz2-dim-solid: rgb(115, 31, 0);
+            --mondaine-red: var(--zz2);
             --bg-color: #000000;
             --card-bg: #000000;
             --widget-bg: #000000;
-            --widget-text: rgba(var(--zz-rgb), 0.6);
+            --widget-text: rgba(var(--zz2-rgb), 0.7);
             --text-color: var(--zz);
             --border-color: rgba(var(--zz-rgb), 0.14);
             --border-color-soft: rgba(var(--zz-rgb), 0.22);
             --nav-active-bg: rgba(var(--zz-rgb), 0.14);
             --card-shadow: transparent;
             --today-text: #000000;
-            --today-glow: rgba(var(--zz-rgb), 0.35);
-            /* En zz tot és taronja: el festiu en ple i el dissabte com un dia normal */
-            --holiday-color: var(--zz);
-            --pill-border: rgba(var(--zz-rgb), 0.35);
+            --today-glow: rgba(var(--zz2-rgb), 0.35);
+            /* En zz: el festiu amb el segon color i el dissabte com un dia normal */
+            --holiday-color: var(--zz2);
+            --pill-border: rgba(var(--zz2-rgb), 0.4);
             --saturday-color: var(--zz);
         }
 
@@ -285,7 +289,7 @@
         }
 
         html[data-theme="zz"] .back-flag {
-            filter: grayscale(1) sepia(1) saturate(6) hue-rotate(-25deg) brightness(0.7);
+            filter: url(#zzFlagTint);
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -2078,16 +2082,16 @@
 
         html[data-theme="zz"] .clock-dial { fill: #000000; stroke: #000000; }
         html[data-theme="zz"] .clock-brand { fill: var(--zz); } /* logo i sotalogo: mateixa intensitat que les agulles */
-        html[data-theme="zz"] .clock-badge { fill: var(--zz); }
+        html[data-theme="zz"] .clock-badge { fill: var(--zz2); }
         html[data-theme="zz"] .clock-badge-cross { fill: #000000; }
         html[data-theme="zz"] .mark-hour { stroke: var(--zz); }
-        html[data-theme="zz"] .mark-minute { stroke: var(--zz-dim); }
+        html[data-theme="zz"] .mark-minute { stroke: rgba(var(--zz2-rgb), 0.5); }
         html[data-theme="zz"] .hand { stroke: var(--zz); }
         /* Segonera: el mateix to mig apagat, però opac (sense transparència: el disc i la tija no es
            sumen entre ells ni deixen veure les agulles a través) */
-        html[data-theme="zz"] .second-line { stroke: var(--zz-dim-solid); }
-        html[data-theme="zz"] .second-dot { fill: var(--zz-dim-solid); }
-        html[data-theme="zz"] .clock-cap { fill: var(--zz-dim-solid); } /* el botó central, del mateix to que la segonera */
+        html[data-theme="zz"] .second-line { stroke: var(--zz2-dim-solid); }
+        html[data-theme="zz"] .second-dot { fill: var(--zz2-dim-solid); }
+        html[data-theme="zz"] .clock-cap { fill: var(--zz2-dim-solid); } /* el botó central, del mateix to que la segonera */
 
         html[data-theme="zz"] .day:not(.today):not(.holiday) .day-number {
             opacity: 0.8;
@@ -2302,6 +2306,17 @@
         <div class="clock-face-back" aria-hidden="true">
             <div class="clock-back-plate">
                 <svg class="back-flag" id="backFlag" viewBox="0 0 32 32"></svg>
+                <!-- Mode Zz: la bandera passa als colors triats (clars → primer color; mitjans i foscos → segon) -->
+                <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+                    <filter id="zzFlagTint" color-interpolation-filters="sRGB">
+                        <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+                        <feComponentTransfer id="zzFlagTable">
+                            <feFuncR type="discrete" tableValues="0.32 0.62 1"/>
+                            <feFuncG type="discrete" tableValues="0.09 0.17 0.27"/>
+                            <feFuncB type="discrete" tableValues="0 0 0"/>
+                        </feComponentTransfer>
+                    </filter>
+                </svg>
             </div>
         </div>
       </div>
@@ -5856,7 +5871,29 @@
     // En mode Zz, un toc a l'esfera canvia el to fosforescent (taronja, vermell, groc, verd, blau).
     // Un doble toc, en qualsevol mode, fa girar l'esfera i se'n veu el revers.
     const ZZ_TINTS = { orange: [255, 69, 0], red: [255, 40, 40], yellow: [242, 197, 61], green: [61, 220, 132], blue: [74, 166, 255] };
-    const ZZ_ORDER = ['orange', 'red', 'yellow', 'green', 'blue'];
+    const ZZ_SIMPLE = ['orange', 'red', 'yellow', 'green', 'blue'];
+    // Sis combinacions de dos colors, triades a l'atzar el primer cop i desades en aquest aparell
+    // (el primer color: agulles, marques de les hores, logo i xifres; el segon: segonera, marques
+    // dels minuts, festius, etiquetes, vores i botons destacats)
+    const ZZ_COMBOS_KEY = 'mondaineZzCombos';
+    const ZZ_COMBOS = (() => {
+        try {
+            const v = JSON.parse(localStorage.getItem(ZZ_COMBOS_KEY));
+            if (Array.isArray(v) && v.length === 6 && v.every(p => Array.isArray(p) && ZZ_SIMPLE.includes(p[0]) && ZZ_SIMPLE.includes(p[1]) && p[0] !== p[1])) return v;
+        } catch (e) {}
+        const all = [];
+        ZZ_SIMPLE.forEach(a => ZZ_SIMPLE.forEach(b => { if (a !== b) all.push([a, b]); }));
+        const picked = [];
+        while (picked.length < 6) {
+            const p = all.splice(Math.floor(Math.random() * all.length), 1)[0];
+            // sense repetir la mateixa parella girada
+            if (!picked.some(q => q[0] === p[1] && q[1] === p[0])) picked.push(p);
+        }
+        try { localStorage.setItem(ZZ_COMBOS_KEY, JSON.stringify(picked)); } catch (e) {}
+        return picked;
+    })();
+    const ZZ_ORDER = ZZ_SIMPLE.concat(ZZ_COMBOS.map((p, i) => `c${i}`));
+    const zzPair = id => (id[0] === 'c' ? ZZ_COMBOS[Number(id.slice(1))] : [id, id]);
     const ZZ_KEY = 'mondaineZzTint';
     let zzTint = (() => { const v = readStorage(ZZ_KEY, 'orange'); return ZZ_ORDER.includes(v) ? v : 'orange'; })();
     // Intensitat del mode Zz (comuna a tots els tons): dit amunt o avall sobre l'esfera
@@ -5867,13 +5904,29 @@
 
     function applyZzTint() {
         // Tots els colors del mode Zz surten d'aquest to: escalant-lo s'apaga o s'aviva tota la pantalla
-        const [r, g, b] = ZZ_TINTS[zzTint].map(v => Math.round(v * zzLevel));
+        const [first, second] = zzPair(zzTint);
+        const [r, g, b] = ZZ_TINTS[first].map(v => Math.round(v * zzLevel));
+        const [r2, g2, b2] = ZZ_TINTS[second].map(v => Math.round(v * zzLevel));
         const root = document.documentElement;
         root.setAttribute('data-zz', zzTint);
         root.style.setProperty('--zz', `rgb(${r}, ${g}, ${b})`);
         root.style.setProperty('--zz-rgb', `${r}, ${g}, ${b}`);
+        root.style.setProperty('--zz2', `rgb(${r2}, ${g2}, ${b2})`);
+        root.style.setProperty('--zz2-rgb', `${r2}, ${g2}, ${b2}`);
         // El 45 % del to sobre negre, com a color opac (per a la segonera)
         root.style.setProperty('--zz-dim-solid', `rgb(${Math.round(r * 0.45)}, ${Math.round(g * 0.45)}, ${Math.round(b * 0.45)})`);
+        root.style.setProperty('--zz2-dim-solid', `rgb(${Math.round(r2 * 0.45)}, ${Math.round(g2 * 0.45)}, ${Math.round(b2 * 0.45)})`);
+        // Bandera del revers: els tons clars van al primer color i els foscos, apagats, al segon
+        const table = document.getElementById('zzFlagTable');
+        if (table) {
+            // Tres nivells nets: foscos → segon color apagat, mitjans → segon color, clars → primer color
+            const single = second === first;
+            [['feFuncR', r, r2], ['feFuncG', g, g2], ['feFuncB', b, b2]].forEach(([tag, hi, low]) => {
+                const f = table.querySelector(tag);
+                const vals = single ? [hi * 0.32, hi * 0.62, hi] : [low * 0.55, low, hi];
+                if (f) f.setAttribute('tableValues', vals.map(v => (v / 255).toFixed(3)).join(' '));
+            });
+        }
     }
 
     function cycleZzTint() {
@@ -6790,7 +6843,7 @@
             sections: [
                 ['L’esfera', [
                     ['Doble toc', 'L’esfera gira i mostra la bandera de l’idioma.'],
-                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd i blau.'],
+                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd, blau i sis combinacions de dos colors.'],
                     ['Dit amunt o avall · mode Zz', 'Més o menys intensitat de tota la pantalla.']
                 ]],
                 ['Les finestres', [
@@ -6831,7 +6884,7 @@
             sections: [
                 ['Le cadran', [
                     ['Double tap', 'Le cadran tourne et montre le drapeau de la langue.'],
-                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert et bleu.'],
+                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert, bleu et six combinaisons de deux couleurs.'],
                     ['Doigt vers le haut ou le bas · mode Zz', 'Plus ou moins d’intensité sur tout l’écran.']
                 ]],
                 ['Les fenêtres', [
@@ -6871,7 +6924,7 @@
             sections: [
                 ['Das Zifferblatt', [
                     ['Doppeltippen', 'Das Zifferblatt dreht sich und zeigt die Flagge der Sprache.'],
-                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün und Blau.'],
+                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün, Blau und sechs Kombinationen aus zwei Farben.'],
                     ['Finger hoch oder runter · Zz-Modus', 'Mehr oder weniger Helligkeit für den ganzen Bildschirm.']
                 ]],
                 ['Die Fenster', [
@@ -6911,7 +6964,7 @@
             sections: [
                 ['Il quadrante', [
                     ['Doppio tocco', 'Il quadrante gira e mostra la bandiera della lingua.'],
-                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde e blu.'],
+                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde, blu e sei combinazioni di due colori.'],
                     ['Dito su o giù · modalità Zz', 'Più o meno intensità su tutto lo schermo.']
                 ]],
                 ['Le finestre', [
@@ -6951,7 +7004,7 @@
             sections: [
                 ['The dial', [
                     ['Double tap', 'The dial spins and shows the flag of the language.'],
-                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green and blue.'],
+                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green, blue and six two-colour combinations.'],
                     ['Finger up or down · Zz mode', 'More or less brightness for the whole screen.']
                 ]],
                 ['The windows', [
