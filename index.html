@@ -5870,28 +5870,15 @@
     // ---------- Mode Zz amb colors (com al PRS 516) ----------
     // En mode Zz, un toc a l'esfera canvia el to fosforescent (taronja, vermell, groc, verd, blau).
     // Un doble toc, en qualsevol mode, fa girar l'esfera i se'n veu el revers.
-    const ZZ_TINTS = { orange: [255, 69, 0], red: [255, 40, 40], yellow: [242, 197, 61], green: [61, 220, 132], blue: [74, 166, 255] };
+    const ZZ_TINTS = { orange: [255, 69, 0], red: [255, 40, 40], yellow: [242, 197, 61], green: [61, 220, 132], blue: [74, 166, 255], amber: [255, 176, 0], warmwhite: [242, 232, 213] };
     const ZZ_SIMPLE = ['orange', 'red', 'yellow', 'green', 'blue'];
-    // Sis combinacions de dos colors, triades a l'atzar el primer cop i desades en aquest aparell
-    // (el primer color: agulles, marques de les hores, logo i xifres; el segon: segonera, marques
-    // dels minuts, festius, etiquetes, vores i botons destacats)
-    const ZZ_COMBOS_KEY = 'mondaineZzCombos';
-    const ZZ_COMBOS = (() => {
-        try {
-            const v = JSON.parse(localStorage.getItem(ZZ_COMBOS_KEY));
-            if (Array.isArray(v) && v.length === 6 && v.every(p => Array.isArray(p) && ZZ_SIMPLE.includes(p[0]) && ZZ_SIMPLE.includes(p[1]) && p[0] !== p[1])) return v;
-        } catch (e) {}
-        const all = [];
-        ZZ_SIMPLE.forEach(a => ZZ_SIMPLE.forEach(b => { if (a !== b) all.push([a, b]); }));
-        const picked = [];
-        while (picked.length < 6) {
-            const p = all.splice(Math.floor(Math.random() * all.length), 1)[0];
-            // sense repetir la mateixa parella girada
-            if (!picked.some(q => q[0] === p[1] && q[1] === p[0])) picked.push(p);
-        }
-        try { localStorage.setItem(ZZ_COMBOS_KEY, JSON.stringify(picked)); } catch (e) {}
-        return picked;
-    })();
+    // Deu combinacions de dos colors, triades per en Xavier a la maqueta (números 2, 3, 9, 10, 11,
+    // 12, 15, 16, 19 i 24). El primer color: agulles, marques de les hores, logo i xifres; el segon:
+    // segonera, marques dels minuts, festius, etiquetes, vores i botons destacats.
+    const ZZ_COMBOS = [
+        ['orange', 'yellow'], ['orange', 'green'], ['yellow', 'orange'], ['yellow', 'red'], ['yellow', 'green'],
+        ['yellow', 'blue'], ['green', 'yellow'], ['green', 'blue'], ['blue', 'yellow'], ['amber', 'warmwhite']
+    ];
     const ZZ_ORDER = ZZ_SIMPLE.concat(ZZ_COMBOS.map((p, i) => `c${i}`));
     const zzPair = id => (id[0] === 'c' ? ZZ_COMBOS[Number(id.slice(1))] : [id, id]);
     const ZZ_KEY = 'mondaineZzTint';
@@ -6843,7 +6830,7 @@
             sections: [
                 ['L’esfera', [
                     ['Doble toc', 'L’esfera gira i mostra la bandera de l’idioma.'],
-                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd, blau i sis combinacions de dos colors.'],
+                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd, blau i deu combinacions de dos colors.'],
                     ['Dit amunt o avall · mode Zz', 'Més o menys intensitat de tota la pantalla.']
                 ]],
                 ['Les finestres', [
@@ -6884,7 +6871,7 @@
             sections: [
                 ['Le cadran', [
                     ['Double tap', 'Le cadran tourne et montre le drapeau de la langue.'],
-                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert, bleu et six combinaisons de deux couleurs.'],
+                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert, bleu et dix combinaisons de deux couleurs.'],
                     ['Doigt vers le haut ou le bas · mode Zz', 'Plus ou moins d’intensité sur tout l’écran.']
                 ]],
                 ['Les fenêtres', [
@@ -6924,7 +6911,7 @@
             sections: [
                 ['Das Zifferblatt', [
                     ['Doppeltippen', 'Das Zifferblatt dreht sich und zeigt die Flagge der Sprache.'],
-                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün, Blau und sechs Kombinationen aus zwei Farben.'],
+                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün, Blau und zehn Kombinationen aus zwei Farben.'],
                     ['Finger hoch oder runter · Zz-Modus', 'Mehr oder weniger Helligkeit für den ganzen Bildschirm.']
                 ]],
                 ['Die Fenster', [
@@ -6964,7 +6951,7 @@
             sections: [
                 ['Il quadrante', [
                     ['Doppio tocco', 'Il quadrante gira e mostra la bandiera della lingua.'],
-                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde, blu e sei combinazioni di due colori.'],
+                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde, blu e dieci combinazioni di due colori.'],
                     ['Dito su o giù · modalità Zz', 'Più o meno intensità su tutto lo schermo.']
                 ]],
                 ['Le finestre', [
@@ -7004,7 +6991,7 @@
             sections: [
                 ['The dial', [
                     ['Double tap', 'The dial spins and shows the flag of the language.'],
-                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green, blue and six two-colour combinations.'],
+                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green, blue and ten two-colour combinations.'],
                     ['Finger up or down · Zz mode', 'More or less brightness for the whole screen.']
                 ]],
                 ['The windows', [
