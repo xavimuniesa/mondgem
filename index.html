@@ -1741,14 +1741,31 @@
         .placa.placa-aniv > svg { stroke: var(--accent); }
 
         /* ---------- Botó d'ajuda («?») i finestra d'ajuda ---------- */
-        .pill.help-btn {
-            min-width: 0;
-            width: calc(clamp(28px, 4vh, 36px) * var(--cal-scale, 1));
+        .clock-section { position: relative; }
+
+        .help-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            z-index: 5;
+            width: 34px;
+            height: 34px;
             padding: 0;
-            justify-content: center;
-            font-size: clamp(0.85rem, 3.6vw, 1rem);
-            letter-spacing: 0;
+            border-radius: 50%;
+            border: 1.5px solid var(--pill-border);
+            background: transparent;
+            color: var(--widget-text);
+            font: inherit;
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
+
+        .help-btn:active { background-color: var(--nav-active-bg); }
 
         .dialeg-cara.ajuda {
             width: min(100%, 460px);
@@ -2251,6 +2268,8 @@
 
 <div class="app-card">
     <div class="clock-section">
+        <!-- Ajuda: a la cantonada de la zona del rellotge, fora de l'esfera -->
+        <button class="help-btn" id="helpBtn" type="button" aria-label="Ajuda">?</button>
       <div class="clock-flip" id="clockFlip">
         <svg class="clock-svg clock-face-front" viewBox="0 0 300 300">
             <defs>
@@ -2338,7 +2357,6 @@
         <div class="calendar-header-row">
             <div class="calendar-header" id="calendarHeader"></div>
             <div class="header-pills">
-                <button class="pill help-btn" id="helpBtn" type="button" aria-label="Ajuda">?</button>
                 <button class="pill theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Canvia el tema">
                     <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="4.5"/>
