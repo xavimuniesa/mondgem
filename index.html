@@ -2081,6 +2081,9 @@
         }
 
         html[data-theme="zz"] .clock-dial { fill: #000000; stroke: #000000; }
+        /* L'halo només es veu en mode Zz i amb les combinacions que en porten */
+        .zz-halo { display: none; pointer-events: none; }
+        html[data-theme="zz"][data-zz-halo="1"] .zz-halo { display: inline; }
         html[data-theme="zz"] .clock-brand { fill: var(--zz); } /* logo i sotalogo: mateixa intensitat que les agulles */
         html[data-theme="zz"] .clock-badge { fill: var(--zz2); }
         html[data-theme="zz"] .clock-badge-cross { fill: #000000; }
@@ -2262,6 +2265,13 @@
                     <stop offset="55%" stop-color="#000000"/>
                     <stop offset="100%" stop-color="#000000"/>
                 </linearGradient>
+                <!-- Halo del mode Zz: neix a la vora de l'esfera i s'esvaeix cap a l'eix -->
+                <radialGradient id="zzHaloGradient" cx="150" cy="150" r="146" gradientUnits="userSpaceOnUse">
+                    <stop offset="0.5" style="stop-color: var(--zz-halo); stop-opacity: 0"/>
+                    <stop offset="0.8" style="stop-color: var(--zz-halo); stop-opacity: 0.1"/>
+                    <stop offset="0.94" style="stop-color: var(--zz-halo); stop-opacity: 0.32"/>
+                    <stop offset="1" style="stop-color: var(--zz-halo); stop-opacity: 0.6"/>
+                </radialGradient>
                 <filter id="markShadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx="1" dy="1.8" stdDeviation="1.1" flood-color="#000000" flood-opacity="0.4"/>
                 </filter>
@@ -2269,6 +2279,7 @@
 
             <!-- Bisell exterior i fons -->
             <circle class="clock-dial" cx="150" cy="150" r="140" fill="url(#dialGradient)" stroke="url(#bezelGradient)" stroke-width="12"/>
+            <circle class="zz-halo" cx="150" cy="150" r="146" fill="url(#zzHaloGradient)"/>
 
             <!-- Text MONDAINE -->
             <text class="clock-brand" x="150" y="97" font-family="'Montserrat', -apple-system, sans-serif" font-size="16" font-weight="300" letter-spacing="1.8" fill="#000000" text-anchor="middle">MONDAINE</text>
@@ -5870,14 +5881,22 @@
     // ---------- Mode Zz amb colors (com al PRS 516) ----------
     // En mode Zz, un toc a l'esfera canvia el to fosforescent (taronja, vermell, groc, verd, blau).
     // Un doble toc, en qualsevol mode, fa girar l'esfera i se'n veu el revers.
-    const ZZ_TINTS = { orange: [255, 69, 0], red: [255, 40, 40], yellow: [242, 197, 61], green: [61, 220, 132], blue: [74, 166, 255], amber: [255, 176, 0], warmwhite: [242, 232, 213] };
+    const ZZ_TINTS = { orange: [255, 69, 0], red: [255, 40, 40], yellow: [242, 197, 61], green: [61, 220, 132], blue: [74, 166, 255], amber: [255, 176, 0], warmwhite: [242, 232, 213],
+        cyan: [64, 224, 224], pink: [255, 95, 176], lilac: [169, 139, 255], turquoise: [0, 200, 170], copper: [217, 119, 66] };
     const ZZ_SIMPLE = ['orange', 'red', 'yellow', 'green', 'blue'];
     // Deu combinacions de dos colors, triades per en Xavier a la maqueta (números 2, 3, 9, 10, 11,
     // 12, 15, 16, 19 i 24). El primer color: agulles, marques de les hores, logo i xifres; el segon:
     // segonera, marques dels minuts, festius, etiquetes, vores i botons destacats.
     const ZZ_COMBOS = [
         ['orange', 'yellow'], ['orange', 'green'], ['yellow', 'orange'], ['yellow', 'red'], ['yellow', 'green'],
-        ['yellow', 'blue'], ['green', 'yellow'], ['green', 'blue'], ['blue', 'yellow'], ['amber', 'warmwhite']
+        ['yellow', 'blue'], ['green', 'yellow'], ['green', 'blue'], ['blue', 'yellow'], ['amber', 'warmwhite'],
+        // Amb halo (tercer valor): les vint triades a la maqueta de l'halo (totes menys l'1, el 5, l'11 i el 15)
+        ['amber', 'warmwhite', 'amber'], ['green', 'cyan', 'green'], ['blue', 'yellow', 'blue'], ['turquoise', 'yellow', 'turquoise'],
+        ['copper', 'warmwhite', 'copper'], ['orange', 'blue', 'orange'],
+        ['yellow', 'blue', 'blue'], ['cyan', 'blue', 'blue'], ['warmwhite', 'blue', 'blue'], ['pink', 'lilac', 'lilac'],
+        ['lilac', 'pink', 'pink'], ['warmwhite', 'green', 'green'],
+        ['blue', 'cyan', 'lilac'], ['yellow', 'orange', 'red'], ['cyan', 'pink', 'lilac'], ['yellow', 'green', 'cyan'],
+        ['lilac', 'cyan', 'blue'], ['green', 'blue', 'cyan'], ['warmwhite', 'yellow', 'orange'], ['blue', 'warmwhite', 'lilac']
     ];
     const ZZ_ORDER = ZZ_SIMPLE.concat(ZZ_COMBOS.map((p, i) => `c${i}`));
     const zzPair = id => (id[0] === 'c' ? ZZ_COMBOS[Number(id.slice(1))] : [id, id]);
@@ -5891,11 +5910,16 @@
 
     function applyZzTint() {
         // Tots els colors del mode Zz surten d'aquest to: escalant-lo s'apaga o s'aviva tota la pantalla
-        const [first, second] = zzPair(zzTint);
+        const [first, second, halo] = zzPair(zzTint);
         const [r, g, b] = ZZ_TINTS[first].map(v => Math.round(v * zzLevel));
         const [r2, g2, b2] = ZZ_TINTS[second].map(v => Math.round(v * zzLevel));
         const root = document.documentElement;
         root.setAttribute('data-zz', zzTint);
+        root.setAttribute('data-zz-halo', halo ? '1' : '0');
+        if (halo) {
+            const [rh, gh, bh] = ZZ_TINTS[halo].map(v => Math.round(v * zzLevel));
+            root.style.setProperty('--zz-halo', `rgb(${rh}, ${gh}, ${bh})`);
+        }
         root.style.setProperty('--zz', `rgb(${r}, ${g}, ${b})`);
         root.style.setProperty('--zz-rgb', `${r}, ${g}, ${b}`);
         root.style.setProperty('--zz2', `rgb(${r2}, ${g2}, ${b2})`);
@@ -6830,7 +6854,7 @@
             sections: [
                 ['L’esfera', [
                     ['Doble toc', 'L’esfera gira i mostra la bandera de l’idioma.'],
-                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd, blau i deu combinacions de dos colors.'],
+                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd, blau, deu combinacions de dos colors i vint més amb halo.'],
                     ['Dit amunt o avall · mode Zz', 'Més o menys intensitat de tota la pantalla.']
                 ]],
                 ['Les finestres', [
@@ -6871,7 +6895,7 @@
             sections: [
                 ['Le cadran', [
                     ['Double tap', 'Le cadran tourne et montre le drapeau de la langue.'],
-                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert, bleu et dix combinaisons de deux couleurs.'],
+                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert, bleu, dix combinaisons de deux couleurs et vingt autres avec halo.'],
                     ['Doigt vers le haut ou le bas · mode Zz', 'Plus ou moins d’intensité sur tout l’écran.']
                 ]],
                 ['Les fenêtres', [
@@ -6911,7 +6935,7 @@
             sections: [
                 ['Das Zifferblatt', [
                     ['Doppeltippen', 'Das Zifferblatt dreht sich und zeigt die Flagge der Sprache.'],
-                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün, Blau und zehn Kombinationen aus zwei Farben.'],
+                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün, Blau, zehn Kombinationen aus zwei Farben und zwanzig weitere mit Halo.'],
                     ['Finger hoch oder runter · Zz-Modus', 'Mehr oder weniger Helligkeit für den ganzen Bildschirm.']
                 ]],
                 ['Die Fenster', [
@@ -6951,7 +6975,7 @@
             sections: [
                 ['Il quadrante', [
                     ['Doppio tocco', 'Il quadrante gira e mostra la bandiera della lingua.'],
-                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde, blu e dieci combinazioni di due colori.'],
+                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde, blu, dieci combinazioni di due colori e altre venti con alone.'],
                     ['Dito su o giù · modalità Zz', 'Più o meno intensità su tutto lo schermo.']
                 ]],
                 ['Le finestre', [
@@ -6991,7 +7015,7 @@
             sections: [
                 ['The dial', [
                     ['Double tap', 'The dial spins and shows the flag of the language.'],
-                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green, blue and ten two-colour combinations.'],
+                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green, blue, ten two-colour combinations and twenty more with a halo.'],
                     ['Finger up or down · Zz mode', 'More or less brightness for the whole screen.']
                 ]],
                 ['The windows', [
