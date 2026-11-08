@@ -224,6 +224,54 @@
             animation: girRellotge 8s cubic-bezier(.45, .05, .55, .95);
         }
 
+        /* ---------- Segonera en capa pròpia (estalvi de bateria) ---------- */
+        .seconds-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .seconds-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        /* Stop2Go: volta en 58 s i 2 s aturada a les 12. El JS només en fixa l'inici. */
+        .seconds-hand {
+            will-change: transform;
+            animation: stop2go 60s linear infinite;
+            animation-delay: var(--sec-delay, 0s);
+        }
+
+        .seconds-shadow {
+            will-change: transform;
+            animation: stop2goOmbra 60s linear infinite;
+            animation-delay: var(--sec-delay, 0s);
+        }
+
+        @keyframes stop2go {
+            0% { transform: rotate(0deg); }
+            96.6667% { transform: rotate(360deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes stop2goOmbra {
+            0% { transform: translate(0.667%, 1.667%) rotate(0deg); }
+            96.6667% { transform: translate(0.667%, 1.667%) rotate(360deg); }
+            100% { transform: translate(0.667%, 1.667%) rotate(360deg); }
+        }
+
+        html[data-theme="zz"] .seconds-shadow { display: none; }
+
+        .clock-flip.girant .seconds-layer {
+            transform: translateZ(calc(var(--thick) / 2 + 1px));
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
         @keyframes girRellotge {
             from { transform: rotateY(0deg); }
             to { transform: rotateY(360deg); }
@@ -2322,15 +2370,30 @@
             <!-- Agulla Minutera -->
             <line id="minuteHand" class="hand hand-shadow" x1="150" y1="175" x2="150" y2="26" stroke="#000000" stroke-width="12" stroke-linecap="butt"/>
 
-            <!-- Segonera Stop2Go amb les teves mides ajustades -->
-            <g id="secondHand" class="hand-shadow">
-                <line class="second-line" x1="150" y1="172" x2="150" y2="69" stroke="#e30613" stroke-width="3.5" stroke-linecap="butt"/>
-                <circle class="second-dot" cx="150" cy="63" r="9" fill="#e30613"/>
-            </g>
-
-            <!-- Caputxó/Eix central vermell -->
-            <circle class="clock-cap" cx="150" cy="150" r="5" fill="#e30613"/>
         </svg>
+
+        <!-- Segonera Stop2Go en capes pròpies que gira la targeta gràfica (animació CSS): l'esfera
+             no s'ha de tornar a dibuixar a cada fotograma i es gasta molta menys bateria.
+             L'ombra és una còpia difuminada que gira desplaçada, així no canvia de direcció. -->
+        <div class="seconds-layer" aria-hidden="true">
+            <svg class="seconds-svg seconds-shadow" viewBox="0 0 300 300">
+                <filter id="secondShadowBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+                <g filter="url(#secondShadowBlur)" fill="rgba(0,0,0,0.35)" stroke="rgba(0,0,0,0.35)">
+                    <line x1="150" y1="172" x2="150" y2="69" stroke-width="3.5"/>
+                    <circle cx="150" cy="63" r="9" stroke="none"/>
+                </g>
+            </svg>
+            <svg class="seconds-svg seconds-hand" viewBox="0 0 300 300">
+                <g id="secondHand">
+                    <line class="second-line" x1="150" y1="172" x2="150" y2="69" stroke="#e30613" stroke-width="3.5" stroke-linecap="butt"/>
+                    <circle class="second-dot" cx="150" cy="63" r="9" fill="#e30613"/>
+                </g>
+            </svg>
+            <!-- Caputxó/Eix central vermell (no gira) -->
+            <svg class="seconds-svg seconds-cap" viewBox="0 0 300 300">
+                <circle class="clock-cap" cx="150" cy="150" r="5" fill="#e30613"/>
+            </svg>
+        </div>
 
         <!-- Revers: caixa fosca, placa platejada i la bandera de l'idioma triat -->
         <div class="clock-face-back" aria-hidden="true">
@@ -3253,25 +3316,45 @@
     let currentMinute = -1;
     let currentDateKey = null;
 
-    function updateClock() {
-        const now = new Date();
-        const ms = now.getMilliseconds();
-        const s = now.getSeconds();
+    // Estalvi de bateria: ja no hi ha cap bucle que redibuixi l'esfera 60 cops per segon.
+    // La minutera i l'horària es mouen un cop per minut, i la segonera és una animació CSS
+    // (stop2go) que mou la targeta gràfica; aquí només se'n fixa el punt de partida.
+    const secondsLayerEls = document.querySelectorAll('.seconds-hand, .seconds-shadow');
+    function syncSecondHand(now = new Date()) {
+        const intoMinute = now.getSeconds() * 1000 + now.getMilliseconds();
+        const root = document.querySelector('.seconds-layer');
+        root.style.setProperty('--sec-delay', `${-intoMinute}ms`);
+        // Es reinicia l'animació perquè agafi el nou punt de partida
+        secondsLayerEls.forEach(el => { el.style.animationName = 'none'; });
+        void root.offsetWidth;
+        secondsLayerEls.forEach(el => { el.style.animationName = ''; });
+    }
+
+    function updateHands(now = new Date()) {
         const m = now.getMinutes();
         const h = now.getHours();
-
-        // Stop2Go: la segonera fa la volta en 58 s i s'atura 2 s a les 12
-        const secondAngle = s < 58 ? ((s * 1000 + ms) / 58000) * 360 : 360;
-        const minuteAngle = m * 6;
-        const hourAngle = ((h % 12) * 30) + (m * 0.5);
-
-        secondHandEl.setAttribute('transform', `rotate(${secondAngle} 150 150)`);
-        minuteHandEl.setAttribute('transform', `rotate(${minuteAngle} 150 150)`);
-        hourHandEl.setAttribute('transform', `rotate(${hourAngle} 150 150)`);
-
-        checkMinute(now);
-        requestAnimationFrame(updateClock);
+        minuteHandEl.setAttribute('transform', `rotate(${m * 6} 150 150)`);
+        hourHandEl.setAttribute('transform', `rotate(${((h % 12) * 30) + (m * 0.5)} 150 150)`);
     }
+
+    // El salt de la minutera, just quan comença el minut (com el rellotge de debò)
+    let minuteTimer = null;
+    function scheduleNextMinute() {
+        clearTimeout(minuteTimer);
+        const now = new Date();
+        minuteTimer = setTimeout(() => { checkMinute(new Date()); scheduleNextMinute(); }, 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 15);
+    }
+
+    function updateClock() {
+        const now = new Date();
+        updateHands(now);
+        syncSecondHand(now);
+        checkMinute(now);
+        scheduleNextMinute();
+    }
+
+    // En tornar a l'app (o despertar el mòbil) es torna a posar tot a l'hora exacta
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
 
     // Es comprova també amb un temporitzador: requestAnimationFrame s'atura quan la pestanya
     // no es veu, i a l'escriptori volem que l'anunci horari soni igualment
@@ -3286,6 +3369,8 @@
     setInterval(() => checkMinute(new Date()), 1000);
 
     function onMinuteChange(now) {
+        updateHands(now);
+        syncSecondHand(now);
         updateAltViews();
         // Canvi de dia: es compara la data, no l'hora 00:00, perquè si la pàgina estava
         // en segon pla a mitjanit el navegador no executa el rellotge i aquell minut es perdria
@@ -3680,7 +3765,8 @@
             fetchInProgress = false;
         }, {
             timeout: 15000,
-            maximumAge: 10 * 60 * 1000
+            // En mode Zz es reaprofita la posició de les últimes 3 hores: el GPS gasta molta bateria
+            maximumAge: (document.documentElement.getAttribute('data-theme') === 'zz' ? 3 * 60 : 10) * 60 * 1000
         });
     }
 
@@ -3788,8 +3874,12 @@
     }
 
     // Les dades es refresquen soles cada 15 min i en tornar a obrir la pestanya
+    // En mode Zz (normalment de nit) el temps es consulta cada 30 min en lloc de cada 15
     setInterval(() => {
-        if (!document.hidden) fetchLocationData();
+        if (document.hidden) return;
+        const zz = document.documentElement.getAttribute('data-theme') === 'zz';
+        if (zz && Date.now() - lastFetchTime < 2 * REFRESH_INTERVAL_MS - 30000) return;
+        fetchLocationData();
     }, REFRESH_INTERVAL_MS);
 
     document.addEventListener('visibilitychange', () => {
@@ -5881,8 +5971,10 @@
     mediaReady = true;
     mediaApplyLanguage();
     // Es comprova cada 20 minuts (programes) i 10 minuts (notícies)
-    setInterval(() => { if (document.visibilityState === 'visible') loadPrograms(true); }, 20 * 60 * 1000);
-    setInterval(() => { if (document.visibilityState === 'visible') loadNews(true); }, 10 * 60 * 1000);
+    // En mode Zz no es baixen en segon pla: només si la finestra és oberta (o en obrir-la)
+    const mediaBackgroundOk = key => document.documentElement.getAttribute('data-theme') !== 'zz' || (fullsReady && currentFull() && currentFull().dataset.key === key);
+    setInterval(() => { if (document.visibilityState === 'visible' && mediaBackgroundOk('podcasts')) loadPrograms(true); }, 20 * 60 * 1000);
+    setInterval(() => { if (document.visibilityState === 'visible' && mediaBackgroundOk('noticies')) loadNews(true); }, 10 * 60 * 1000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadNews(false); });
     // Sense connexió / connexió recuperada
     window.addEventListener('offline', () => {
