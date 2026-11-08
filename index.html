@@ -264,7 +264,8 @@
             100% { transform: translate(0.667%, 1.667%) rotate(360deg); }
         }
 
-        html[data-theme="zz"] .seconds-shadow { display: none; }
+        /* En Zz l'ombra s'amaga però l'animació continua, així torna al seu lloc en sortir del Zz */
+        html[data-theme="zz"] .seconds-shadow { visibility: hidden; }
 
         .clock-flip.girant .seconds-layer {
             transform: translateZ(calc(var(--thick) / 2 + 1px));
@@ -3352,6 +3353,9 @@
         checkMinute(now);
         scheduleNextMinute();
     }
+
+    // En canviar de tema, la segonera i la seva ombra es tornen a sincronitzar
+    new MutationObserver(() => syncSecondHand()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // En tornar a l'app (o despertar el mòbil) es torna a posar tot a l'hora exacta
     document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
