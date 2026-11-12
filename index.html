@@ -224,6 +224,58 @@
             animation: girRellotge 8s cubic-bezier(.45, .05, .55, .95);
         }
 
+        /* ---------- Mode lluminós: com les marques de llum dels rellotges, sobre negre ---------- */
+        html[data-theme="zz"][data-lume="1"] .clock-face-front .hand,
+        html[data-theme="zz"][data-lume="1"] .clock-face-front #dial-marks .mark-hour {
+            filter: drop-shadow(0 0 3px rgba(var(--zz-rgb), 0.55));
+        }
+
+        html[data-theme="zz"][data-lume="1"] .hand-shadow {
+            filter: drop-shadow(0 0 3px rgba(var(--zz-rgb), 0.55));
+        }
+
+        html[data-theme="zz"][data-lume="1"] .second-line { stroke: var(--zz); }
+        html[data-theme="zz"][data-lume="1"] .second-dot,
+        html[data-theme="zz"][data-lume="1"] .clock-cap { fill: var(--zz); }
+        html[data-theme="zz"][data-lume="1"] #secondHand { filter: drop-shadow(0 0 2px rgba(var(--zz-rgb), 0.6)); }
+        html[data-theme="zz"][data-lume="1"] .clock-badge { fill: var(--zz); }
+
+        /* Calendari: cada dia dins un cercle discret; dissabtes i diumenges plens; avui il·luminat */
+        html[data-theme="zz"][data-lume="1"] .day .day-number {
+            box-shadow: inset 0 0 0 1.5px rgba(var(--zz-rgb), 0.1);
+        }
+        html[data-theme="zz"][data-lume="1"] .day.other-month .day-number { box-shadow: none; }
+        html[data-theme="zz"][data-lume="1"] .day.saturday:not(.today):not(.other-month) .day-number {
+            background-color: rgba(var(--zz-rgb), 0.26);
+            color: var(--zz);
+        }
+        html[data-theme="zz"][data-lume="1"] .day.sunday:not(.today):not(.other-month) .day-number,
+        html[data-theme="zz"][data-lume="1"] .day.holiday:not(.today):not(.other-month) .day-number {
+            background-color: rgba(var(--zz-rgb), 0.5);
+            color: #0b0c07;
+        }
+        html[data-theme="zz"][data-lume="1"] .day.today .day-number {
+            background-color: var(--zz);
+            color: #0b0c07;
+            box-shadow: 0 0 16px rgba(var(--zz-rgb), 0.65);
+        }
+
+        /* Botons actius i destacats, plens i amb una mica de llum */
+        html[data-theme="zz"][data-lume="1"] .awake-btn.on,
+        html[data-theme="zz"][data-lume="1"] .lang-actual {
+            box-shadow: 0 0 12px rgba(var(--zz-rgb), 0.45);
+        }
+        html[data-theme="zz"][data-lume="1"] .awake-btn.on {
+            background-color: var(--zz);
+            color: #0b0c07;
+        }
+        html[data-theme="zz"][data-lume="1"] .awake-btn.on svg { stroke: #0b0c07; }
+        html[data-theme="zz"][data-lume="1"] .lang-actual {
+            background-color: var(--zz);
+            border-color: var(--zz);
+            color: #0b0c07;
+        }
+
         /* ---------- Segonera en capa pròpia (estalvi de bateria) ---------- */
         .seconds-layer {
             position: absolute;
@@ -1080,7 +1132,8 @@
 
         .theme-toggle-btn.light .icon-sun,
         .theme-toggle-btn.dark .icon-moon,
-        .theme-toggle-btn.zz .icon-zz {
+        .theme-toggle-btn.zz .icon-zz,
+        .theme-toggle-btn.lume .icon-lume {
             display: block;
         }
 
@@ -1948,6 +2001,7 @@
         .theme-toggle-btn.light .icon-sun,
         .theme-toggle-btn.dark .icon-moon,
         .theme-toggle-btn.zz .icon-zz,
+        .theme-toggle-btn.lume .icon-lume,
         .voice-toggle-btn.off .icon-voice-off,
         .voice-toggle-btn.always .icon-voice-on,
         .voice-toggle-btn.day .icon-voice-on {
@@ -2432,6 +2486,10 @@
                     <svg class="icon-zz" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M3 10h7l-7 9h7M14 4h6l-6 7h6"/>
                     </svg>
+                    <svg class="icon-lume" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3.2"/>
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.8 5.8l2 2M16.2 16.2l2 2M5.8 18.2l2-2M16.2 7.8l2-2" opacity=".55"/>
+                    </svg>
                     <span class="theme-auto-label" aria-hidden="true">A</span>
                 </button>
                 <button class="pill today-btn" id="todayBtn" type="button"></button>
@@ -2815,7 +2873,7 @@
             feels: 'Sensació', forecast: 'Previsió properes 12 hores',
             prevMonth: 'Mes anterior', nextMonth: 'Mes següent', language: 'Idioma',
             weather: { snow: 'Neu', rain: 'Pluja', fog: 'Boira', clear: 'Serè', clearNight: 'Serè', cloud: 'Núvols' },
-            themeNames: { light: 'diürn', dark: 'nocturn', zz: 'zz (tauleta de nit)' },
+            themeNames: { light: 'diürn', dark: 'nocturn', zz: 'zz (tauleta de nit)', lume: 'lluminós (nit)' },
             themeForced: n => `Tema forçat: ${n}. Toca per canviar.`,
             themeAutoNow: n => `Tema automàtic (ara ${n}). Toca per canviar.`,
             themeToast: n => `Tema ${n}`,
@@ -2847,7 +2905,7 @@
             feels: 'Ressenti', forecast: 'Prévisions des 12 prochaines heures',
             prevMonth: 'Mois précédent', nextMonth: 'Mois suivant', language: 'Langue',
             weather: { snow: 'Neige', rain: 'Pluie', fog: 'Brouillard', clear: 'Dégagé', clearNight: 'Dégagé', cloud: 'Nuageux' },
-            themeNames: { light: 'jour', dark: 'nuit', zz: 'zz (table de chevet)' },
+            themeNames: { light: 'jour', dark: 'nuit', zz: 'zz (table de chevet)', lume: 'lumineux (nuit)' },
             themeForced: n => `Thème forcé : ${n}. Touchez pour changer.`,
             themeAutoNow: n => `Thème automatique (actuellement ${n}). Touchez pour changer.`,
             themeToast: n => `Thème ${n}`,
@@ -2879,7 +2937,7 @@
             feels: 'Gefühlt', forecast: 'Vorhersage für die nächsten 12 Stunden',
             prevMonth: 'Vorheriger Monat', nextMonth: 'Nächster Monat', language: 'Sprache',
             weather: { snow: 'Schnee', rain: 'Regen', fog: 'Nebel', clear: 'Klar', clearNight: 'Klar', cloud: 'Bewölkt' },
-            themeNames: { light: 'Tag', dark: 'Nacht', zz: 'zz (Nachttisch)' },
+            themeNames: { light: 'Tag', dark: 'Nacht', zz: 'zz (Nachttisch)', lume: 'Leuchtziffern (Nacht)' },
             themeForced: n => `Design fest: ${n}. Tippen zum Wechseln.`,
             themeAutoNow: n => `Automatisches Design (jetzt ${n}). Tippen zum Wechseln.`,
             themeToast: n => `Design ${n}`,
@@ -2911,7 +2969,7 @@
             feels: 'Percepita', forecast: 'Previsioni per le prossime 12 ore',
             prevMonth: 'Mese precedente', nextMonth: 'Mese successivo', language: 'Lingua',
             weather: { snow: 'Neve', rain: 'Pioggia', fog: 'Nebbia', clear: 'Sereno', clearNight: 'Sereno', cloud: 'Nuvoloso' },
-            themeNames: { light: 'giorno', dark: 'notte', zz: 'zz (comodino)' },
+            themeNames: { light: 'giorno', dark: 'notte', zz: 'zz (comodino)', lume: 'luminoso (notte)' },
             themeForced: n => `Tema fisso: ${n}. Tocca per cambiare.`,
             themeAutoNow: n => `Tema automatico (ora ${n}). Tocca per cambiare.`,
             themeToast: n => `Tema ${n}`,
@@ -2943,7 +3001,7 @@
             feels: 'Feels like', forecast: 'Forecast for the next 12 hours',
             prevMonth: 'Previous month', nextMonth: 'Next month', language: 'Language',
             weather: { snow: 'Snow', rain: 'Rain', fog: 'Fog', clear: 'Clear', clearNight: 'Clear', cloud: 'Cloudy' },
-            themeNames: { light: 'day', dark: 'night', zz: 'zz (bedside)' },
+            themeNames: { light: 'day', dark: 'night', zz: 'zz (bedside)', lume: 'luminous (night)' },
             themeForced: n => `Theme fixed: ${n}. Tap to change.`,
             themeAutoNow: n => `Automatic theme (now ${n}). Tap to change.`,
             themeToast: n => `Theme: ${n}`,
@@ -4458,8 +4516,11 @@
     // ---------- Tema: automàtic, diürn, nocturn o zz ----------
     // Automàtic segons l'hora local, o forçat amb el botó (cicle: automàtic → diürn → nocturn → zz)
     const THEME_STORAGE_KEY = 'mondaineThemeOverride';
-    const THEME_NAMES = { light: 1, dark: 1, zz: 1 }; // noms traduïts a I18N[...].themeNames
-    const THEME_COLORS = { light: '#ffffff', dark: '#161616', zz: '#000000' };
+    // «lume» (lluminós): un mode de nit fet sobre el Zz (pantalla encesa, veu callada, intensitat amb
+    // el dit…), però amb els tons de les marques lluminoses dels rellotges: verd pàl·lid sobre negre
+    const THEME_NAMES = { light: 1, dark: 1, zz: 1, lume: 1 }; // noms traduïts a I18N[...].themeNames
+    const THEME_COLORS = { light: '#ffffff', dark: '#161616', zz: '#000000', lume: '#000000' };
+    var zzTintReady = false;
     let sessionThemeOverride = null;
 
     function readStorage(key, fallback) {
@@ -4496,11 +4557,15 @@
 
     function applyTheme() {
         const override = getThemeOverride();
-        const effective = THEME_NAMES[override] ? override : getAutoTheme();
+        const lume = override === 'lume';
+        const effective = lume ? 'zz' : (THEME_NAMES[override] ? override : getAutoTheme());
 
+        const lumeChanged = (document.documentElement.getAttribute('data-lume') === '1') !== lume;
+        if (lumeChanged) document.documentElement.setAttribute('data-lume', lume ? '1' : '0');
         if (document.documentElement.getAttribute('data-theme') !== effective) {
             document.documentElement.setAttribute('data-theme', effective);
         }
+        if (lumeChanged && zzTintReady) applyZzTint();
 
         const meta = document.getElementById('themeColorMeta');
         if (meta) meta.setAttribute('content', THEME_COLORS[effective]);
@@ -4508,7 +4573,8 @@
         const btn = document.getElementById('themeToggleBtn');
         btn.classList.toggle('light', effective === 'light');
         btn.classList.toggle('dark', effective === 'dark');
-        btn.classList.toggle('zz', effective === 'zz');
+        btn.classList.toggle('zz', effective === 'zz' && !lume);
+        btn.classList.toggle('lume', lume);
         btn.classList.toggle('manual', !!THEME_NAMES[override]);
         const label = THEME_NAMES[override]
             ? T().themeForced(T().themeNames[override])
@@ -4520,7 +4586,7 @@
     }
 
     document.getElementById('themeToggleBtn').addEventListener('click', () => {
-        const order = [null, 'light', 'dark', 'zz'];
+        const order = [null, 'light', 'dark', 'zz', 'lume'];
         const current = THEME_NAMES[getThemeOverride()] ? getThemeOverride() : null;
         const next = order[(order.indexOf(current) + 1) % order.length];
         setThemeOverride(next);
@@ -5996,7 +6062,9 @@
     // En mode Zz, un toc a l'esfera canvia el to fosforescent (taronja, vermell, groc, verd, blau).
     // Un doble toc, en qualsevol mode, fa girar l'esfera i se'n veu el revers.
     const ZZ_TINTS = { orange: [255, 69, 0], red: [255, 40, 40], yellow: [242, 197, 61], green: [61, 220, 132], blue: [74, 166, 255], amber: [255, 176, 0], warmwhite: [242, 232, 213],
-        cyan: [64, 224, 224], pink: [255, 95, 176], lilac: [169, 139, 255], turquoise: [0, 200, 170], copper: [217, 119, 66] };
+        cyan: [64, 224, 224], pink: [255, 95, 176], lilac: [169, 139, 255], turquoise: [0, 200, 170], copper: [217, 119, 66],
+        // Mode lluminós: el verd pàl·lid de les marques lluminoses i un oliva apagat per al secundari
+        lume: [228, 238, 188], lumeDim: [146, 152, 116] };
     const ZZ_SIMPLE = ['orange', 'red', 'yellow', 'green', 'blue'];
     // Deu combinacions de dos colors, triades per en Xavier a la maqueta (números 2, 3, 9, 10, 11,
     // 12, 15, 16, 19 i 24). El primer color: agulles, marques de les hores, logo i xifres; el segon:
@@ -6024,7 +6092,8 @@
 
     function applyZzTint() {
         // Tots els colors del mode Zz surten d'aquest to: escalant-lo s'apaga o s'aviva tota la pantalla
-        const [first, second, halo] = zzPair(zzTint);
+        const lumeOn = document.documentElement.getAttribute('data-lume') === '1';
+        const [first, second, halo] = lumeOn ? ['lume', 'lumeDim'] : zzPair(zzTint);
         const [r, g, b] = ZZ_TINTS[first].map(v => Math.round(v * zzLevel));
         const [r2, g2, b2] = ZZ_TINTS[second].map(v => Math.round(v * zzLevel));
         const root = document.documentElement;
@@ -6060,6 +6129,7 @@
         applyZzTint();
     }
     applyZzTint();
+    zzTintReady = true;
 
     function setZzLevel(v, withToast) {
         const nv = Math.min(1, Math.max(ZZ_LEVEL_MIN, v));
@@ -6115,7 +6185,7 @@
             if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; spinClock(); return; }
             tapTimer = setTimeout(() => {
                 tapTimer = null;
-                if (document.documentElement.getAttribute('data-theme') === 'zz') cycleZzTint();
+                if (document.documentElement.getAttribute('data-theme') === 'zz' && document.documentElement.getAttribute('data-lume') !== '1') cycleZzTint();
             }, 300);
         });
     })();
@@ -6980,7 +7050,7 @@
                     ['Finestres', 'Calendari · Temperatura · Data · El temps · Avui · Properament · Avisos · Qualitat de l’aire · Ubicació · Ràdio · Podcasts · Notícies · Alarmes']
                 ]],
                 ['Els botons', [
-                    ['.icon-sun', 'Tema: A automàtic (dia o nit segons el sol), dia, nit o Zz, la tauleta de nit.'],
+                    ['.icon-sun', 'Tema: A automàtic (dia de 7 a 20 h, nit la resta), dia, nit, Zz (la tauleta de nit) o lluminós, de nit amb els tons de les marques de llum.'],
                     ['CA', 'Idioma: català, francès, alemany, italià o anglès. Canvia també la veu.'],
                     ['#placaLloc > svg', 'La població: un toc porta a la seva ubicació.'],
                     ['#voiceToggleBtn .icon-voice-on', 'Anunci de les hores en punt (ding-dong i veu). En mode Zz calla.'],
@@ -7020,7 +7090,7 @@
                     ['Fenêtres', 'Calendrier · Température · Date · Météo · Aujourd’hui · Alertes · Qualité de l’air · Lieu · Radio · Actualités · Réveils']
                 ]],
                 ['Les boutons', [
-                    ['.icon-sun', 'Thème : A automatique (jour ou nuit selon le soleil), jour, nuit ou Zz, table de chevet.'],
+                    ['.icon-sun', 'Thème : A automatique (jour de 7 h à 20 h, nuit le reste), jour, nuit, Zz (table de chevet) ou lumineux, la nuit aux tons des aiguilles luminescentes.'],
                     ['FR', 'Langue : catalan, français, allemand, italien ou anglais. Change aussi la voix.'],
                     ['#placaLloc > svg', 'La localité : un tap ouvre sa fenêtre Lieu.'],
                     ['#voiceToggleBtn .icon-voice-on', 'Annonce des heures pile (ding-dong et voix). Silence en mode Zz.'],
@@ -7060,7 +7130,7 @@
                     ['Fenster', 'Kalender · Temperatur · Datum · Wetter · Heute · Warnungen · Luftqualität · Ort · Radio · Nachrichten · Wecker']
                 ]],
                 ['Die Tasten', [
-                    ['.icon-sun', 'Design: A automatisch (Tag oder Nacht nach der Sonne), Tag, Nacht oder Zz, der Nachttisch.'],
+                    ['.icon-sun', 'Design: A automatisch (Tag von 7 bis 20 Uhr, sonst Nacht), Tag, Nacht, Zz (Nachttisch) oder Leuchtziffern, nachts in den Farben der Leuchtmasse.'],
                     ['DE', 'Sprache: Katalanisch, Französisch, Deutsch, Italienisch oder Englisch. Auch die Stimme.'],
                     ['#placaLloc > svg', 'Der Ort: Antippen öffnet das Fenster Ort.'],
                     ['#voiceToggleBtn .icon-voice-on', 'Ansage zur vollen Stunde (Gong und Stimme). Im Zz-Modus still.'],
@@ -7100,7 +7170,7 @@
                     ['Finestre', 'Calendario · Temperatura · Data · Meteo · Oggi · Avvisi · Qualità dell’aria · Posizione · Radio · Notizie · Sveglie']
                 ]],
                 ['I pulsanti', [
-                    ['.icon-sun', 'Tema: A automatico (giorno o notte secondo il sole), giorno, notte o Zz, il comodino.'],
+                    ['.icon-sun', 'Tema: A automatico (giorno dalle 7 alle 20, notte il resto), giorno, notte, Zz (comodino) o luminoso, di notte con i toni delle lancette luminose.'],
                     ['IT', 'Lingua: catalano, francese, tedesco, italiano o inglese. Cambia anche la voce.'],
                     ['#placaLloc > svg', 'La località: un tocco apre la finestra Posizione.'],
                     ['#voiceToggleBtn .icon-voice-on', 'Annuncio delle ore piene (din-don e voce). In modalità Zz tace.'],
@@ -7140,7 +7210,7 @@
                     ['Windows', 'Calendar · Temperature · Date · Weather · Today · Alerts · Air quality · Location · Radio · News · Alarms']
                 ]],
                 ['The buttons', [
-                    ['.icon-sun', 'Theme: A automatic (day or night by the sun), day, night or Zz, the bedside mode.'],
+                    ['.icon-sun', 'Theme: A automatic (day from 7 am to 8 pm, night otherwise), day, night, Zz (bedside) or luminous, at night in the tones of glowing watch hands.'],
                     ['EN', 'Language: Catalan, French, German, Italian or English. The voice changes too.'],
                     ['#placaLloc > svg', 'The town: a tap opens its Location window.'],
                     ['#voiceToggleBtn .icon-voice-on', 'On-the-hour announcement (chime and voice). Silent in Zz mode.'],
