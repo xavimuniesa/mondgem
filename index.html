@@ -2164,11 +2164,12 @@
         }
 
         /* Avís breu en canviar un mode */
+        /* Globus de text: al peu del rellotge (dins la zona de l'esfera, a baix i centrat) */
         .toast {
             position: fixed;
             left: 50%;
-            top: max(18px, env(safe-area-inset-top));
-            transform: translate(-50%, -12px);
+            top: 50%;
+            transform: translate(-50%, calc(-50% + 10px));
             background-color: rgba(0, 0, 0, 0.85);
             color: #ffffff;
             font-size: 0.85rem;
@@ -2188,7 +2189,7 @@
 
         .toast.visible {
             opacity: 1;
-            transform: translate(-50%, 0);
+            transform: translate(-50%, -50%);
         }
 
         /* ---------- Mode zz: el rellotge també passa a negre i taronja, sense ombres ---------- */
@@ -2371,6 +2372,7 @@
     <div class="clock-section">
         <!-- Ajuda: a la cantonada de la zona del rellotge, fora de l'esfera -->
         <button class="help-btn" id="helpBtn" type="button" aria-label="Ajuda">?</button>
+
       <div class="clock-flip" id="clockFlip">
         <svg class="clock-svg clock-face-front" viewBox="0 0 300 300">
             <defs>
@@ -2777,6 +2779,8 @@
 </div>
 
 <div class="holiday-tooltip" id="holidayTooltip"></div>
+
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- Ajuda: què fa l'app i com es fa servir -->
@@ -4500,8 +4504,27 @@
     const toastEl = document.getElementById('toast');
     let toastTimer = null;
 
+    // El globus surt al peu del rellotge: centrat a l'espai entre l'esfera i el calendari si hi cap
+    // (en vertical) i, si no, just a sobre de la part de baix de l'esfera (en apaisat)
+    function placeToast() {
+        const face = document.querySelector('.clock-face-front');
+        if (!face) return;
+        const f = face.getBoundingClientRect();
+        const cal = document.querySelector('.calendar-section').getBoundingClientRect();
+        const h = toastEl.offsetHeight || 36;
+        const belowFace = cal.top > f.bottom + 4 && cal.left < f.right && cal.right > f.left;
+        let y;
+        if (belowFace && cal.top - f.bottom >= h + 6) y = (f.bottom + cal.top) / 2;
+        else if (belowFace) y = cal.top - h / 2 - 3;
+        else y = Math.min(f.bottom - h / 2 - 6, window.innerHeight - h / 2 - 8);
+        const w = toastEl.offsetWidth || 200;
+        toastEl.style.left = `${Math.max(w / 2 + 8, Math.min(window.innerWidth - w / 2 - 8, f.left + f.width / 2))}px`;
+        toastEl.style.top = `${y}px`;
+    }
+
     function showToast(text, ms = 2200) {
         toastEl.textContent = text;
+        placeToast();
         toastEl.classList.add('visible');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => toastEl.classList.remove('visible'), ms);
@@ -4724,7 +4747,7 @@
                 if (h === 0) return 'È mezzanotte.';
                 if (h === 12) return 'È mezzogiorno.';
                 if (h === 1) return 'È l’una.';
-                return `Sono le ${h}.`;
+                return `Sono le ${NUM_WORDS.it(h)}.`;
             },
             greeting: h => ['Ciao!', `Ti auguro una buona ${(h >= 19 || h < 5) ? 'serata' : 'giornata'}.`],
             friendly(h, hour) {
@@ -4984,33 +5007,68 @@
         return `${verb(q)} ${QUARTS[q]} menys ${CA_NUM[-diff]} ${nextName}.`;
     }
 
+    // Nombres en lletres (0-59) per dir i escriure l'hora sencera
+    const NUM_WORDS = {
+        fr(n) {
+            const u = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize'];
+            if (n <= 16) return u[n];
+            if (n < 20) return 'dix-' + u[n - 10];
+            const t = ['', '', 'vingt', 'trente', 'quarante', 'cinquante'][Math.floor(n / 10)], r = n % 10;
+            return r === 0 ? t : r === 1 ? `${t} et un` : `${t}-${u[r]}`;
+        },
+        de(n) {
+            const u = ['null', 'eins', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'elf', 'zwölf',
+                'dreizehn', 'vierzehn', 'fünfzehn', 'sechzehn', 'siebzehn', 'achtzehn', 'neunzehn'];
+            if (n < 20) return u[n];
+            const t = ['', '', 'zwanzig', 'dreißig', 'vierzig', 'fünfzig'][Math.floor(n / 10)], r = n % 10;
+            return r === 0 ? t : `${r === 1 ? 'ein' : u[r]}und${t}`;
+        },
+        it(n) {
+            const u = ['zero', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove', 'dieci', 'undici', 'dodici',
+                'tredici', 'quattordici', 'quindici', 'sedici', 'diciassette', 'diciotto', 'diciannove'];
+            if (n < 20) return u[n];
+            let t = ['', '', 'venti', 'trenta', 'quaranta', 'cinquanta'][Math.floor(n / 10)], r = n % 10;
+            if (r === 0) return t;
+            if (r === 1 || r === 8) t = t.slice(0, -1);
+            return t + (r === 3 ? 'tré' : u[r]);
+        },
+        en(n) {
+            const u = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+                'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+            if (n < 20) return u[n];
+            const t = ['', '', 'twenty', 'thirty', 'forty', 'fifty'][Math.floor(n / 10)], r = n % 10;
+            return r === 0 ? t : `${t}-${u[r]}`;
+        }
+    };
+
     const TELL_TIME = {
-        ca: catalanTime,
+        ca: catalanTime, // ja és en lletres, amb el sistema de quarts
         fr(now) {
-            const h = now.getHours(), m = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), w = NUM_WORDS.fr;
             if (m === 0) return SPEECH.fr.hour(h);
-            if (h === 0) return `Il est minuit ${m}.`;
-            if (h === 12) return `Il est midi ${m}.`;
-            return `Il est ${h} heure${h === 1 ? '' : 's'} ${m}.`;
+            const min = m === 1 ? 'une' : w(m).replace(/ et un$/, ' et une');
+            if (h === 0) return `Il est minuit ${min}.`;
+            if (h === 12) return `Il est midi ${min}.`;
+            return `Il est ${FR_HOURS[h]} heure${h === 1 ? '' : 's'} ${min}.`;
         },
         de(now) {
-            const h = now.getHours(), m = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), w = NUM_WORDS.de;
             if (m === 0) return SPEECH.de.hour(h);
-            return `Es ist ${h} Uhr ${m}.`;
+            return `Es ist ${h === 0 ? 'null' : DE_HOURS[h]} Uhr ${w(m)}.`;
         },
         it(now) {
-            const h = now.getHours(), m = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), w = NUM_WORDS.it;
             if (m === 0) return SPEECH.it.hour(h);
-            if (h === 0) return `È mezzanotte e ${m}.`;
-            if (h === 12) return `È mezzogiorno e ${m}.`;
-            if (h === 1) return `È l’una e ${m}.`;
-            return `Sono le ${h} e ${m}.`;
+            if (h === 0) return `È mezzanotte e ${w(m)}.`;
+            if (h === 12) return `È mezzogiorno e ${w(m)}.`;
+            if (h === 1) return `È l’una e ${w(m)}.`;
+            return `Sono le ${w(h)} e ${w(m)}.`;
         },
         en(now) {
-            const h = now.getHours(), m = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), w = NUM_WORDS.en;
             if (m === 0) return SPEECH.en.hour(h);
-            const h12 = h % 12 === 0 ? 12 : h % 12;
-            return `It's ${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'a.m.' : 'p.m.'}`;
+            const part = h < 12 ? 'in the morning' : h < 18 ? 'in the afternoon' : h < 21 ? 'in the evening' : 'at night';
+            return `It's ${EN_HOURS[h % 12]} ${m < 10 ? 'oh ' + w(m) : w(m)} ${part}.`;
         }
     };
 
