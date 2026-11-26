@@ -6193,8 +6193,9 @@
         }
     }
 
-    function cycleZzTint() {
-        zzTint = ZZ_ORDER[(ZZ_ORDER.indexOf(zzTint) + 1) % ZZ_ORDER.length];
+    function cycleZzTint(step = 1) {
+        const n = ZZ_ORDER.length;
+        zzTint = ZZ_ORDER[(((ZZ_ORDER.indexOf(zzTint) + step) % n) + n) % n];
         writeStorage(ZZ_KEY, zzTint);
         applyZzTint();
     }
@@ -6213,35 +6214,69 @@
     // Arrossegar amunt (més intens) o avall (més apagat) sobre l'esfera, només en mode Zz.
     // Si el dit gairebé no es mou, continua sent un toc (canvi de to) o un doble toc (gir).
     let zzDragUntil = 0;
-    (function setupZzIntensityDrag() {
+    // Gestos sobre l'esfera en mode Zz:
+    //  · dit amunt o avall → intensitat de tota la pantalla
+    //  · dit a l'esquerra o a la dreta → color següent o anterior (cada ~55 px, un color més)
+    // Si el dit gairebé no es mou, continua sent un toc (el doble toc fa girar l'esfera).
+    (function setupZzDialGestures() {
         const DRAG_PX = 12;      // a partir d'aquí ja és arrossegar
-        const FULL_RANGE = 260;  // píxels per anar del mínim al màxim
-        let startY = 0, startLevel = 1, active = false, dragging = false, pid = null;
+        const FULL_RANGE = 260;  // píxels per anar del mínim al màxim d'intensitat
+        const TINT_STEP_PX = 55; // píxels per passar d'un color al següent
+        let startX = 0, startY = 0, startLevel = 1, startIndex = 0, active = false, mode = null, pid = null;
         clockFlip.addEventListener('pointerdown', (e) => {
             if (!isZzTheme()) return;
-            active = true; dragging = false; pid = e.pointerId;
-            startY = e.clientY; startLevel = zzLevel;
+            active = true; mode = null; pid = e.pointerId;
+            startX = e.clientX; startY = e.clientY;
+            startLevel = zzLevel; startIndex = ZZ_ORDER.indexOf(zzTint);
         });
         clockFlip.addEventListener('pointermove', (e) => {
             if (!active || e.pointerId !== pid) return;
-            const dy = e.clientY - startY;
-            if (!dragging && Math.abs(dy) < DRAG_PX) return;
-            if (!dragging) { dragging = true; try { clockFlip.setPointerCapture(pid); } catch (err) {} }
+            const dx = e.clientX - startX, dy = e.clientY - startY;
+            if (!mode) {
+                if (Math.max(Math.abs(dx), Math.abs(dy)) < DRAG_PX) return;
+                mode = Math.abs(dx) > Math.abs(dy) ? 'tint' : 'level';
+                try { clockFlip.setPointerCapture(pid); } catch (err) {}
+            }
             e.preventDefault();
-            setZzLevel(startLevel - (dy - Math.sign(dy) * DRAG_PX) / FULL_RANGE * (1 - ZZ_LEVEL_MIN), true);
+            if (mode === 'level') {
+                setZzLevel(startLevel - (dy - Math.sign(dy) * DRAG_PX) / FULL_RANGE * (1 - ZZ_LEVEL_MIN), true);
+            } else {
+                // Dit cap a l'esquerra: colors següents; cap a la dreta: anteriors (com passar pàgines)
+                const k = Math.max(0, Math.floor((Math.abs(dx) - DRAG_PX * 2) / TINT_STEP_PX) + 1);
+                const steps = dx < 0 ? k : -k;
+                const n = ZZ_ORDER.length;
+                const target = ZZ_ORDER[(((startIndex + steps) % n) + n) % n];
+                if (target !== zzTint) {
+                    zzTint = target;
+                    writeStorage(ZZ_KEY, zzTint);
+                    applyZzTint();
+                    showToast(`${ZZ_ORDER.indexOf(zzTint) + 1} / ${n}`, 1000);
+                }
+            }
         });
         const end = (e) => {
             if (!active || (e && e.pointerId !== pid)) return;
-            if (dragging) zzDragUntil = Date.now() + 400; // el «click» que ve després no és un toc
-            active = false; dragging = false; pid = null;
+            if (mode) zzDragUntil = Date.now() + 400; // el «click» que ve després no és un toc
+            active = false; mode = null; pid = null;
         };
         clockFlip.addEventListener('pointerup', end);
         clockFlip.addEventListener('pointercancel', end);
-        // Ordinador: la roda del ratolí sobre l'esfera
+        // Ordinador: la roda del ratolí (amunt/avall) canvia la intensitat; la roda lateral o
+        // el trackpad de costat, el color
+        let wheelX = 0;
         clockFlip.addEventListener('wheel', (e) => {
             if (!isZzTheme()) return;
             e.preventDefault();
-            setZzLevel(zzLevel - e.deltaY / 1500, true);
+            if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                wheelX += e.deltaX;
+                if (Math.abs(wheelX) >= 60) {
+                    cycleZzTint(wheelX > 0 ? 1 : -1);
+                    showToast(`${ZZ_ORDER.indexOf(zzTint) + 1} / ${ZZ_ORDER.length}`, 1000);
+                    wheelX = 0;
+                }
+            } else {
+                setZzLevel(zzLevel - e.deltaY / 1500, true);
+            }
         }, { passive: false });
     })();
 
@@ -6253,10 +6288,8 @@
         clockFlip.addEventListener('click', () => {
             if (Date.now() < zzDragUntil) return;
             if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; spinClock(); return; }
-            tapTimer = setTimeout(() => {
-                tapTimer = null;
-                if (document.documentElement.getAttribute('data-theme') === 'zz') cycleZzTint();
-            }, 300);
+            // Un toc sol ja no canvia el color (ara es fa lliscant de costat); s'espera el segon toc
+            tapTimer = setTimeout(() => { tapTimer = null; }, 300);
         });
     })();
 
@@ -7108,7 +7141,7 @@
             sections: [
                 ['L’esfera', [
                     ['Doble toc', 'L’esfera gira i mostra la bandera de l’idioma.'],
-                    ['Toc · mode Zz', 'Canvia el color: taronja, vermell, groc, verd, blau, lluminós (com les marques de llum dels rellotges), setze combinacions de dos colors i vint-i-nou més amb halo.'],
+                    ['Dit a l’esquerra o a la dreta · mode Zz', 'Color següent o anterior: taronja, vermell, groc, verd, blau, lluminós (com les marques de llum dels rellotges), setze combinacions de dos colors i vint-i-nou més amb halo.'],
                     ['Dit amunt o avall · mode Zz', 'Més o menys intensitat de tota la pantalla.']
                 ]],
                 ['Les finestres', [
@@ -7149,7 +7182,7 @@
             sections: [
                 ['Le cadran', [
                     ['Double tap', 'Le cadran tourne et montre le drapeau de la langue.'],
-                    ['Tap · mode Zz', 'Change la couleur : orange, rouge, jaune, vert, bleu, lumineux (comme les aiguilles luminescentes), seize combinaisons de deux couleurs et vingt-neuf autres avec halo.'],
+                    ['Doigt vers la gauche ou la droite · mode Zz', 'Couleur suivante ou précédente : orange, rouge, jaune, vert, bleu, lumineux (comme les aiguilles luminescentes), seize combinaisons de deux couleurs et vingt-neuf autres avec halo.'],
                     ['Doigt vers le haut ou le bas · mode Zz', 'Plus ou moins d’intensité sur tout l’écran.']
                 ]],
                 ['Les fenêtres', [
@@ -7189,7 +7222,7 @@
             sections: [
                 ['Das Zifferblatt', [
                     ['Doppeltippen', 'Das Zifferblatt dreht sich und zeigt die Flagge der Sprache.'],
-                    ['Tippen · Zz-Modus', 'Ändert die Farbe: Orange, Rot, Gelb, Grün, Blau, Leuchtfarbe (wie Leuchtzeiger), sechzehn Kombinationen aus zwei Farben und neunundzwanzig weitere mit Halo.'],
+                    ['Finger nach links oder rechts · Zz-Modus', 'Nächste oder vorherige Farbe: Orange, Rot, Gelb, Grün, Blau, Leuchtfarbe (wie Leuchtzeiger), sechzehn Kombinationen aus zwei Farben und neunundzwanzig weitere mit Halo.'],
                     ['Finger hoch oder runter · Zz-Modus', 'Mehr oder weniger Helligkeit für den ganzen Bildschirm.']
                 ]],
                 ['Die Fenster', [
@@ -7229,7 +7262,7 @@
             sections: [
                 ['Il quadrante', [
                     ['Doppio tocco', 'Il quadrante gira e mostra la bandiera della lingua.'],
-                    ['Tocco · modalità Zz', 'Cambia il colore: arancione, rosso, giallo, verde, blu, luminoso (come le lancette luminose), sedici combinazioni di due colori e altre ventinove con alone.'],
+                    ['Dito a sinistra o a destra · modalità Zz', 'Colore successivo o precedente: arancione, rosso, giallo, verde, blu, luminoso (come le lancette luminose), sedici combinazioni di due colori e altre ventinove con alone.'],
                     ['Dito su o giù · modalità Zz', 'Più o meno intensità su tutto lo schermo.']
                 ]],
                 ['Le finestre', [
@@ -7269,7 +7302,7 @@
             sections: [
                 ['The dial', [
                     ['Double tap', 'The dial spins and shows the flag of the language.'],
-                    ['Tap · Zz mode', 'Changes the colour: orange, red, yellow, green, blue, luminous (like glowing watch hands), sixteen two-colour combinations and twenty-nine more with a halo.'],
+                    ['Finger left or right · Zz mode', 'Next or previous colour: orange, red, yellow, green, blue, luminous (like glowing watch hands), sixteen two-colour combinations and twenty-nine more with a halo.'],
                     ['Finger up or down · Zz mode', 'More or less brightness for the whole screen.']
                 ]],
                 ['The windows', [

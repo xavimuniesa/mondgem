@@ -1,6 +1,6 @@
 // Service worker: permet instal·lar l'app i obrir-la sense connexió.
 // Quan canviïs index.html, puja el número de CACHE_VERSION perquè els mòbils agafin la versió nova.
-const CACHE_VERSION = 'rellotge-v39';
+const CACHE_VERSION = 'rellotge-v40';
 const APP_SHELL = [
   './',
   './index.html',
